@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func Start(in io.Reader, out io.Writer) {
+func Start(in io.Reader, out io.Writer, args Args) {
 	s := bufio.NewScanner(in)
 	for {
 		fmt.Fprintf(out, ">> ")
@@ -18,6 +18,6 @@ func Start(in io.Reader, out io.Writer) {
 			fmt.Fprintf(out, "Bye.\n")
 			return
 		}
-		fmt.Fprintf(out, input)
+		fmt.Fprintf(out, "%s\n", input)
 	}
 }
