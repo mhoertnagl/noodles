@@ -29,8 +29,5 @@ func Start(in io.Reader, out io.Writer, args Args) {
 		for t := r.Next(); t != ""; t = r.Next() {
 			fmt.Fprintf(out, "%s\n", t)
 		}
-		// for _, t := range r.Tokens() {
-		// 	fmt.Fprintf(out, "%s.\n", t)
-		// }
 	}
 }

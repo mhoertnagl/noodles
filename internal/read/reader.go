@@ -2,7 +2,6 @@ package read
 
 import (
 	"bytes"
-	//"fmt"
 	"regexp"
 )
 
@@ -12,7 +11,7 @@ type Reader interface {
 	Load(input string)
 	Next() string
 	Peek() string
-	// Tokens() []string
+	Pos() int
 }
 
 type reader struct {
@@ -31,15 +30,10 @@ func New() Reader {
 
 func (r *reader) Load(input string) {
 	mm := r.re.FindAllStringSubmatch(input, -1)
-	// fmt.Println(len(mm))
 	r.tokens = make([]string, len(mm))
 	for i, m := range mm {
-		// fmt.Printf("%d: %s\n", i, m[1])
 		r.tokens[i] = m[1]
 	}
-	// r.tokens = r.re.FindAllString(input, -1)
-	// fmt.Println(r.tokens)
-	// fmt.Println(len(r.tokens))
 	r.pos = 0
 }
 
@@ -56,9 +50,10 @@ func (r *reader) Peek() string {
 	return ""
 }
 
-// func (r *reader) Tokens() []string {
-// 	return r.tokens
-// }
+func (r *reader) Pos() int {
+	// Positions visible to the user start at 1.
+	return r.pos + 1
+}
 
 func buildPattern() string {
 	var pat bytes.Buffer
@@ -74,16 +69,5 @@ func buildPattern() string {
 	pat.WriteString("|")                           // or
 	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]*") // atoms
 	pat.WriteString(")")                           // End capture group
-	// pat.WriteString("[\\s,]+")                     // whitespace or commas
-	// pat.WriteString("|")                           // or
-	// pat.WriteString("~@")                          // ~@
-	// pat.WriteString("|")                           // or
-	// pat.WriteString("[\\[\\]{}\\(\\)'`~^@]")       // any of [, ], {, }, (, ), ', `, ~, ^, @
-	// pat.WriteString("|")                           // or
-	// pat.WriteString("\"(\\.|[^\\\"])*\"?")         // strings with escape characters and an optional " at the end
-	// pat.WriteString("|")                           // or
-	// pat.WriteString(";.*")                         // comments???
-	// pat.WriteString("|")                           // or
-	// pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]*") // atoms
 	return pat.String()
 }
