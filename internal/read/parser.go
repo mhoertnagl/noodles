@@ -92,7 +92,6 @@ func (p *parser) parseArgs(start string, end string) []Node {
 func (p *parser) parseAtom() Node {
 	pre := p.tok[0]
 	switch {
-	// case strings.HasPrefix(p.tok, `"`):
 	case pre == '"':
 		return p.parseString()
 	case isNumber(pre):
