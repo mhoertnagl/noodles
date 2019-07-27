@@ -1,9 +1,12 @@
 package read
 
+// TODO: Move to separate namespace?
+
 type Node interface {
 }
 
 type ErrorNode struct {
+	Msg string
 }
 
 type ListNode struct {
@@ -15,7 +18,7 @@ type VectorNode struct {
 }
 
 type HashMapNode struct {
-	Items []Node
+	Items map[Node]Node
 }
 
 type StringNode struct {

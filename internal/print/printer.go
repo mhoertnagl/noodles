@@ -2,12 +2,14 @@ package print
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/mhoertnagl/splis2/internal/read"
 	"strconv"
 )
 
 type Printer interface {
-	Print(n read.Node) string
+	Print(node read.Node) string
+	PrintErrors(parser read.Parser) string
 }
 
 type printer struct {
@@ -27,13 +29,13 @@ func (p *printer) Print(node read.Node) string {
 func (p *printer) print(node read.Node) {
 	switch n := node.(type) {
 	case *read.ErrorNode:
-		p.buf.WriteString("ERROR\n")
+		p.buf.WriteString("  [ERROR]  ")
 	case *read.ListNode:
 		p.printSeq(n.Items, "(", ")")
 	case *read.VectorNode:
 		p.printSeq(n.Items, "[", "]")
 	case *read.HashMapNode:
-		p.printSeq(n.Items, "{", "}")
+		p.printHashMap(n.Items)
 	case *read.StringNode:
 		p.buf.WriteString(n.Val)
 	case *read.NumberNode:
@@ -58,4 +60,27 @@ func (p *printer) printSeq(items []read.Node, start string, end string) {
 		p.print(item)
 	}
 	p.buf.WriteString(end)
+}
+
+func (p *printer) printHashMap(items map[read.Node]read.Node) {
+	p.buf.WriteString("{")
+	for key, val := range items {
+		p.print(key)
+		p.buf.WriteString(" ")
+		p.print(val)
+		p.buf.WriteString(" ")
+	}
+	p.buf.WriteString("}")
+}
+
+func (p *printer) PrintErrors(parser read.Parser) string {
+	var errBuf bytes.Buffer
+	for _, e := range parser.Errors() {
+		errBuf.WriteString(p.printError(e))
+	}
+	return errBuf.String()
+}
+
+func (p *printer) printError(n *read.ErrorNode) string {
+	return fmt.Sprintf("ERROR: %s\n", n.Msg)
 }
