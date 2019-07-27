@@ -29,3 +29,11 @@ type NumberNode struct {
 type SymbolNode struct {
 	Name string
 }
+
+type TrueNode struct{}
+type FalseNode struct{}
+type NilNode struct{}
+
+var TrueObject *TrueNode = &TrueNode{}
+var FalseObject *FalseNode = &FalseNode{}
+var NilObject *NilNode = &NilNode{}

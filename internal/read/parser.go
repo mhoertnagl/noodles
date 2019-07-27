@@ -97,6 +97,15 @@ func (p *parser) parseAtom() Node {
 		return p.parseString()
 	case isNumber(pre):
 		return p.parseNumber()
+	case p.tok == "true":
+		p.next()
+		return TrueObject
+	case p.tok == "false":
+		p.next()
+		return FalseObject
+	case p.tok == "nil":
+		p.next()
+		return NilObject
 	default:
 		return p.parseSymbol()
 	}

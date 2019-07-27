@@ -40,6 +40,12 @@ func (p *printer) print(node read.Node) {
 		p.buf.WriteString(strconv.FormatFloat(n.Val, 'g', -1, 64))
 	case *read.SymbolNode:
 		p.buf.WriteString(n.Name)
+	case *read.TrueNode:
+		p.buf.WriteString("true")
+	case *read.FalseNode:
+		p.buf.WriteString("false")
+	case *read.NilNode:
+		p.buf.WriteString("nil")
 	}
 }
 
