@@ -21,7 +21,7 @@ type reader struct {
 }
 
 // New creates a new Reader instance.
-func New() Reader {
+func NewReader() Reader {
 	r := &reader{}
 	pat := buildPattern()
 	r.re = regexp.MustCompile(pat)
@@ -65,9 +65,9 @@ func buildPattern() string {
 	pat.WriteString("|")                           // or
 	pat.WriteString("\"(?:\\.|[^\\\"])*\"?")       // strings with escape characters and an optional " at the end
 	pat.WriteString("|")                           // or
-	pat.WriteString(";.*")                         // comments???
-	pat.WriteString("|")                           // or
 	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]*") // atoms
 	pat.WriteString(")")                           // End capture group
+	pat.WriteString("|")                           // or
+	pat.WriteString(";.*")                         // comments
 	return pat.String()
 }

@@ -3,6 +3,7 @@ package repl
 import (
 	"bufio"
 	"fmt"
+	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
 	"io"
 )
@@ -13,7 +14,9 @@ import (
 // it to out. The parameter args modifies the behavior of the REPL.
 func Start(in io.Reader, out io.Writer, args Args) {
 	s := bufio.NewScanner(in)
-	r := read.New()
+	r := read.NewReader()
+	p := read.NewParser()
+	w := print.NewPrinter()
 
 	for {
 		fmt.Fprintf(out, ">> ")
@@ -26,8 +29,11 @@ func Start(in io.Reader, out io.Writer, args Args) {
 		// 	return
 		// }
 		r.Load(input)
-		for t := r.Next(); t != ""; t = r.Next() {
-			fmt.Fprintf(out, "%s\n", t)
-		}
+		// for t := r.Next(); t != ""; t = r.Next() {
+		// 	fmt.Fprintf(out, "%s\n", t)
+		// }
+		ast := p.Parse(r)
+		output := w.Print(ast)
+		fmt.Fprintf(out, "%s\n", output)
 	}
 }

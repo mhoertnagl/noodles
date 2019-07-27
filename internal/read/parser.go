@@ -15,12 +15,13 @@ type parser struct {
 	tok string
 }
 
-func New() Parser {
+func NewParser() Parser {
 	return &parser{}
 }
 
 func (p *parser) Parse(r Reader) Node {
 	p.r = r
+	p.next()
 	return p.parse()
 }
 
@@ -36,7 +37,7 @@ func (p *parser) consume(exp string) {
 	if p.tok == exp {
 		p.next()
 	} else {
-		fmt.Printf("%d: Unexpected [%s]. Expecting [%s]", p.r.Pos(), p.tok, exp)
+		fmt.Printf("%d: Unexpected [%s]. Expecting [%s].\n", p.r.Pos(), p.tok, exp)
 	}
 }
 
@@ -45,26 +46,47 @@ func (p *parser) error() Node {
 }
 
 func (p *parser) parse() Node {
-	p.next()
 	switch {
 	case p.tok == ")":
 		fmt.Printf("Unexpected [)].\n")
 		return p.error()
 	case p.tok == "(":
 		return p.parseList()
+	case p.tok == "]":
+		fmt.Printf("Unexpected []].\n")
+		return p.error()
+	case p.tok == "[":
+		return p.parseVector()
+	case p.tok == "}":
+		fmt.Printf("Unexpected [}].\n")
+		return p.error()
+	case p.tok == "{":
+		return p.parseHashMap()
 	default:
 		return p.parseAtom()
 	}
 }
 
 func (p *parser) parseList() Node {
-	n := &ListNode{}
-	p.consume("(")
-	for p.tok != ")" && p.tok != "" {
-		p.parse()
+	return &ListNode{Items: p.parseArgs("(", ")")}
+}
+
+func (p *parser) parseVector() Node {
+	return &VectorNode{Items: p.parseArgs("[", "]")}
+}
+
+func (p *parser) parseHashMap() Node {
+	return &HashMapNode{Items: p.parseArgs("{", "}")}
+}
+
+func (p *parser) parseArgs(start string, end string) []Node {
+	args := []Node{}
+	p.consume(start)
+	for p.tok != end && p.tok != "" {
+		args = append(args, p.parse())
 	}
-	p.consume(")")
-	return n
+	p.consume(end)
+	return args
 }
 
 func (p *parser) parseAtom() Node {
@@ -93,7 +115,7 @@ func (p *parser) parseString() Node {
 }
 
 func (p *parser) parseNumber() Node {
-	if v, err := strconv.ParseFloat(p.tok, 64); err != nil {
+	if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
 		n := &NumberNode{}
 		n.Val = v
 		p.next()

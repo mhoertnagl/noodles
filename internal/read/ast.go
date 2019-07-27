@@ -10,6 +10,14 @@ type ListNode struct {
 	Items []Node
 }
 
+type VectorNode struct {
+	Items []Node
+}
+
+type HashMapNode struct {
+	Items []Node
+}
+
 type StringNode struct {
 	Val string
 }
