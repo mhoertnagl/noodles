@@ -44,7 +44,8 @@ func (e *evaluator) eval(env Env, node read.Node) read.Node {
 }
 
 func (e *evaluator) evalList(env Env, n *read.ListNode) read.Node {
-  // TODO: switch ...
+  // TODO: type SpecialForm func(Env, []read.Node)read.Node
+  // TODO: map[string]SpecialForm
   
 	return &read.ListNode{Items: e.evalSeq(env, n.Items)}
 }
