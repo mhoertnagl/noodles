@@ -6,15 +6,21 @@ import (
 )
 
 type Evaluator interface {
-	Eval(env Env, node read.Node) read.Node
+	Eval(node read.Node) read.Node
 }
 
 type evaluator struct {
+  env Env
   err []*read.ErrorNode
 }
 
-func NewEvaluator() Evaluator {
-	return &evaluator{}
+// TODO: PrintErrors
+
+func NewEvaluator(env Env) Evaluator {
+  e := &evaluator{env: env}
+  env.AddSpecialForm("def!", e.evalDef)
+  env.AddSpecialForm("let*", e.evalLet)
+	return e
 }
 
 func (e *evaluator) error(format string, args ...interface{}) read.Node {
@@ -23,8 +29,8 @@ func (e *evaluator) error(format string, args ...interface{}) read.Node {
 	return err
 }
 
-func (e *evaluator) Eval(env Env, node read.Node) read.Node {
-	return e.eval(env, node)
+func (e *evaluator) Eval(node read.Node) read.Node {
+	return e.eval(e.env, node)
 }
 
 func (e *evaluator) eval(env Env, node read.Node) read.Node {
@@ -44,10 +50,22 @@ func (e *evaluator) eval(env Env, node read.Node) read.Node {
 }
 
 func (e *evaluator) evalList(env Env, n *read.ListNode) read.Node {
-  // TODO: type SpecialForm func(Env, []read.Node)read.Node
-  // TODO: map[string]SpecialForm
+  if len(n.Items) == 0 {
+    return n
+  }
   
-	return &read.ListNode{Items: e.evalSeq(env, n.Items)}
+  switch x := n.Items[0].(type) {
+  case *read.SymbolNode:
+    if fun, ok := env.FindSpecialForm(x.Name); ok {
+      // Evaluate the function arguments and apply function.
+      args := e.evalSeq(env, n.Items[1:])
+      return fun(env, args)
+    }
+  }	
+  
+  // Evaluate all items of the list and return a new list with the evaluated items.
+  items := e.evalSeq(env, n.Items)
+  return &read.ListNode{Items: items}
 }
 
 func (e *evaluator) evalVector(env Env, n *read.VectorNode) read.Node {
@@ -84,31 +102,17 @@ func (e *evaluator) evalSymbol(env Env, n *read.SymbolNode) read.Node {
 // environment will be ignored silently.
 // (def! a 42) will bind a to 42 in the current environment. Returns the bound
 // value 42.
-func (e *evaluator) evalDef(env Env, n *read.ListNode) read.Node {
-  return e.evalSet(env, n.Items[1], n.Items[2])
-}
-
-// evalSet evaluates the name and the val argument and binds name to val in the 
-// environment.
-func (e *evaluator) evalSet(env Env, name read.Node, val read.Node) read.Node {
-  n := e.eval(env, name)
-  v := e.eval(env, val)
-  switch x := n.(type) {
-  case *read.SymbolNode:
-    env.Set(x.Name, v)
-    return v
-  default:
-    return e.error("Cannot bind to [%s].", name)
-  }
+func (e *evaluator) evalDef(env Env, ns []read.Node) read.Node {
+  return e.evalSet(env, ns[0], ns[1])
 }
 
 // evalLet binds a list, vector or hash-map of pairs to a noe local environment
 // and evaluates it's body in it.
 // If the second argument is neiher a list, vector or hash-map this it yields a 
 // runtime error.
-func (e *evaluator) evalLet(env Env, n *read.ListNode) read.Node {
+func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
   sub := NewEnv(env)
-  bindings := e.eval(env, n.Items[1])
+  bindings := e.eval(env, ns[0])
   switch b := bindings.(type) {
   case *read.ListNode:
     e.evalSeqBindings(sub, b.Items)
@@ -119,7 +123,7 @@ func (e *evaluator) evalLet(env Env, n *read.ListNode) read.Node {
   default:
     return e.error("Cannot bind non-sequence.")
   }
-  return e.eval(sub, n.Items[2])
+  return e.eval(sub, ns[1])
 }
 
 func (e *evaluator) evalSeqBindings(env Env, b []read.Node) {
@@ -132,4 +136,20 @@ func (e *evaluator) evalHashMapBindings(env Env, b map[read.Node]read.Node) {
   for k, v := range b {
     e.evalSet(env, k, v)  
   }  
+}
+
+// evalSet evaluates the name and the val argument and binds name to val in the 
+// environment.
+func (e *evaluator) evalSet(env Env, name read.Node, val read.Node) read.Node {
+  // TODO: Evaluating a symbol node is not a good idea.
+  // Perhaps we can evaluate a node if it is not a symbol node.
+  //n := e.eval(env, name)
+  v := e.eval(env, val)
+  switch x := name.(type) {
+  case *read.SymbolNode:
+    env.Set(x.Name, v)
+    return v
+  default:
+    return e.error("Cannot bind to [%s].", name)
+  }
 }
