@@ -20,6 +20,7 @@ func NewEvaluator(env Env) Evaluator {
 	e := &evaluator{env: env}
 	env.AddSpecialForm("def!", e.evalDef)
 	env.AddSpecialForm("let*", e.evalLet)
+	env.AddSpecialForm("+", e.evalSum)
 	return e
 }
 
@@ -106,8 +107,8 @@ func (e *evaluator) evalDef(env Env, ns []read.Node) read.Node {
 	return e.evalSet(env, ns[0], ns[1])
 }
 
-// evalLet binds a list, vector or hash-map of pairs to a noe local environment
-// and evaluates it's body in it.
+// evalLet binds a list, vector or hash-map of pairs to a new local environment
+// and evaluates it's body with respect to this new environment.
 // If the second argument is neiher a list, vector or hash-map this it yields a
 // runtime error.
 func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
@@ -123,7 +124,22 @@ func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
 	default:
 		return e.error("Cannot bind non-sequence.")
 	}
+	// Evaluate the body with the new local environment.
 	return e.eval(sub, ns[1])
+}
+
+// evalSum computes the sum of all arguments.
+// Non-numeric arguments will be ignored.
+func (e *evaluator) evalSum(env Env, ns []read.Node) read.Node {
+	var sum float64
+	for _, n := range ns {
+		switch v := n.(type) {
+		case *read.NumberNode:
+			sum += v.Val
+			// TODO: Return error if it is not a number?
+		}
+	}
+	return read.NewNumber(sum)
 }
 
 func (e *evaluator) evalSeqBindings(env Env, b []read.Node) {
@@ -149,6 +165,8 @@ func (e *evaluator) evalSet(env Env, name read.Node, val read.Node) read.Node {
 	case *read.SymbolNode:
 		env.Set(x.Name, v)
 		return v
+	// TODO: StringNode. We should append an obscure unicode character to the string to make it different from other symbols.
+	// Or we add "". This would make debugging easier.
 	default:
 		return e.error("Cannot bind to [%s].", name)
 	}
