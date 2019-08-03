@@ -37,7 +37,8 @@ func (p *printer) print(node read.Node) {
 	case *read.HashMapNode:
 		p.printHashMap(n.Items)
 	case *read.StringNode:
-		p.buf.WriteString(n.Val)
+		p.printString(n)
+		//p.buf.WriteString(n.Val)
 	case *read.NumberNode:
 		p.buf.WriteString(strconv.FormatFloat(n.Val, 'g', -1, 64))
 	case *read.SymbolNode:
@@ -49,6 +50,12 @@ func (p *printer) print(node read.Node) {
 	case *read.NilNode:
 		p.buf.WriteString("nil")
 	}
+}
+
+func (p *printer) printString(n *read.StringNode) {
+	p.buf.WriteString(`"`)
+	p.buf.WriteString(n.Val)
+	p.buf.WriteString(`"`)
 }
 
 func (p *printer) printSeq(items []read.Node, start string, end string) {
@@ -64,11 +71,16 @@ func (p *printer) printSeq(items []read.Node, start string, end string) {
 
 func (p *printer) printHashMap(items map[read.Node]read.Node) {
 	p.buf.WriteString("{")
+	// TODO: Unfortunate.
+	init := false
 	for key, val := range items {
+		if init {
+			p.buf.WriteString(" ")
+		}
+		init = true
 		p.print(key)
 		p.buf.WriteString(" ")
 		p.print(val)
-		p.buf.WriteString(" ")
 	}
 	p.buf.WriteString("}")
 }
