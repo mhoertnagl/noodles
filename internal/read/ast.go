@@ -9,6 +9,7 @@ type ErrorNode struct {
 	Msg string
 }
 
+// TODO: Make it a varargs version with fmt.
 func NewError(msg string) *ErrorNode {
 	return &ErrorNode{Msg: msg}
 }
@@ -77,6 +78,7 @@ func NewHashMap(items map[Node]Node) *HashMapNode {
 	return &HashMapNode{Items: items}
 }
 
+// TODO: Rename to NewEmptyHashMap()
 func NewHashMap2() *HashMapNode {
 	return NewHashMap(make(map[Node]Node))
 }

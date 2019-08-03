@@ -42,9 +42,9 @@ func (p *parser) next() {
 	p.tok = p.rd.Next()
 }
 
-func (p *parser) peek() string {
-	return p.rd.Peek()
-}
+// func (p *parser) peek() string {
+// 	return p.rd.Peek()
+// }
 
 func (p *parser) consume(exp string) {
 	if p.tok == exp {
@@ -55,7 +55,7 @@ func (p *parser) consume(exp string) {
 }
 
 func (p *parser) error(format string, args ...interface{}) Node {
-	e := &ErrorNode{Msg: fmt.Sprintf(format, args...)}
+	e := NewError(fmt.Sprintf(format, args...))
 	p.err = append(p.err, e)
 	p.next() // Ignore the malign token and move on.
 	return e
@@ -81,15 +81,15 @@ func (p *parser) parse() Node {
 }
 
 func (p *parser) parseList() Node {
-	return &ListNode{Items: p.parseArgs("(", ")")}
+	return NewList(p.parseArgs("(", ")"))
 }
 
 func (p *parser) parseVector() Node {
-	return &VectorNode{Items: p.parseArgs("[", "]")}
+	return NewVector(p.parseArgs("[", "]"))
 }
 
 func (p *parser) parseHashMap() Node {
-	n := &HashMapNode{Items: make(map[Node]Node)}
+	n := NewHashMap2()
 	p.consume("{")
 	// TODO: parse first and check if the count is even.
 	for p.tok != "}" && p.tok != "" {
@@ -108,18 +108,17 @@ func (p *parser) parseArgs(start string, end string) []Node {
 	for p.tok != end && p.tok != "" {
 		args = append(args, p.parse())
 	}
+	// TODO: Should we return an error node?
 	p.consume(end)
 	return args
 }
 
 func (p *parser) parseAtom() Node {
 	var n Node
-	// TODO: Can tok be nil?
-	pre := p.tok[0]
 	switch {
-	case pre == '"':
+	case strings.HasPrefix(p.tok, `"`):
 		n = p.parseString()
-	case isNumber(pre):
+	case isNumber(p.tok):
 		n = p.parseNumber()
 	case p.tok == "true":
 		n = TrueObject
@@ -130,18 +129,14 @@ func (p *parser) parseAtom() Node {
 	default:
 		n = p.parseSymbol()
 	}
-	// TODO: Remove this in final version if we can guarantee that default is symbol for all inputs.
-	// This should never happen. Defaults to symbol.
-	if n == nil {
-		n = p.error("Unrecognized token [%s].", p.tok)
-	}
 	p.next()
 	return n
 }
 
 func (p *parser) parseString() Node {
 	if strings.HasSuffix(p.tok, `"`) {
-		return &StringNode{Val: normalizeString(p.tok)}
+		// TODO: Create a constant for the empty string.
+		return NewString(normalizeString(p.tok))
 	}
 	return p.error("Missing [\"].\n")
 }
@@ -154,17 +149,18 @@ func normalizeString(val string) string {
 
 func (p *parser) parseNumber() Node {
 	if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
-		return &NumberNode{Val: v}
+		// TODO: Create a constant pool for the numbers [-32, 31]?
+		return NewNumber(v)
 	}
 	return p.error("[%s] is not a floating point number.\n", p.tok)
 }
 
-func isNumber(c byte) bool {
-	return ('0' <= c && c <= '9') || c == '-' || c == '.'
+func isNumber(tok string) bool {
+	return len(tok) > 0 && '0' <= tok[0] && tok[0] <= '9'
 }
 
 // TODO: Keywords :<x> <-> ʞ<x>
 
 func (p *parser) parseSymbol() Node {
-	return &SymbolNode{Name: p.tok}
+	return NewSymbol(p.tok)
 }
