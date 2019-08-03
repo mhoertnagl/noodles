@@ -58,10 +58,11 @@ func (e *evaluator) evalList(env Env, n *read.ListNode) read.Node {
 	switch x := n.Items[0].(type) {
 	case *read.SymbolNode:
 		if fun, ok := env.FindSpecialForm(x.Name); ok {
-			// Evaluate the function arguments and apply function.
-			args := e.evalSeq(env, n.Items[1:])
-			return fun(env, args)
+			// Special Forms get their arguments passed unevaluated. They usually
+			// have custom evaluation strategies.
+			return fun(env, n.Items[1:])
 		}
+		// TODO: else if // user defined fun.
 	}
 
 	// Evaluate all items of the list and return a new list with the evaluated items.
@@ -99,22 +100,29 @@ func (e *evaluator) evalSymbol(env Env, n *read.SymbolNode) read.Node {
 	return e.error("Undefined variable [%s].", n.Name)
 }
 
-// evalDef binds a name to a value. Redefinitions of the same name in the same
-// environment will be ignored silently.
-// (def! a 42) will bind a to 42 in the current environment. Returns the bound
-// value 42.
+// TODO: Should def! be able to overwrite an already defined binding?
+// evalDef binds a name to a value. Evaluates the value before it get bound to
+// the name and returns it. Redefinitions of the same name in the same
+// environment will overwrite the previous value.
 func (e *evaluator) evalDef(env Env, ns []read.Node) read.Node {
+	if len(ns) != 2 {
+		return e.error("def! requires exactly 2 arguments.")
+	}
 	return e.evalSet(env, ns[0], ns[1])
 }
 
 // evalLet binds a list, vector or hash-map of pairs to a new local environment
 // and evaluates it's body with respect to this new environment.
-// If the second argument is neiher a list, vector or hash-map this it yields a
-// runtime error.
+// If the second argument is neiher a list, vector or hash-map this function
+// yields a runtime error. The list of arguments has to be a sequence of name-
+// value pairs. The values will be evaluated before they get bound to their
+// respective names.
 func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
+	if len(ns) != 2 {
+		return e.error("let* requires exactly 2 arguments.")
+	}
 	sub := NewEnv(env)
-	bindings := e.eval(env, ns[0])
-	switch b := bindings.(type) {
+	switch b := ns[0].(type) {
 	case *read.ListNode:
 		e.evalSeqBindings(sub, b.Items)
 	case *read.VectorNode:
@@ -125,6 +133,8 @@ func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
 		return e.error("Cannot bind non-sequence.")
 	}
 	// Evaluate the body with the new local environment.
+	// fmt.Println(env.String())
+	// fmt.Println(sub.String())
 	return e.eval(sub, ns[1])
 }
 
@@ -133,7 +143,8 @@ func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
 func (e *evaluator) evalSum(env Env, ns []read.Node) read.Node {
 	var sum float64
 	for _, n := range ns {
-		switch v := n.(type) {
+		m := e.eval(env, n)
+		switch v := m.(type) {
 		case *read.NumberNode:
 			sum += v.Val
 			// TODO: Return error if it is not a number?
@@ -163,8 +174,7 @@ func (e *evaluator) evalSet(env Env, name read.Node, val read.Node) read.Node {
 	v := e.eval(env, val)
 	switch x := name.(type) {
 	case *read.SymbolNode:
-		env.Set(x.Name, v)
-		return v
+		return env.Set(x.Name, v)
 	// TODO: StringNode. We should append an obscure unicode character to the string to make it different from other symbols.
 	// Or we add "". This would make debugging easier.
 	default:

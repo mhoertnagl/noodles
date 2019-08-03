@@ -1,16 +1,19 @@
 package eval
 
 import (
+	"bytes"
+	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
 type SpecialForm func(Env, []read.Node) read.Node
 
 type Env interface {
-	Set(name string, val read.Node)
+	Set(name string, val read.Node) read.Node
 	Lookup(name string) read.Node
 	AddSpecialForm(name string, fun SpecialForm)
 	FindSpecialForm(name string) (SpecialForm, bool)
+	String() string
 }
 
 type env struct {
@@ -27,10 +30,12 @@ func NewEnv(outer Env) Env {
 	}
 }
 
-func (e *env) Set(name string, val read.Node) {
-	if _, ok := e.defs[name]; !ok {
-		e.defs[name] = val
-	}
+func (e *env) Set(name string, val read.Node) read.Node {
+	// if _, ok := e.defs[name]; !ok {
+	// 	e.defs[name] = val
+	// }
+	e.defs[name] = val
+	return val
 }
 
 // TODO: Iterative version?
@@ -56,4 +61,18 @@ func (e *env) FindSpecialForm(name string) (SpecialForm, bool) {
 		return e.outer.FindSpecialForm(name)
 	}
 	return nil, false
+}
+
+func (e *env) String() string {
+	var buf bytes.Buffer
+	w := print.NewPrinter()
+	buf.WriteString("- DEFS ---------------------------------\n")
+	for k, v := range e.defs {
+		buf.WriteString("  ")
+		buf.WriteString(k)
+		buf.WriteString(" = ")
+		buf.WriteString(w.Print(v))
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
