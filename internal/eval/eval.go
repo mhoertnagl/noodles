@@ -23,6 +23,10 @@ func NewEvaluator(env Env) Evaluator {
   env.AddSpecialForm("do", e.evalDo)
   env.AddSpecialForm("if", e.evalIf)
 	env.AddSpecialForm("+", e.evalSum)
+  env.AddSpecialForm("<", e.evalLT)
+  env.AddSpecialForm(">", e.evalGT)
+  env.AddSpecialForm("<=", e.evalLE)
+  env.AddSpecialForm(">=", e.evalGE)
 	return e
 }
 
@@ -62,7 +66,7 @@ func (e *evaluator) evalList(env Env, n *read.ListNode) read.Node {
 		if fun, ok := env.FindSpecialForm(x.Name); ok {
 			// Special Forms get their arguments passed unevaluated. They usually
 			// have custom evaluation strategies.
-			return fun(env, n.Items[1:])
+			return fun(env, x.Name, n.Items[1:])
 		}
 		// TODO: else if // user defined fun.
 	}
@@ -107,7 +111,7 @@ func (e *evaluator) evalSymbol(env Env, n *read.SymbolNode) read.Node {
 // evalDef binds a name to a value. Evaluates the value before it get bound to
 // the name and returns it. Redefinitions of the same name in the same
 // environment will overwrite the previous value.
-func (e *evaluator) evalDef(env Env, ns []read.Node) read.Node {
+func (e *evaluator) evalDef(env Env, name string, ns []read.Node) read.Node {
 	if len(ns) != 2 {
 		return e.error("def! requires exactly 2 arguments.")
 	}
@@ -120,7 +124,7 @@ func (e *evaluator) evalDef(env Env, ns []read.Node) read.Node {
 // yields a runtime error. The list of arguments has to be a sequence of name-
 // value pairs. The values will be evaluated before they get bound to their
 // respective names.
-func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
+func (e *evaluator) evalLet(env Env, name string, ns []read.Node) read.Node {
 	if len(ns) != 2 {
 		return e.error("let* requires exactly 2 arguments.")
 	}
@@ -143,22 +147,27 @@ func (e *evaluator) evalLet(env Env, ns []read.Node) read.Node {
 
 // evalSum computes the sum of all arguments.
 // Non-numeric arguments will be ignored.
-func (e *evaluator) evalSum(env Env, ns []read.Node) read.Node {
+func (e *evaluator) evalSum(env Env, name string, ns []read.Node) read.Node {
 	var sum float64
 	for _, n := range ns {
 		m := e.eval(env, n)
-		switch v := m.(type) {
-		case *read.NumberNode:
-			sum += v.Val
-			// TODO: Return error if it is not a number?
-		}
+    if v, ok := m.(*read.NumberNode); ok {
+      sum += v.Val
+    } else {
+      return e.error("[%s] is not a number.", "")
+    }
+		// switch v := m.(type) {
+		// case *read.NumberNode:
+		// 	sum += v.Val
+		// 	// TODO: Return error if it is not a number?
+		// }
 	}
 	return read.NewNumber(sum)
 }
 
 // evalDo evaluates a list of items and returns the final evaluated result.
 // Returns nil when the list is empty.
-func (e *evaluator) evalDo(env Env, ns []read.Node) read.Node {
+func (e *evaluator) evalDo(env Env, name string, ns []read.Node) read.Node {
   var r read.Node = read.NilObject
   for _, n := range ns {
     r = e.eval(env, n)
@@ -169,7 +178,7 @@ func (e *evaluator) evalDo(env Env, ns []read.Node) read.Node {
 // evalIf evaluates its first argument. If it is true?? evaluates the second
 // argument else evaluates the third argument. If the first argument is not true
 // and no third argument is given then it returns nil.
-func (e *evaluator) evalIf(env Env, ns []read.Node) read.Node {
+func (e *evaluator) evalIf(env Env, name string, ns []read.Node) read.Node {
   len := len(ns)
   if len != 2 && len != 3 {
     return e.error("if requires either exactly 2 or 3 arguments.")
@@ -206,6 +215,91 @@ func (e *evaluator) evalTrue(env Env, node read.Node) bool {
   }
   return true
 }
+
+func (e *evaluator) evalLT(env Env, name string, ns []read.Node) read.Node {
+  if len(ns) != 2 {
+		return e.error("%s requires exactly 2 arguments.", name)
+	}
+  if n0, ok0 := ns[0].(*read.NumberNode); ok0 {
+    if n1, ok1 := ns[1].(*read.NumberNode); ok1 {
+      return read.NewBool(n0.Val < n1.Val)     
+    }
+  }
+  return e.error("Cannot compare [%s] and [%s]", "", "")
+}
+
+func (e *evaluator) evalGT(env Env, name string, ns []read.Node) read.Node {
+  if len(ns) != 2 {
+		return e.error("%s requires exactly 2 arguments.", name)
+	}
+  if n0, ok0 := ns[0].(*read.NumberNode); ok0 {
+    if n1, ok1 := ns[1].(*read.NumberNode); ok1 {
+      return read.NewBool(n0.Val > n1.Val)     
+    }
+  }
+  return e.error("Cannot compare [%s] and [%s]", "", "")
+}
+
+func (e *evaluator) evalLE(env Env, name string, ns []read.Node) read.Node {
+  if len(ns) != 2 {
+		return e.error("%s requires exactly 2 arguments.", name)
+	}
+  if n0, ok0 := ns[0].(*read.NumberNode); ok0 {
+    if n1, ok1 := ns[1].(*read.NumberNode); ok1 {
+      return read.NewBool(n0.Val <= n1.Val)   
+    }
+  }
+  return e.error("Cannot compare [%s] and [%s]", "", "")
+}
+
+func (e *evaluator) evalGE(env Env, name string, ns []read.Node) read.Node {
+  if len(ns) != 2 {
+		return e.error("%s requires exactly 2 arguments.", name)
+	}
+  if n0, ok0 := ns[0].(*read.NumberNode); ok0 {
+    if n1, ok1 := ns[1].(*read.NumberNode); ok1 {
+      return read.NewBool(n0.Val >= n1.Val)   
+    }
+  }
+  return e.error("Cannot compare [%s] and [%s]", "", "")
+}
+
+// func (e *evaluator) evalCmp(env Env, name string, ns []read.Node) read.Node {
+//   if len(ns) != 2 {
+// 		return e.error("%s requires exactly 2 arguments.", name)
+// 	}
+//   // if n0, ok0 := ns[0].(*read.NumberNode); ok0 {
+//   //   if n1, ok1 := ns[1].(*read.NumberNode); ok1 {
+//   //     switch name {
+//   //     case "<":
+//   //       return n0.Val < n1.Val
+//   //     case ">":
+//   //       return n0.Val > n1.Val
+//   //     case "<=":
+//   //       return n0.Val <= n1.Val
+//   //     case ">=":
+//   //       return n0.Val >= n1.Val
+//   //     }      
+//   //   }
+//   // }
+//   switch n0 := ns[0].(type) {
+//   case *read.NumberNode:
+//     switch n1 := ns[1].(type) {
+//     case *read.NumberNode:
+//       switch name {
+//       case "<":
+//         return n0.Val < n1.Val
+//       case ">":
+//         return n0.Val > n1.Val
+//       case "<=":
+//         return n0.Val <= n1.Val
+//       case ">=":
+//         return n0.Val >= n1.Val
+//       }
+//     }
+//   }
+//   return e.error("Cannot compare [%s] and [%s]", "", "")
+// }
 
 func (e *evaluator) evalSeqBindings(env Env, b []read.Node) {
 	for i := 0; i < len(b); i += 2 {

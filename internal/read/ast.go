@@ -14,13 +14,22 @@ func NewError(msg string) *ErrorNode {
 	return &ErrorNode{Msg: msg}
 }
 
+type NilNode struct{}
+
+var NilObject *NilNode = &NilNode{}
+
 type TrueNode struct{}
 type FalseNode struct{}
-type NilNode struct{}
 
 var TrueObject *TrueNode = &TrueNode{}
 var FalseObject *FalseNode = &FalseNode{}
-var NilObject *NilNode = &NilNode{}
+
+func NewBool(val bool) Node {
+	if val {
+    return TrueObject
+  }
+  return FalseObject
+}
 
 type StringNode struct {
 	Val string

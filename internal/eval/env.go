@@ -6,7 +6,7 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
-type SpecialForm func(Env, []read.Node) read.Node
+type SpecialForm func(Env, string, []read.Node) read.Node
 
 type Env interface {
 	Set(name string, val read.Node) read.Node
@@ -72,6 +72,12 @@ func (e *env) String() string {
 		buf.WriteString(k)
 		buf.WriteString(" = ")
 		buf.WriteString(w.Print(v))
+		buf.WriteString("\n")
+	}
+  buf.WriteString("- SPECIALS -----------------------------\n")
+	for k := range e.specials {
+		buf.WriteString("  ")
+		buf.WriteString(k)
 		buf.WriteString("\n")
 	}
 	return buf.String()

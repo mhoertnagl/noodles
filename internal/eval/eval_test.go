@@ -21,6 +21,10 @@ func TestEvalSum(t *testing.T) {
 	test(t, "(+ (+ 1 1) (+ 1 1))", "4")
 }
 
+func TestEvalInvalidSum(t *testing.T) {
+	test(t, "(+ 1 1 x)", "  [ERROR]  ")
+}
+
 func TestEvalDef1(t *testing.T) {
 	env := eval.NewEnv(nil)
 	teste(t, env, "(def! :a 1)", "1")
@@ -101,9 +105,82 @@ func TestEvalIf(t *testing.T) {
  
   test(t, "(if false (+ 2 2) (+ 1 1))", "2")
   test(t, "(if true (+ 2 2) (+ 1 1))", "4")
+  
+  test(t, "(if (< 0 1) 1 0)", "1")
+  test(t, "(if (< 0 0) 1 0)", "0")
+  test(t, "(if (< 1 0) 1 0)", "0")
 }
 
-// TODO: Comparision
+func TestEvalIfWithoutElse(t *testing.T) {
+  test(t, "(if false 1)", "nil")
+  test(t, "(if true 1)", "1")
+}
+
+func TestEvalInvalidIf(t *testing.T) {
+  test(t, "(if)", "  [ERROR]  ")
+  test(t, "(if true)", "  [ERROR]  ")
+  test(t, "(if true 1 0 2)", "  [ERROR]  ")
+}
+
+func TestEvalLT(t *testing.T) {
+  test(t, "(< 0 1)", "true")
+  test(t, "(< 0 0)", "false")
+  test(t, "(< 1 0)", "false")
+}
+
+func TestEvalInvalidLT(t *testing.T) {
+  test(t, "(<)", "  [ERROR]  ")
+  test(t, "(< 0)", "  [ERROR]  ")
+  test(t, "(< 1 0 1)", "  [ERROR]  ")
+  test(t, "(< x 0)", "  [ERROR]  ")
+  test(t, "(< 0 x)", "  [ERROR]  ")
+  test(t, "(< x x)", "  [ERROR]  ")
+}
+
+func TestEvalGT(t *testing.T) {
+  test(t, "(> 0 1)", "false")
+  test(t, "(> 0 0)", "false")
+  test(t, "(> 1 0)", "true")
+}
+
+func TestEvalInvalidGT(t *testing.T) {
+  test(t, "(>)", "  [ERROR]  ")
+  test(t, "(> 0)", "  [ERROR]  ")
+  test(t, "(> 1 0 1)", "  [ERROR]  ")
+  test(t, "(> x 0)", "  [ERROR]  ")
+  test(t, "(> 0 x)", "  [ERROR]  ")
+  test(t, "(> x x)", "  [ERROR]  ")
+}
+
+func TestEvalLE(t *testing.T) {
+  test(t, "(<= 0 1)", "true")
+  test(t, "(<= 0 0)", "true")
+  test(t, "(<= 1 0)", "false")
+  test(t, "(<= x 0)", "  [ERROR]  ")
+  test(t, "(<= 0 x)", "  [ERROR]  ")
+  test(t, "(<= x x)", "  [ERROR]  ")
+}
+
+func TestEvalInvalidLE(t *testing.T) {
+  test(t, "(<=)", "  [ERROR]  ")
+  test(t, "(<= 0)", "  [ERROR]  ")
+  test(t, "(<= 1 0 1)", "  [ERROR]  ")
+}
+
+func TestEvalGE(t *testing.T) {
+  test(t, "(>= 0 1)", "false")
+  test(t, "(>= 0 0)", "true")
+  test(t, "(>= 1 0)", "true")
+}
+
+func TestEvalInvalidGE(t *testing.T) {
+  test(t, "(>=)", "  [ERROR]  ")
+  test(t, "(>= 0)", "  [ERROR]  ")
+  test(t, "(>= 1 0 1)", "  [ERROR]  ")
+  test(t, "(>= x 0)", "  [ERROR]  ")
+  test(t, "(>= 0 x)", "  [ERROR]  ")
+  test(t, "(>= x x)", "  [ERROR]  ")
+}
 
 func test(t *testing.T, i string, e string) {
 	teste(t, eval.NewEnv(nil), i, e)
