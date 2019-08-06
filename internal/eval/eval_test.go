@@ -76,6 +76,12 @@ func TestEvalInvalidLet(t *testing.T) {
 	test(t, "(let* (:a 1) :a :b)", "  [ERROR]  ")
 }
 
+func TestEvalDo(t *testing.T) {
+  test(t, "(do)", "nil")
+  test(t, "(do (+ 1 1) (+ 2 2))", "4")
+	test(t, "(do (def! a 3) (def! b 7) (+ a b))", "10")
+}
+
 func test(t *testing.T, i string, e string) {
 	teste(t, eval.NewEnv(nil), i, e)
 }

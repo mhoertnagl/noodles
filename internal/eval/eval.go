@@ -20,6 +20,7 @@ func NewEvaluator(env Env) Evaluator {
 	e := &evaluator{env: env}
 	env.AddSpecialForm("def!", e.evalDef)
 	env.AddSpecialForm("let*", e.evalLet)
+  env.AddSpecialForm("do", e.evalDo)
 	env.AddSpecialForm("+", e.evalSum)
 	return e
 }
@@ -152,6 +153,16 @@ func (e *evaluator) evalSum(env Env, ns []read.Node) read.Node {
 		}
 	}
 	return read.NewNumber(sum)
+}
+
+// Evaluates a list of expressions and returns the final evaluated result.
+// Returns nil when the list is empty.
+func (e *evaluator) evalDo(env Env, ns []read.Node) read.Node {
+  var r read.Node = read.NilObject
+  for _, n := range ns {
+    r = e.eval(env, n)
+  }
+	return r
 }
 
 func (e *evaluator) evalSeqBindings(env Env, b []read.Node) {
