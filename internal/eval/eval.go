@@ -21,6 +21,7 @@ func NewEvaluator(env Env) Evaluator {
 	env.AddSpecialForm("def!", e.evalDef)
 	env.AddSpecialForm("let*", e.evalLet)
   env.AddSpecialForm("do", e.evalDo)
+  env.AddSpecialForm("if", e.evalIf)
 	env.AddSpecialForm("+", e.evalSum)
 	return e
 }
@@ -155,7 +156,7 @@ func (e *evaluator) evalSum(env Env, ns []read.Node) read.Node {
 	return read.NewNumber(sum)
 }
 
-// Evaluates a list of expressions and returns the final evaluated result.
+// evalDo evaluates a list of items and returns the final evaluated result.
 // Returns nil when the list is empty.
 func (e *evaluator) evalDo(env Env, ns []read.Node) read.Node {
   var r read.Node = read.NilObject
@@ -163,6 +164,47 @@ func (e *evaluator) evalDo(env Env, ns []read.Node) read.Node {
     r = e.eval(env, n)
   }
 	return r
+}
+
+// evalIf evaluates its first argument. If it is true?? evaluates the second
+// argument else evaluates the third argument. If the first argument is not true
+// and no third argument is given then it returns nil.
+func (e *evaluator) evalIf(env Env, ns []read.Node) read.Node {
+  len := len(ns)
+  if len != 2 && len != 3 {
+    return e.error("if requires either exactly 2 or 3 arguments.")
+  }
+  cond := e.eval(env, ns[0])
+  if e.evalTrue(env, cond) {
+    return e.eval(env, ns[1])
+  } else if len == 3 {
+    return e.eval(env, ns[2])
+  }
+	return read.NilObject
+}
+
+func (e *evaluator) evalTrue(env Env, node read.Node) bool {
+  // case *read.SymbolNode:
+  //   return false
+  switch n := node.(type) {
+  case *read.ErrorNode:
+    return false
+  case *read.NilNode:
+    return false
+  case *read.FalseNode:
+    return false
+  case *read.NumberNode:
+    return n.Val != 0
+  case *read.StringNode:
+    return len(n.Val) != 0    
+  case *read.ListNode:
+    return len(n.Items) != 0
+  case *read.VectorNode:
+    return len(n.Items) != 0
+  case *read.HashMapNode:
+    return len(n.Items) != 0
+  }
+  return true
 }
 
 func (e *evaluator) evalSeqBindings(env Env, b []read.Node) {

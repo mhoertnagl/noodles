@@ -68,6 +68,8 @@ func TestEvalLetVectorBinding(t *testing.T) {
 	test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
 }
 
+// TODO: Test HashMap let binding.
+
 // TODO: Test outer environment.
 
 func TestEvalInvalidLet(t *testing.T) {
@@ -81,6 +83,27 @@ func TestEvalDo(t *testing.T) {
   test(t, "(do (+ 1 1) (+ 2 2))", "4")
 	test(t, "(do (def! a 3) (def! b 7) (+ a b))", "10")
 }
+
+func TestEvalIf(t *testing.T) {
+  test(t, "(if nil 1 0)", "0") // Error?
+  test(t, "(if false 1 0)", "0")
+  test(t, "(if true 1 0)", "1")
+  test(t, "(if 42 1 0)", "1") // Error?
+  test(t, `(if "" 1 0)`, "0") // Error?
+  test(t, `(if "x" 1 0)`, "1") // Error?
+  test(t, "(if :x 1 0)", "0") // Error? // :x is undefined.
+  test(t, "(if () 1 0)", "0") // Error?
+  test(t, "(if (42) 1 0)", "1") // Error?
+  test(t, "(if [] 1 0)", "0") // Error?
+  test(t, "(if [42] 1 0)", "1") // Error?
+  test(t, "(if {} 1 0)", "0") // Error?
+  test(t, "(if {:a 42} 1 0)", "1") // Error?
+ 
+  test(t, "(if false (+ 2 2) (+ 1 1))", "2")
+  test(t, "(if true (+ 2 2) (+ 1 1))", "4")
+}
+
+// TODO: Comparision
 
 func test(t *testing.T, i string, e string) {
 	teste(t, eval.NewEnv(nil), i, e)
