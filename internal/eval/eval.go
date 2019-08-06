@@ -65,7 +65,8 @@ func (e *evaluator) evalList(env Env, n *read.ListNode) read.Node {
 		// TODO: else if // user defined fun.
 	}
 
-	// Evaluate all items of the list and return a new list with the evaluated items.
+	// Evaluate all items of the list and return a new list with the evaluated 
+  // items.
 	items := e.evalSeq(env, n.Items)
 	return read.NewList(items)
 }

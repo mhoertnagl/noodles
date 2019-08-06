@@ -50,7 +50,7 @@ func (p *parser) consume(exp string) {
 	if p.tok == exp {
 		p.next()
 	} else {
-		fmt.Printf("Unexpected [%s]. Expecting [%s].\n", p.tok, exp)
+		p.error("Unexpected [%s]. Expecting [%s].\n", p.tok, exp)
 	}
 }
 

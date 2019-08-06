@@ -51,6 +51,7 @@ func TestEvalInvalidDef(t *testing.T) {
 	test(t, "(def!)", "  [ERROR]  ")
 	test(t, "(def! :a)", "  [ERROR]  ")
 	test(t, "(def! :a 1 :b)", "  [ERROR]  ")
+  test(t, "(def! 5 2)", "  [ERROR]  ")
 }
 
 func TestEvalLet(t *testing.T) {
@@ -70,7 +71,7 @@ func TestEvalLetVectorBinding(t *testing.T) {
 // TODO: Test outer environment.
 
 func TestEvalInvalidLet(t *testing.T) {
-	test(t, "(let*", "  [ERROR]  ")
+	test(t, "(let*)", "  [ERROR]  ")
 	test(t, "(let* (:a 1))", "  [ERROR]  ")
 	test(t, "(let* (:a 1) :a :b)", "  [ERROR]  ")
 }
