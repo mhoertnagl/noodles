@@ -10,7 +10,7 @@ type SpecialForm func(Env, string, []read.Node) read.Node
 
 type Env interface {
 	Set(name string, val read.Node) read.Node
-	Lookup(name string) read.Node
+	Lookup(name string) (read.Node, bool)
 	AddSpecialForm(name string, fun SpecialForm)
 	FindSpecialForm(name string) (SpecialForm, bool)
 	String() string
@@ -39,14 +39,13 @@ func (e *env) Set(name string, val read.Node) read.Node {
 }
 
 // TODO: Iterative version?
-func (e *env) Lookup(name string) read.Node {
+func (e *env) Lookup(name string) (read.Node, bool) {
 	if v, ok := e.defs[name]; ok {
-		return v
+		return v, true
 	} else if e.outer != nil {
 		return e.outer.Lookup(name)
 	}
-	// TODO: Return error node?
-	return nil
+	return nil, false
 }
 
 func (e *env) AddSpecialForm(name string, fun SpecialForm) {
@@ -74,7 +73,7 @@ func (e *env) String() string {
 		buf.WriteString(w.Print(v))
 		buf.WriteString("\n")
 	}
-  buf.WriteString("- SPECIALS -----------------------------\n")
+	buf.WriteString("- SPECIALS -----------------------------\n")
 	for k := range e.specials {
 		buf.WriteString("  ")
 		buf.WriteString(k)

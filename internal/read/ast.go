@@ -9,46 +9,42 @@ type ErrorNode struct {
 	Msg string
 }
 
+func IsError(n Node) bool {
+	_, ok := n.(*ErrorNode)
+	return ok
+}
+
 // TODO: Make it a varargs version with fmt.
 func NewError(msg string) *ErrorNode {
 	return &ErrorNode{Msg: msg}
 }
 
-type NilNode struct{}
-
-var NilObject *NilNode = &NilNode{}
-
-type TrueNode struct{}
-type FalseNode struct{}
-
-var TrueObject *TrueNode = &TrueNode{}
-var FalseObject *FalseNode = &FalseNode{}
-
-func NewBool(val bool) Node {
-	if val {
-    return TrueObject
-  }
-  return FalseObject
+func IsNil(n Node) bool {
+	return n == nil
 }
 
-type StringNode struct {
-	Val string
+func IsBool(n Node) bool {
+	_, ok := n.(bool)
+	return ok
 }
 
-func NewString(val string) *StringNode {
-	return &StringNode{Val: val}
+func IsNumber(n Node) bool {
+	_, ok := n.(float64)
+	return ok
 }
 
-type NumberNode struct {
-	Val float64
-}
-
-func NewNumber(val float64) *NumberNode {
-	return &NumberNode{Val: val}
+func IsString(n Node) bool {
+	_, ok := n.(string)
+	return ok
 }
 
 type SymbolNode struct {
 	Name string
+}
+
+func IsSymbol(n Node) bool {
+	_, ok := n.(*SymbolNode)
+	return ok
 }
 
 func NewSymbol(name string) *SymbolNode {
@@ -57,6 +53,11 @@ func NewSymbol(name string) *SymbolNode {
 
 type ListNode struct {
 	Items []Node
+}
+
+func IsList(n Node) bool {
+	_, ok := n.(*ListNode)
+	return ok
 }
 
 func NewList(items []Node) *ListNode {
@@ -71,6 +72,11 @@ type VectorNode struct {
 	Items []Node
 }
 
+func IsVector(n Node) bool {
+	_, ok := n.(*VectorNode)
+	return ok
+}
+
 func NewVector(items []Node) *VectorNode {
 	return &VectorNode{Items: items}
 }
@@ -81,6 +87,11 @@ func NewVector2(items ...Node) *VectorNode {
 
 type HashMapNode struct {
 	Items map[Node]Node
+}
+
+func IsHashMap(n Node) bool {
+	_, ok := n.(*HashMapNode)
+	return ok
 }
 
 func NewHashMap(items map[Node]Node) *HashMapNode {

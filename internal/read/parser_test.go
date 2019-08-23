@@ -7,12 +7,12 @@ import (
 )
 
 func TestParseNil(t *testing.T) {
-	testp(t, " nil ", read.NilObject)
+	testpw(t, " nil ", "nil")
 }
 
 func TestParseBool(t *testing.T) {
-	testp(t, " true ", read.TrueObject)
-	testp(t, " false ", read.FalseObject)
+	testpw(t, " true ", "true")
+	testpw(t, " false ", "false")
 }
 
 func TestParseNumbers(t *testing.T) {
@@ -81,17 +81,6 @@ func TestParseIncompleteHashMaps(t *testing.T) {
 	testpw(t, " { ", "{}")
 	testpw(t, ` {"a" `, `{"a" }`) // The value for key "a" is the empty string.
 	testpw(t, ` {"a" 1 `, `{"a" 1}`)
-}
-
-func testp(t *testing.T, i string, e read.Node) {
-	r := read.NewReader()
-	r.Load(i)
-	p := read.NewParser()
-	n := p.Parse(r)
-	if n != e {
-		w := print.NewPrinter()
-		t.Errorf("Expecting [%s] but got [%s]", w.Print(e), w.Print(n))
-	}
 }
 
 func testpw(t *testing.T, i string, e string) {

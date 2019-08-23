@@ -121,11 +121,11 @@ func (p *parser) parseAtom() Node {
 	case isNumber(p.tok):
 		n = p.parseNumber()
 	case p.tok == "true":
-		n = TrueObject
+		n = true // TrueObject
 	case p.tok == "false":
-		n = FalseObject
+		n = false // FalseObject
 	case p.tok == "nil":
-		n = NilObject
+		n = nil // NilObject
 	default:
 		n = p.parseSymbol()
 	}
@@ -136,7 +136,7 @@ func (p *parser) parseAtom() Node {
 func (p *parser) parseString() Node {
 	if strings.HasSuffix(p.tok, `"`) {
 		// TODO: Create a constant for the empty string.
-		return NewString(normalizeString(p.tok))
+		return normalizeString(p.tok) // NewString(normalizeString(p.tok))
 	}
 	return p.error("Missing [\"].\n")
 }
@@ -150,7 +150,7 @@ func normalizeString(val string) string {
 func (p *parser) parseNumber() Node {
 	if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
 		// TODO: Create a constant pool for the numbers [-32, 31]?
-		return NewNumber(v)
+		return v // NewNumber(v)
 	}
 	return p.error("[%s] is not a floating point number.\n", p.tok)
 }

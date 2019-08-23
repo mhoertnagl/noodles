@@ -26,35 +26,32 @@ func (p *printer) Print(node read.Node) string {
 	return p.buf.String()
 }
 
-func (p *printer) print(node read.Node) {
-	switch n := node.(type) {
-	case *read.ErrorNode:
+func (p *printer) print(n read.Node) {
+	switch {
+	case read.IsError(n):
 		p.buf.WriteString("  [ERROR]  ")
-	case *read.ListNode:
-		p.printSeq(n.Items, "(", ")")
-	case *read.VectorNode:
-		p.printSeq(n.Items, "[", "]")
-	case *read.HashMapNode:
-		p.printHashMap(n.Items)
-	case *read.StringNode:
-		p.printString(n)
-		//p.buf.WriteString(n.Val)
-	case *read.NumberNode:
-		p.buf.WriteString(strconv.FormatFloat(n.Val, 'g', -1, 64))
-	case *read.SymbolNode:
-		p.buf.WriteString(n.Name)
-	case *read.TrueNode:
-		p.buf.WriteString("true")
-	case *read.FalseNode:
-		p.buf.WriteString("false")
-	case *read.NilNode:
+	case read.IsNil(n):
 		p.buf.WriteString("nil")
+	case read.IsBool(n):
+		p.buf.WriteString(strconv.FormatBool(n.(bool)))
+	case read.IsNumber(n):
+		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'g', -1, 64))
+	case read.IsString(n):
+		p.printString(n.(string))
+	case read.IsSymbol(n):
+		p.buf.WriteString(n.(*read.SymbolNode).Name)
+	case read.IsList(n):
+		p.printSeq(n.(*read.ListNode).Items, "(", ")")
+	case read.IsVector(n):
+		p.printSeq(n.(*read.VectorNode).Items, "[", "]")
+	case read.IsHashMap(n):
+		p.printHashMap(n.(*read.HashMapNode).Items)
 	}
 }
 
-func (p *printer) printString(n *read.StringNode) {
+func (p *printer) printString(s string) {
 	p.buf.WriteString(`"`)
-	p.buf.WriteString(n.Val)
+	p.buf.WriteString(s)
 	p.buf.WriteString(`"`)
 }
 

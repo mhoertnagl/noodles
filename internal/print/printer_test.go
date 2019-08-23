@@ -11,23 +11,23 @@ func TestError(t *testing.T) {
 }
 
 func TestNil(t *testing.T) {
-	test(t, read.NilObject, "nil")
+	test(t, nil, "nil")
 }
 
 func TestBool(t *testing.T) {
-	test(t, read.TrueObject, "true")
-	test(t, read.FalseObject, "false")
+	test(t, true, "true")
+	test(t, false, "false")
 }
 
 func TestNumbers(t *testing.T) {
-	test(t, read.NewNumber(1), "1")
-	test(t, read.NewNumber(.2), "0.2")
-	test(t, read.NewNumber(-.2), "-0.2")
+	test(t, 1., "1")
+	test(t, .2, "0.2")
+	test(t, -.2, "-0.2")
 }
 
 func TestStrings(t *testing.T) {
-	test(t, read.NewString(""), `""`)
-	test(t, read.NewString("x"), `"x"`)
+	test(t, "", `""`)
+	test(t, "x", `"x"`)
 }
 
 func TestSymbols(t *testing.T) {
@@ -39,20 +39,20 @@ func TestSymbols(t *testing.T) {
 
 func TestLists(t *testing.T) {
 	test(t, read.NewList2(), `()`)
-	test(t, read.NewList2(read.NewNumber(1)), `(1)`)
-	test(t, read.NewList2(read.NewNumber(1), read.NewString("")), `(1 "")`)
+	test(t, read.NewList2(1.), `(1)`)
+	test(t, read.NewList2(1., ""), `(1 "")`)
 }
 
 func TestVector(t *testing.T) {
 	test(t, read.NewVector2(), `[]`)
-	test(t, read.NewVector2(read.NewNumber(1)), `[1]`)
-	test(t, read.NewVector2(read.NewNumber(1), read.NewString("")), `[1 ""]`)
+	test(t, read.NewVector2(1.), `[1]`)
+	test(t, read.NewVector2(1., ""), `[1 ""]`)
 }
 
 func TestHashMap(t *testing.T) {
 	m := read.NewHashMap2()
 	test(t, m, `{}`)
-	m.Items[read.NewSymbol("x")] = read.NewNumber(1)
+	m.Items[read.NewSymbol("x")] = 1.
 	test(t, m, `{x 1}`)
 	// m.Items[read.NewSymbol("y")] = read.NewString("42")
 	// TODO: Order is not guaranteed.
