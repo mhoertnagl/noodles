@@ -31,6 +31,19 @@ func TestEvalDiff(t *testing.T) {
 	test(t, "(- 1 2)", "-1")
 }
 
+func TestEvalDiff2(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! :a (+ 1 1))", "2")
+	teste(t, env, "(- :a)", "-2")
+}
+
+func TestEvalDiff3(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! :a (+ 1 1))", "2")
+	teste(t, env, "(- :a 1)", "1")
+	teste(t, env, "(- 1 :a)", "-1")
+}
+
 func TestEvalInvalidDiff(t *testing.T) {
 	test(t, "(-)", "  [ERROR]  ")
 	test(t, "(- 1 1 1)", "  [ERROR]  ")
