@@ -8,6 +8,21 @@ import (
 
 type SpecialForm func(Env, string, []read.Node) read.Node
 
+type FuncNode struct {
+	Env  Env
+	Pars []string
+	Fun  read.Node
+}
+
+func NewFuncNode(env Env, pars []string, fun read.Node) read.Node {
+	return &FuncNode{Env: env, Pars: pars, Fun: fun}
+}
+
+func IsFuncNode(n read.Node) bool {
+	_, ok := n.(*FuncNode)
+	return ok
+}
+
 type Env interface {
 	Set(name string, val read.Node) read.Node
 	Lookup(name string) (read.Node, bool)

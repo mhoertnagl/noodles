@@ -25,6 +25,17 @@ func TestEvalInvalidSum(t *testing.T) {
 	test(t, "(+ 1 1 x)", "  [ERROR]  ")
 }
 
+func TestEvalDiff(t *testing.T) {
+	test(t, "(- 1)", "-1")
+	test(t, "(- 2 1)", "1")
+	test(t, "(- 1 2)", "-1")
+}
+
+func TestEvalInvalidDiff(t *testing.T) {
+	test(t, "(-)", "  [ERROR]  ")
+	test(t, "(- 1 1 1)", "  [ERROR]  ")
+}
+
 func TestEvalDef1(t *testing.T) {
 	env := eval.NewEnv(nil)
 	teste(t, env, "(def! :a 1)", "1")
@@ -92,12 +103,12 @@ func TestEvalIf(t *testing.T) {
 	test(t, "(if nil 1 0)", "0") // Error?
 	test(t, "(if false 1 0)", "0")
 	test(t, "(if true 1 0)", "1")
-	test(t, "(if 42 1 0)", "1")      // Error?
-	test(t, `(if "" 1 0)`, "0")      // Error?
-	test(t, `(if "x" 1 0)`, "1")     // Error?
-	test(t, "(if :x 1 0)", "0")      // Error? // :x is undefined.
-	test(t, "(if () 1 0)", "0")      // Error?
-	test(t, "(if (42) 1 0)", "1")    // Error?
+	test(t, "(if 42 1 0)", "1")           // Error?
+	test(t, `(if "" 1 0)`, "0")           // Error?
+	test(t, `(if "x" 1 0)`, "1")          // Error?
+	test(t, "(if :x 1 0)", "  [ERROR]  ") // Error? // :x is undefined.
+	// // test(t, "(if () 1 0)", "0")      // Error?
+	// // test(t, "(if (42) 1 0)", "1")    // Error?
 	test(t, "(if [] 1 0)", "0")      // Error?
 	test(t, "(if [42] 1 0)", "1")    // Error?
 	test(t, "(if {} 1 0)", "0")      // Error?
@@ -109,6 +120,10 @@ func TestEvalIf(t *testing.T) {
 	test(t, "(if (< 0 1) 1 0)", "1")
 	test(t, "(if (< 0 0) 1 0)", "0")
 	test(t, "(if (< 1 0) 1 0)", "0")
+
+	test(t, "(if (> 0 1) 1 0)", "0")
+	test(t, "(if (> 0 0) 1 0)", "0")
+	test(t, "(if (> 1 0) 1 0)", "1")
 }
 
 func TestEvalIfWithoutElse(t *testing.T) {
@@ -127,6 +142,22 @@ func TestEvalLT(t *testing.T) {
 	test(t, "(< 0 0)", "false")
 	test(t, "(< 1 0)", "false")
 }
+
+func TestEvalLT2(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! N 0)", "0")
+	teste(t, env, "(< N 1)", "true")
+	teste(t, env, "(< N 0)", "false")
+}
+
+func TestEvalLT3(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! N 1)", "1")
+	teste(t, env, "(< N 1)", "false")
+	teste(t, env, "(< N 0)", "false")
+}
+
+// TODO: variable second argument.
 
 func TestEvalInvalidLT(t *testing.T) {
 	test(t, "(<)", "  [ERROR]  ")
@@ -182,19 +213,70 @@ func TestEvalInvalidGE(t *testing.T) {
 	test(t, "(>= x x)", "  [ERROR]  ")
 }
 
+func TestEvalFun(t *testing.T) {
+	//test(t, "(fn* () 42)", "#<fn>")
+	test(t, "((fn* () 42))", "42")
+	test(t, "((fn* (a) a) 42)", "42")
+	test(t, "((fn* (a b) b) 0 42)", "42")
+	test(t, "((fn* (a b c) (+ a b c)) 1 2 3)", "6")
+	test(t, "((fn* (f x) (f x)) (fn* (a) (+ 1 a)) 7)", "8")
+	test(t, "(((fn* (a) (fn* (b) (+ a b))) 5) 7)", "12")
+}
+
+func TestEvalFun2(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! gen-plus5 (fn* () (fn* (b) (+ 5 b))))", "")
+	teste(t, env, "(def! plus5 (gen-plus5))", "")
+	teste(t, env, "(plus5 7)", "12")
+}
+
+func TestEvalFun3(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! gen-plusX (fn* (x) (fn* (b) (+ x b))))", "")
+	teste(t, env, "(def! plus7 (gen-plusX 7))", "")
+	teste(t, env, "(plus7 8)", "15")
+}
+
+func TestEvalFun4(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! iffun (fn* (N) (if (> N 0) 33 22)))", "")
+	teste(t, env, "(iffun 0)", "22")
+	teste(t, env, "(iffun 1)", "33")
+}
+
+func TestEvalFun5(t *testing.T) {
+	env := eval.NewEnv(nil)
+	teste(t, env, "(def! sumdown (fn* (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
+	teste(t, env, "(sumdown 1)", "1")
+	teste(t, env, "(sumdown 2)", "3")
+	teste(t, env, "(sumdown 6)", "21")
+}
+
+// TODO: implement =
+// func TestEvalFun6(t *testing.T) {
+// 	env := eval.NewEnv(nil)
+// 	teste(t, env, "(def! fib (fn* (N) (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))", "")
+// 	teste(t, env, "(fib 1)", "1")
+// 	teste(t, env, "(fib 2)", "2")
+// 	teste(t, env, "(fib 4)", "5")
+// }
+
 func test(t *testing.T, i string, e string) {
 	teste(t, eval.NewEnv(nil), i, e)
 }
 
 func teste(t *testing.T, env eval.Env, i string, e string) {
 	r := read.NewReader()
-	r.Load(i)
 	p := read.NewParser()
-	n := p.Parse(r)
 	w := print.NewPrinter()
 	v := eval.NewEvaluator(env)
+	r.Load(i)
+	n := p.Parse(r)
 	m := v.Eval(n)
 	a := w.Print(m)
+	for _, err := range v.Errors() {
+		w.PrintError(err)
+	}
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)
 	}

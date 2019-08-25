@@ -10,6 +10,7 @@ import (
 type Printer interface {
 	Print(node read.Node) string
 	PrintErrors(parser read.Parser) string
+	PrintError(n *read.ErrorNode) string
 }
 
 type printer struct {
@@ -46,6 +47,8 @@ func (p *printer) print(n read.Node) {
 		p.printSeq(n.(*read.VectorNode).Items, "[", "]")
 	case read.IsHashMap(n):
 		p.printHashMap(n.(*read.HashMapNode).Items)
+		// case eval.IsFuncNode(n):
+		// 	p.buf.WriteString("#<fn>")
 	}
 }
 
@@ -85,11 +88,11 @@ func (p *printer) printHashMap(items map[read.Node]read.Node) {
 func (p *printer) PrintErrors(parser read.Parser) string {
 	var errBuf bytes.Buffer
 	for _, e := range parser.Errors() {
-		errBuf.WriteString(p.printError(e))
+		errBuf.WriteString(p.PrintError(e))
 	}
 	return errBuf.String()
 }
 
-func (p *printer) printError(n *read.ErrorNode) string {
+func (p *printer) PrintError(n *read.ErrorNode) string {
 	return fmt.Sprintf("ERROR: %s\n", n.Msg)
 }
