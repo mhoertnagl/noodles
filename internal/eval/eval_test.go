@@ -152,6 +152,45 @@ func TestEvalInvalidIf(t *testing.T) {
 	test(t, "(if true 1 0 2)", "  [ERROR]  ")
 }
 
+func TestList(t *testing.T) {
+	test(t, "(list)", "()")
+	test(t, "(list 0)", "(0)")
+	test(t, "(list 0 1)", "(0 1)")
+}
+
+func TestIsList(t *testing.T) {
+	test(t, "(list? nil)", "false")
+	test(t, "(list? 0)", "false")
+	test(t, `(list? "a")`, "false")
+	test(t, "(list? [])", "false")
+	test(t, "(list? {})", "false")
+	test(t, "(list? (list))", "true")
+	test(t, "(list? (list 1))", "true")
+}
+
+func TestInvalidIsList(t *testing.T) {
+	test(t, "(list?)", "  [ERROR]  ")
+	test(t, "(list? () ())", "  [ERROR]  ")
+}
+
+func TestCount(t *testing.T) {
+	test(t, "(count (list))", "0")
+	test(t, "(count (list 1))", "1")
+	test(t, "(count (list 1 2 3))", "3")
+	test(t, "(count [])", "0")
+	test(t, "(count [1])", "1")
+	test(t, "(count [1 2 3 4 5])", "5")
+	test(t, "(count {})", "0")
+	test(t, "(count {a 1})", "1")
+	test(t, "(count {a 1 b 2 c 3 d 4})", "4")
+}
+
+func TestInvalidCount(t *testing.T) {
+	test(t, "(count nil)", "  [ERROR]  ")
+	test(t, "(count 0)", "  [ERROR]  ")
+	test(t, `(count "a")`, "  [ERROR]  ")
+}
+
 func TestEvalLT(t *testing.T) {
 	test(t, "(< 0 1)", "true")
 	test(t, "(< 0 0)", "false")
@@ -226,6 +265,82 @@ func TestEvalInvalidGE(t *testing.T) {
 	test(t, "(>= x 0)", "  [ERROR]  ")
 	test(t, "(>= 0 x)", "  [ERROR]  ")
 	test(t, "(>= x x)", "  [ERROR]  ")
+}
+
+func TestEvalNilEquivalence(t *testing.T) {
+	test(t, "(= nil nil)", "true")
+	test(t, "(= 0 nil)", "false")
+	test(t, "(= nil 0)", "false")
+}
+
+func TestEvalBooleanEquivalence(t *testing.T) {
+	test(t, "(= false false)", "true")
+	test(t, "(= false true)", "false")
+	test(t, "(= true false)", "false")
+	test(t, "(= true true)", "true")
+}
+
+func TestEvalNumberEquivalence(t *testing.T) {
+	test(t, "(= 1 1)", "true")
+	test(t, "(= 1 0)", "false")
+	test(t, "(= 0 1)", "false")
+	test(t, "(= (+ 1 1) 2)", "true")
+	test(t, "(= 2 (+ 1 1))", "true")
+}
+
+func TestEvalEnvVarEquivalence(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(def! x 1", "")
+	teste(t, env, "(= x 1)", "true")
+	teste(t, env, "(= 1 x)", "true")
+	teste(t, env, "(= x x)", "true")
+}
+
+func TestEvalStringEquivalence(t *testing.T) {
+	test(t, `(= "" "")`, "true")
+	test(t, `(= "x" "")`, "false")
+	test(t, `(= "" "x")`, "false")
+	test(t, `(= "xyz" "xyz")`, "true")
+}
+
+func TestEvalListEquivalence(t *testing.T) {
+	test(t, `(= (list) nil)`, "false")
+	test(t, `(= nil (list))`, "false")
+	test(t, `(= (list) (list))`, "true")
+	test(t, `(= (list 1) (list))`, "false")
+	test(t, `(= (list 1) (list 1))`, "true")
+	test(t, `(= (list 1) (list 1 2))`, "false")
+	test(t, `(= (list 1 2) (list 1 2))`, "true")
+	test(t, `(= (list 1 2) (list 2 1))`, "false")
+}
+
+func TestEvalVectorEquivalence(t *testing.T) {
+	test(t, `(= [] nil)`, "false")
+	test(t, `(= nil [])`, "false")
+	test(t, `(= [] [])`, "true")
+	test(t, `(= [1] []])`, "false")
+	test(t, `(= [1] [1])`, "true")
+	test(t, `(= [1] [1 2])`, "false")
+	test(t, `(= [1 2] [1 2])`, "true")
+	test(t, `(= [1 2] [2 1])`, "false")
+}
+
+func TestEvalHashMapEquivalence(t *testing.T) {
+	test(t, `(= {} nil)`, "false")
+	test(t, `(= nil {})`, "false")
+	test(t, `(= {} {})`, "true")
+	test(t, `(= {a 1} {})`, "false")
+	test(t, `(= {a 1} {a 1})`, "true")
+	test(t, `(= {a 1} {a 2})`, "false")
+	test(t, `(= {a 1} {b 1})`, "false")
+	test(t, `(= {a 1} {a 1 b 2})`, "false")
+	test(t, `(= {a 1 b 2} {a 1 b 2})`, "true")
+	test(t, `(= {a 1 b 2} {b 1 a 2})`, "true")
+}
+
+func TestEvalInvalidEquivalence(t *testing.T) {
+	test(t, "(=)", "  [ERROR]  ")
+	test(t, "(= 1 1 1)", "  [ERROR]  ")
 }
 
 func TestEvalFun(t *testing.T) {
