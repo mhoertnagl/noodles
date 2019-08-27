@@ -3,14 +3,16 @@ package print
 import (
 	"bytes"
 	"fmt"
-	"github.com/mhoertnagl/splis2/internal/read"
 	"strconv"
+
+	"github.com/mhoertnagl/splis2/internal/data"
+	"github.com/mhoertnagl/splis2/internal/read"
 )
 
 type Printer interface {
-	Print(node read.Node) string
+	Print(node data.Node) string
 	PrintErrors(parser read.Parser) string
-	PrintError(n *read.ErrorNode) string
+	PrintError(n *data.ErrorNode) string
 }
 
 type printer struct {
@@ -21,32 +23,32 @@ func NewPrinter() Printer {
 	return &printer{}
 }
 
-func (p *printer) Print(node read.Node) string {
+func (p *printer) Print(node data.Node) string {
 	p.buf.Reset()
 	p.print(node)
 	return p.buf.String()
 }
 
-func (p *printer) print(n read.Node) {
+func (p *printer) print(n data.Node) {
 	switch {
-	case read.IsError(n):
+	case data.IsError(n):
 		p.buf.WriteString("  [ERROR]  ")
-	case read.IsNil(n):
+	case data.IsNil(n):
 		p.buf.WriteString("nil")
-	case read.IsBool(n):
+	case data.IsBool(n):
 		p.buf.WriteString(strconv.FormatBool(n.(bool)))
-	case read.IsNumber(n):
+	case data.IsNumber(n):
 		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'g', -1, 64))
-	case read.IsString(n):
+	case data.IsString(n):
 		p.printString(n.(string))
-	case read.IsSymbol(n):
-		p.buf.WriteString(n.(*read.SymbolNode).Name)
-	case read.IsList(n):
-		p.printSeq(n.(*read.ListNode).Items, "(", ")")
-	case read.IsVector(n):
-		p.printSeq(n.(*read.VectorNode).Items, "[", "]")
-	case read.IsHashMap(n):
-		p.printHashMap(n.(*read.HashMapNode).Items)
+	case data.IsSymbol(n):
+		p.buf.WriteString(n.(*data.SymbolNode).Name)
+	case data.IsList(n):
+		p.printSeq(n.(*data.ListNode).Items, "(", ")")
+	case data.IsVector(n):
+		p.printSeq(n.(*data.VectorNode).Items, "[", "]")
+	case data.IsHashMap(n):
+		p.printHashMap(n.(*data.HashMapNode).Items)
 		// case eval.IsFuncNode(n):
 		// 	p.buf.WriteString("#<fn>")
 	}
@@ -58,7 +60,7 @@ func (p *printer) printString(s string) {
 	p.buf.WriteString(`"`)
 }
 
-func (p *printer) printSeq(items []read.Node, start string, end string) {
+func (p *printer) printSeq(items []data.Node, start string, end string) {
 	p.buf.WriteString(start)
 	for i, item := range items {
 		if i > 0 {
@@ -69,7 +71,7 @@ func (p *printer) printSeq(items []read.Node, start string, end string) {
 	p.buf.WriteString(end)
 }
 
-func (p *printer) printHashMap(items map[read.Node]read.Node) {
+func (p *printer) printHashMap(items map[data.Node]data.Node) {
 	p.buf.WriteString("{")
 	// TODO: Unfortunate.
 	init := false
@@ -93,6 +95,26 @@ func (p *printer) PrintErrors(parser read.Parser) string {
 	return errBuf.String()
 }
 
-func (p *printer) PrintError(n *read.ErrorNode) string {
+func (p *printer) PrintError(n *data.ErrorNode) string {
 	return fmt.Sprintf("ERROR: %s\n", n.Msg)
 }
+
+// func (e data.Env) String() string {
+// 	var buf bytes.Buffer
+// 	w := NewPrinter()
+// 	buf.WriteString("- DEFS ---------------------------------\n")
+// 	for k, v := range e.defs {
+// 		buf.WriteString("  ")
+// 		buf.WriteString(k)
+// 		buf.WriteString(" = ")
+// 		buf.WriteString(w.Print(v))
+// 		buf.WriteString("\n")
+// 	}
+// 	buf.WriteString("- SPECIALS -----------------------------\n")
+// 	for k := range e.specials {
+// 		buf.WriteString("  ")
+// 		buf.WriteString(k)
+// 		buf.WriteString("\n")
+// 	}
+// 	return buf.String()
+// }

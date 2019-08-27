@@ -1,10 +1,12 @@
 package eval_test
 
 import (
+	"testing"
+
+	"github.com/mhoertnagl/splis2/internal/data"
 	"github.com/mhoertnagl/splis2/internal/eval"
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
-	"testing"
 )
 
 func TestEvalNumbers(t *testing.T) {
@@ -32,13 +34,13 @@ func TestEvalDiff(t *testing.T) {
 }
 
 func TestEvalDiff2(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	teste(t, env, "(- :a)", "-2")
 }
 
 func TestEvalDiff3(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	teste(t, env, "(- :a 1)", "1")
 	teste(t, env, "(- 1 :a)", "-1")
@@ -50,21 +52,21 @@ func TestEvalInvalidDiff(t *testing.T) {
 }
 
 func TestEvalDef1(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a 1)", "1")
 	testenv(t, env, ":a", "1")
 	teste(t, env, ":a", "1")
 }
 
 func TestEvalDef2(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	testenv(t, env, ":a", "2")
 	teste(t, env, ":a", "2")
 }
 
 func TestEvalDef3(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	// Define
 	teste(t, env, "(def! :a 1)", "1")
 	testenv(t, env, ":a", "1")
@@ -157,14 +159,14 @@ func TestEvalLT(t *testing.T) {
 }
 
 func TestEvalLT2(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! N 0)", "0")
 	teste(t, env, "(< N 1)", "true")
 	teste(t, env, "(< N 0)", "false")
 }
 
 func TestEvalLT3(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! N 1)", "1")
 	teste(t, env, "(< N 1)", "false")
 	teste(t, env, "(< N 0)", "false")
@@ -237,28 +239,28 @@ func TestEvalFun(t *testing.T) {
 }
 
 func TestEvalFun2(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! gen-plus5 (fn* () (fn* (b) (+ 5 b))))", "")
 	teste(t, env, "(def! plus5 (gen-plus5))", "")
 	teste(t, env, "(plus5 7)", "12")
 }
 
 func TestEvalFun3(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! gen-plusX (fn* (x) (fn* (b) (+ x b))))", "")
 	teste(t, env, "(def! plus7 (gen-plusX 7))", "")
 	teste(t, env, "(plus7 8)", "15")
 }
 
 func TestEvalFun4(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! iffun (fn* (N) (if (> N 0) 33 22)))", "")
 	teste(t, env, "(iffun 0)", "22")
 	teste(t, env, "(iffun 1)", "33")
 }
 
 func TestEvalFun5(t *testing.T) {
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	teste(t, env, "(def! sumdown (fn* (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
 	teste(t, env, "(sumdown 1)", "1")
 	teste(t, env, "(sumdown 2)", "3")
@@ -267,7 +269,7 @@ func TestEvalFun5(t *testing.T) {
 
 // TODO: implement =
 // func TestEvalFun6(t *testing.T) {
-// 	env := eval.NewEnv(nil)
+// 	env := data.NewEnv(nil)
 // 	teste(t, env, "(def! fib (fn* (N) (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))", "")
 // 	teste(t, env, "(fib 1)", "1")
 // 	teste(t, env, "(fib 2)", "2")
@@ -275,10 +277,10 @@ func TestEvalFun5(t *testing.T) {
 // }
 
 func test(t *testing.T, i string, e string) {
-	teste(t, eval.NewEnv(nil), i, e)
+	teste(t, data.NewEnv(nil), i, e)
 }
 
-func teste(t *testing.T, env eval.Env, i string, e string) {
+func teste(t *testing.T, env data.Env, i string, e string) {
 	r := read.NewReader()
 	p := read.NewParser()
 	w := print.NewPrinter()
@@ -295,7 +297,7 @@ func teste(t *testing.T, env eval.Env, i string, e string) {
 	}
 }
 
-func testenv(t *testing.T, env eval.Env, name string, e string) {
+func testenv(t *testing.T, env data.Env, name string, e string) {
 	if n, ok := env.Lookup(name); ok {
 		w := print.NewPrinter()
 		a := w.Print(n)

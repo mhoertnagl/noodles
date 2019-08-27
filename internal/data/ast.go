@@ -1,4 +1,4 @@
-package read
+package data
 
 // TODO: Move to separate namespace?
 
@@ -101,4 +101,19 @@ func NewHashMap(items map[Node]Node) *HashMapNode {
 // TODO: Rename to NewEmptyHashMap()
 func NewHashMap2() *HashMapNode {
 	return NewHashMap(make(map[Node]Node))
+}
+
+type FuncNode struct {
+	Env  Env
+	Pars []string
+	Fun  Node
+}
+
+func NewFuncNode(env Env, pars []string, fun Node) Node {
+	return &FuncNode{Env: env, Pars: pars, Fun: fun}
+}
+
+func IsFuncNode(n Node) bool {
+	_, ok := n.(*FuncNode)
+	return ok
 }

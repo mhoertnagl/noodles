@@ -1,9 +1,10 @@
 package read_test
 
 import (
+	"testing"
+
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
-	"testing"
 )
 
 func TestParseNil(t *testing.T) {

@@ -1,8 +1,9 @@
 package read_test
 
 import (
-	"github.com/mhoertnagl/splis2/internal/read"
 	"testing"
+
+	"github.com/mhoertnagl/splis2/internal/read"
 )
 
 func TestIgnoreWhitespace(t *testing.T) {
