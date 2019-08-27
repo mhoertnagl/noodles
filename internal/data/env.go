@@ -1,25 +1,25 @@
 package data
 
-type SpecialForm func(Env, string, []Node) Node
+// type SpecialForm func(Env, string, []Node) Node
 
 type Env interface {
 	Set(name string, val Node) Node
 	Lookup(name string) (Node, bool)
-	AddSpecialForm(name string, fun SpecialForm)
-	FindSpecialForm(name string) (SpecialForm, bool)
+	// AddSpecialForm(name string, fun SpecialForm)
+	// FindSpecialForm(name string) (SpecialForm, bool)
 }
 
 type env struct {
-	outer    Env
-	defs     map[string]Node
-	specials map[string]SpecialForm
+	outer Env
+	defs  map[string]Node
+	// specials map[string]SpecialForm
 }
 
 func NewEnv(outer Env) Env {
 	return &env{
-		outer:    outer,
-		defs:     make(map[string]Node),
-		specials: make(map[string]SpecialForm),
+		outer: outer,
+		defs:  make(map[string]Node),
+		// specials: make(map[string]SpecialForm),
 	}
 }
 
@@ -41,16 +41,16 @@ func (e *env) Lookup(name string) (Node, bool) {
 	return nil, false
 }
 
-func (e *env) AddSpecialForm(name string, fun SpecialForm) {
-	e.specials[name] = fun
-}
-
-// TODO: Iterative version?
-func (e *env) FindSpecialForm(name string) (SpecialForm, bool) {
-	if fun, ok := e.specials[name]; ok {
-		return fun, ok
-	} else if e.outer != nil {
-		return e.outer.FindSpecialForm(name)
-	}
-	return nil, false
-}
+// func (e *env) AddSpecialForm(name string, fun SpecialForm) {
+// 	e.specials[name] = fun
+// }
+//
+// // TODO: Iterative version?
+// func (e *env) FindSpecialForm(name string) (SpecialForm, bool) {
+// 	if fun, ok := e.specials[name]; ok {
+// 		return fun, ok
+// 	} else if e.outer != nil {
+// 		return e.outer.FindSpecialForm(name)
+// 	}
+// 	return nil, false
+// }
