@@ -10,14 +10,29 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun("list", list)
 	e.AddCoreFun("list?", isList)
 	e.AddCoreFun("count", count)
-	e.AddCoreFun("+", sum)
-	e.AddCoreFun("-", diff)
+	e.AddCoreFun("empty?", isEmpty)
+	e.AddCoreFun("+", evalxf("+", sum))
+	e.AddCoreFun("-", eval12f("-", neg, diff))
+	e.AddCoreFun("*", evalxf("*", prod))
+	e.AddCoreFun("/", eval12f("/", reciproc, div))
 	e.AddCoreFun("=", eq)
-	e.AddCoreFun("<", eval2f("<", func(a, b float64) data.Node { return a < b }))
-	e.AddCoreFun(">", eval2f(">", func(a, b float64) data.Node { return a > b }))
-	e.AddCoreFun("<=", eval2f("<=", func(a, b float64) data.Node { return a <= b }))
-	e.AddCoreFun(">=", eval2f(">=", func(a, b float64) data.Node { return a >= b }))
+	e.AddCoreFun("<", eval2f("<", lt))
+	e.AddCoreFun(">", eval2f(">", gt))
+	e.AddCoreFun("<=", eval2f("<=", le))
+	e.AddCoreFun(">=", eval2f(">=", ge))
 }
+
+func sum(acc, v float64) float64   { return acc + v }
+func neg(n float64) data.Node      { return -n }
+func diff(a, b float64) data.Node  { return a - b }
+func prod(acc, v float64) float64  { return acc * v }
+func reciproc(n float64) data.Node { return 1 / n }
+func div(a, b float64) data.Node   { return a / b }
+
+func lt(a, b float64) data.Node { return a < b }
+func gt(a, b float64) data.Node { return a > b }
+func le(a, b float64) data.Node { return a <= b }
+func ge(a, b float64) data.Node { return a >= b }
 
 func list(e Evaluator, env data.Env, args []data.Node) data.Node {
 	return data.NewList(args)
@@ -43,6 +58,22 @@ func count(e Evaluator, env data.Env, args []data.Node) data.Node {
 		return float64(len(x.Items))
 	default:
 		return e.Error("[%s] cannot be an argument to [count].", "")
+	}
+}
+
+func isEmpty(e Evaluator, env data.Env, args []data.Node) data.Node {
+	if len(args) != 1 {
+		return e.Error("[empty?] expects 1 argument.")
+	}
+	switch x := args[0].(type) {
+	case *data.ListNode:
+		return len(x.Items) == 0
+	case *data.VectorNode:
+		return len(x.Items) == 0
+	case *data.HashMapNode:
+		return len(x.Items) == 0
+	default:
+		return e.Error("[%s] cannot be an argument to [empty?].", "")
 	}
 }
 
@@ -100,71 +131,63 @@ func eqHashMap(e Evaluator, env data.Env, as, bs data.Map) data.Node {
 	return true
 }
 
-// evalSum computes the sum of all arguments.
-// Non-numeric arguments will be ignored.
-func sum(e Evaluator, env data.Env, args []data.Node) data.Node {
-	var sum float64
-	for _, arg := range args {
-		if v, ok := arg.(float64); ok {
-			sum += v
-		} else {
-			// TODO: Add a printer instance to the evaluator to print expressions.
-			return e.Error("[%s] is not a number.", "")
+func evalxf(name string, f func(float64, float64) float64) CoreFun {
+	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
+		var acc float64
+		for i, arg := range args {
+			if v, ok := arg.(float64); ok {
+				acc = f(acc, v)
+			} else {
+				// TODO: Add a printer instance to the evaluator to print expressions.
+				return e.Error("[%d]. argument [%s] is not a number.", i+1, "")
+			}
 		}
+		return acc
 	}
-	return sum
 }
 
-func diff(e Evaluator, env data.Env, args []data.Node) data.Node {
-	switch len(args) {
-	case 1:
-		if n, ok := args[0].(float64); ok {
-			return -n
-		}
-		// TODO: Add a printer instance to the evaluator to print expressions.
-		return e.Error("[%s] is not a number.", "")
-	case 2:
-		if n1, ok1 := args[0].(float64); ok1 {
-			if n2, ok2 := args[1].(float64); ok2 {
-				return n1 - n2
+func eval12f(name string, f func(float64) data.Node, g func(float64, float64) data.Node) CoreFun {
+	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
+		switch len(args) {
+		case 1:
+			if n, ok := args[0].(float64); ok {
+				return f(n)
 			}
 			// TODO: Add a printer instance to the evaluator to print expressions.
-			return e.Error("[%s] is not a number.", "")
+			return e.Error("Argument [%s] is not a number.", "")
+		case 2:
+			n1, ok1 := args[0].(float64)
+			n2, ok2 := args[1].(float64)
+			if ok1 && ok2 {
+				return g(n1, n2)
+			}
+			if !ok1 {
+				return e.Error("First argument [%s] is not a number.", "")
+			}
+			if !ok2 {
+				return e.Error("Second argument [%s] is not a number.", "")
+			}
 		}
-		// TODO: Add a printer instance to the evaluator to print expressions.
-		return e.Error("[%s] is not a number.", "")
+		return e.Error("[%s] requires either 1 or 2 arguments.", name)
 	}
-	return e.Error("- requires either 1 or 2 arguments.")
 }
-
-// func (e *evaluator) eval1n(f func(float64, float64) data.Node) data.SpecialForm {
-// 	return func(e.Env() data.Env, name string, ns []data.Node) data.Node {
-// 		if len(ns) != 2 {
-// 			return e.error("%s requires exactly 2 numeric arguments.", name)
-// 		}
-// 		v0 := e.EvalEnv(e.Env(), ns[0])
-// 		v1 := e.EvalEnv(e.Env(), ns[1])
-// 		if n0, ok0 := v0.(float64); ok0 {
-// 			if n1, ok1 := v1.(float64); ok1 {
-// 				return f(n0, n1)
-// 			}
-// 		}
-// 		// TODO: Angeben welches argument kein float ist.
-// 		return e.error("")
-// 	}
-// }
 
 func eval2f(name string, f func(float64, float64) data.Node) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
-		if len(args) != 2 {
-			return e.Error("[%s] expects 2 arguments.", name)
-		}
-		if n0, ok0 := args[0].(float64); ok0 {
-			if n1, ok1 := args[1].(float64); ok1 {
+		switch len(args) {
+		case 2:
+			n0, ok0 := args[0].(float64)
+			n1, ok1 := args[1].(float64)
+			if ok0 && ok1 {
 				return f(n0, n1)
 			}
+			if !ok0 {
+				return e.Error("First argument [%s] is not a number.", "")
+			}
+			if !ok1 {
+				return e.Error("Second argument [%s] is not a number.", "")
+			}
 		}
-		// TODO: Angeben welches argument kein float ist.
-		return e.Error("")
+		return e.Error("[%s] expects 2 arguments.", name)
 	}
 }

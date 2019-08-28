@@ -48,6 +48,11 @@ func TestEvalDiff3(t *testing.T) {
 
 func TestEvalInvalidDiff(t *testing.T) {
 	test(t, "(-)", "  [ERROR]  ")
+	test(t, "(- :a)", "  [ERROR]  ")
+	test(t, "(- false)", "  [ERROR]  ")
+	test(t, "(- false 1)", "  [ERROR]  ")
+	test(t, "(- 1 false)", "  [ERROR]  ")
+	test(t, "(- false false)", "  [ERROR]  ")
 	test(t, "(- 1 1 1)", "  [ERROR]  ")
 }
 
@@ -191,6 +196,26 @@ func TestInvalidCount(t *testing.T) {
 	test(t, "(count 0)", "  [ERROR]  ")
 	test(t, `(count "a")`, "  [ERROR]  ")
 	test(t, `(count () ())`, "  [ERROR]  ")
+}
+
+func TestEmpty(t *testing.T) {
+	test(t, "(empty? (list))", "true")
+	test(t, "(empty? (list 1))", "false")
+	test(t, "(empty? (list 1 2 3))", "false")
+	test(t, "(empty? [])", "true")
+	test(t, "(empty? [1])", "false")
+	test(t, "(empty? [1 2 3 4 5])", "false")
+	test(t, "(empty? {})", "true")
+	test(t, `(empty? {"a" 1})`, "false")
+	test(t, `(empty? {"a" 1 "b" 2 "c" 3 "d" 4})`, "false")
+}
+
+func TestInvalidCEmpty(t *testing.T) {
+	test(t, "(empty?)", "  [ERROR]  ")
+	test(t, "(empty? nil)", "  [ERROR]  ")
+	test(t, "(empty? 0)", "  [ERROR]  ")
+	test(t, `(empty? "a")`, "  [ERROR]  ")
+	test(t, `(empty? () ())`, "  [ERROR]  ")
 }
 
 func TestEvalLT(t *testing.T) {
