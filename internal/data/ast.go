@@ -85,8 +85,10 @@ func NewVector2(items ...Node) *VectorNode {
 	return &VectorNode{Items: items}
 }
 
+type Map map[string]Node
+
 type HashMapNode struct {
-	Items map[Node]Node
+	Items Map
 }
 
 func IsHashMap(n Node) bool {
@@ -94,13 +96,12 @@ func IsHashMap(n Node) bool {
 	return ok
 }
 
-func NewHashMap(items map[Node]Node) *HashMapNode {
+func NewHashMap(items Map) *HashMapNode {
 	return &HashMapNode{Items: items}
 }
 
-// TODO: Rename to NewEmptyHashMap()
-func NewHashMap2() *HashMapNode {
-	return NewHashMap(make(map[Node]Node))
+func NewEmptyHashMap() *HashMapNode {
+	return NewHashMap(make(Map))
 }
 
 type FuncNode struct {

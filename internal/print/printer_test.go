@@ -51,10 +51,10 @@ func TestVector(t *testing.T) {
 }
 
 func TestHashMap(t *testing.T) {
-	m := data.NewHashMap2()
+	m := data.NewEmptyHashMap()
 	test(t, m, `{}`)
-	m.Items[data.NewSymbol("x")] = 1.
-	test(t, m, `{x 1}`)
+	m.Items["x"] = 1.
+	test(t, m, `{"x" 1}`)
 	// m.Items[data.NewSymbol("y")] = data.NewString("42")
 	// TODO: Order is not guaranteed.
 	// test(t, m, `{x 1 y "42"}`)

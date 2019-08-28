@@ -83,13 +83,15 @@ func (p *parser) parseVector() data.Node {
 }
 
 func (p *parser) parseHashMap() data.Node {
-	n := data.NewHashMap2()
+	n := data.NewEmptyHashMap()
 	p.consume("{")
 	// TODO: parse first and check if the count is even.
 	for p.tok != "}" && p.tok != "" {
 		key := p.parse()
-		val := p.parse()
-		n.Items[key] = val
+		if k, ok := key.(string); ok {
+			v := p.parse()
+			n.Items[k] = v
+		}
 	}
 	p.consume("}")
 	return n

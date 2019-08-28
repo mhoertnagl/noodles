@@ -71,7 +71,7 @@ func (p *printer) printSeq(items []data.Node, start string, end string) {
 	p.buf.WriteString(end)
 }
 
-func (p *printer) printHashMap(items map[data.Node]data.Node) {
+func (p *printer) printHashMap(items data.Map) {
 	p.buf.WriteString("{")
 	// TODO: Unfortunate.
 	init := false

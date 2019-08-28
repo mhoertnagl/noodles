@@ -125,6 +125,7 @@ func (e *evaluator) evalList(env data.Env, n *data.ListNode) data.Node {
 			return e.evalIf(env, sym.Name, args)
 		default:
 			if fun, ok := e.findCoreFun(sym.Name); ok {
+				args = e.evalSeq(env, args)
 				return fun(e, env, args)
 			}
 		}
@@ -154,11 +155,15 @@ func (e *evaluator) evalVector(env data.Env, n *data.VectorNode) data.Node {
 }
 
 func (e *evaluator) evalHashMap(env data.Env, n *data.HashMapNode) data.Node {
-	c := data.NewHashMap2()
+	c := data.NewEmptyHashMap()
 	for key, val := range n.Items {
 		k := e.EvalEnv(env, key)
 		v := e.EvalEnv(env, val)
-		c.Items[k] = v
+		if sk, ok := k.(string); ok {
+			c.Items[sk] = v
+		} else {
+			e.Error("HashMap key must be string.")
+		}
 	}
 	return c
 }
@@ -237,7 +242,7 @@ func (e *evaluator) evalSeqBindings(env data.Env, b []data.Node) {
 	}
 }
 
-func (e *evaluator) evalHashMapBindings(env data.Env, b map[data.Node]data.Node) {
+func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 	for k, v := range b {
 		e.evalSet(env, k, v)
 	}
