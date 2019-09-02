@@ -160,6 +160,8 @@ func (e *evaluator) evalHashMap(env data.Env, n *data.HashMapNode) data.Node {
 	return c
 }
 
+// evalSeq evaluates a list of nodes sequentially and returns a list of
+// evaluated nodes in the original order.
 func (e *evaluator) evalSeq(env data.Env, items []data.Node) []data.Node {
 	res := make([]data.Node, len(items))
 	for i, item := range items {
@@ -196,10 +198,11 @@ func (e *evaluator) evalSet(env data.Env, name data.Node, val data.Node) data.No
 	if x, ok := name.(*data.SymbolNode); ok {
 		return env.Set(x.Name, v)
 	}
-	// Perhaps we can evaluate a node if it is not a symbol node.
-	//n := e.EvalEnv(env, name)
-	// TODO: StringNode. We should append an obscure unicode character to the string to make it different from other symbols.
-	// Or we add "". This would make debugging easier.
+	// TODO: Perhaps we can evaluate a node if it is not a symbol node.
+	// n := e.EvalEnv(env, name)
+	// TODO: StringNode. We should append an obscure unicode character to the
+	// string to make it different from other symbols. Or we add "".
+	// This would make debugging easier.
 	return e.Error("Cannot bind to [%s].", name)
 }
 
@@ -240,6 +243,8 @@ func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 	}
 }
 
+// evalFunDef creates a new Function Node with references to the current
+// environment, the lsit of parameter names and the function body.
 func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("fn* requires exactly 2 arguments.")
@@ -294,6 +299,8 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	return env, nil
 }
 
+// isTrue returns false when the node is nil, false, 0, "", (), [] and {}.
+// It returns true in all remaining cases.
 func isTrue(env data.Env, n data.Node) bool {
 	switch x := n.(type) {
 	case nil:

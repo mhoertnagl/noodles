@@ -416,7 +416,7 @@ func TestEvalFun5(t *testing.T) {
 	teste(t, env, "(sumdown 6)", "21")
 }
 
-func TestEvalFun6(t *testing.T) {
+func TestEvalFib(t *testing.T) {
 	env := data.NewEnv(nil)
 	fib := `
 		(def! fib (fn* (N)
@@ -433,6 +433,29 @@ func TestEvalFun6(t *testing.T) {
 	teste(t, env, "(fib 4)", "5")
 	teste(t, env, "(fib 5)", "8")
 }
+
+func TestEvalSum2(t *testing.T) {
+	env := data.NewEnv(nil)
+	sum2 := `
+		(def! sum2 (fn* (n acc)
+			(if (= n 0)
+				acc
+				(sum2 (- n 1) (+ n acc)))))
+	`
+	teste(t, env, sum2, "")
+	teste(t, env, "(sum2 10 0)", "55")
+	// NOTE: Slow test.
+	// teste(t, env, "(def! res2 nil)", "nil")
+	// teste(t, env, "(def! res2 (sum2 10000 0))", "50005000")
+}
+
+// NOTE: Slow test.
+// func TestEvalMutualRecursive(t *testing.T) {
+// 	env := data.NewEnv(nil)
+// 	teste(t, env, "(def! foo (fn* (n) (if (= n 0) 0 (bar (- n 1)))))", "")
+// 	teste(t, env, "(def! bar (fn* (n) (if (= n 0) 0 (foo (- n 1)))))", "")
+// 	teste(t, env, "(foo 10000)", "0")
+// }
 
 func test(t *testing.T, i string, e string) {
 	teste(t, data.NewEnv(nil), i, e)

@@ -71,7 +71,7 @@ func (p *printer) print(n data.Node, env data.Env) {
 	case data.IsBool(n):
 		p.buf.WriteString(strconv.FormatBool(n.(bool)))
 	case data.IsNumber(n):
-		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'g', -1, 64))
+		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'f', -1, 64))
 	case data.IsString(n):
 		p.printString(n.(string))
 	case data.IsSymbol(n):
