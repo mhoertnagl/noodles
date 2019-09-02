@@ -35,23 +35,6 @@ func NewEvaluator(env data.Env) Evaluator {
 	}
 	InitCore(e)
 	return e
-	// e := &evaluator{
-	// 	env:     env,
-	// 	err:     []*data.ErrorNode{},
-	// 	printer: print.NewPrinter(),
-	// }
-	// env.AddSpecialForm("def!", e.evalDef)
-	// env.AddSpecialForm("let*", e.evalLet)
-	// env.AddSpecialForm("fn*", e.evalFunDef)
-	// env.AddSpecialForm("do", e.evalDo)
-	// env.AddSpecialForm("if", e.evalIf)
-	// env.AddSpecialForm("+", e.evalSum)
-	// env.AddSpecialForm("-", e.evalDiff)
-	// env.AddSpecialForm("<", e.eval2f(func(n0 float64, n1 float64) data.Node { return n0 < n1 }))
-	// env.AddSpecialForm(">", e.eval2f(func(n0 float64, n1 float64) data.Node { return n0 > n1 }))
-	// env.AddSpecialForm("<=", e.eval2f(func(n0 float64, n1 float64) data.Node { return n0 <= n1 }))
-	// env.AddSpecialForm(">=", e.eval2f(func(n0 float64, n1 float64) data.Node { return n0 >= n1 }))
-	// return e
 }
 
 func (e *evaluator) debug(format string, args ...data.Node) {
@@ -87,6 +70,7 @@ func (e *evaluator) findCoreFun(name string) (CoreFun, bool) {
 	return nil, false
 }
 
+// TODO: Can be private.
 func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 	switch {
 	case data.IsList(n):
@@ -137,6 +121,10 @@ func (e *evaluator) evalList(env data.Env, n *data.ListNode) data.Node {
 		if len(fn.Pars) != len(args) {
 			return e.Error("Number of arguments not the same as number of parameters.")
 		}
+		// Create a new environment for this function.
+		fn.Env = data.NewEnv(fn.Env)
+		// Evaluate and bind argurments to their parameters in the new function
+		// environment.
 		for i, par := range fn.Pars {
 			arg := e.EvalEnv(env, args[i])
 			fn.Env.Set(par, arg)
@@ -252,16 +240,16 @@ func (e *evaluator) evalFunDef(env data.Env, name string, ns []data.Node) data.N
 	if len(ns) != 2 {
 		return e.Error("fn* requires exactly 2 arguments.")
 	}
-	if as, ok := ns[0].(*data.ListNode); ok {
-		args := make([]string, len(as.Items))
-		for i, arg := range as.Items {
-			if a, ok2 := arg.(*data.SymbolNode); ok2 {
-				args[i] = a.Name
+	if ps, ok := ns[0].(*data.ListNode); ok {
+		params := make([]string, len(ps.Items))
+		for i, param := range ps.Items {
+			if p, ok2 := param.(*data.SymbolNode); ok2 {
+				params[i] = p.Name
 			} else {
 				return e.Error("Function parameter must be a symbol.")
 			}
 		}
-		return data.NewFuncNode(data.NewEnv(env), args, ns[1])
+		return data.NewFuncNode(env, params, ns[1])
 	}
 	return e.Error("First argument to fn* must be a list.")
 }

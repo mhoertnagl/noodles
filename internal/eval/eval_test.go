@@ -416,14 +416,23 @@ func TestEvalFun5(t *testing.T) {
 	teste(t, env, "(sumdown 6)", "21")
 }
 
-// TODO: implement =
-// func TestEvalFun6(t *testing.T) {
-// 	env := data.NewEnv(nil)
-// 	teste(t, env, "(def! fib (fn* (N) (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))", "")
-// 	teste(t, env, "(fib 1)", "1")
-// 	teste(t, env, "(fib 2)", "2")
-// 	teste(t, env, "(fib 4)", "5")
-// }
+func TestEvalFun6(t *testing.T) {
+	env := data.NewEnv(nil)
+	fib := `
+		(def! fib (fn* (N)
+			(if (= N 0)
+				1
+				(if (= N 1)
+					1
+					(+ (fib (- N 1)) (fib (- N 2)))))))
+	`
+	teste(t, env, fib, "")
+	teste(t, env, "(fib 0)", "1")
+	teste(t, env, "(fib 1)", "1")
+	teste(t, env, "(fib 2)", "2")
+	teste(t, env, "(fib 4)", "5")
+	teste(t, env, "(fib 5)", "8")
+}
 
 func test(t *testing.T, i string, e string) {
 	teste(t, data.NewEnv(nil), i, e)
