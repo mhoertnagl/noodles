@@ -72,66 +72,70 @@ func (e *evaluator) findCoreFun(name string) (CoreFun, bool) {
 
 // TODO: Can be private.
 func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
-	switch {
-	case data.IsList(n):
-		return e.evalList(env, n.(*data.ListNode))
-	case data.IsVector(n):
-		return e.evalVector(env, n.(*data.VectorNode))
-	case data.IsHashMap(n):
-		return e.evalHashMap(env, n.(*data.HashMapNode))
-	case data.IsSymbol(n):
-		return e.evalSymbol(env, n.(*data.SymbolNode))
-	default:
-		// Return unchanged. These are immutable atoms.
-		return n
-	}
-}
-
-func (e *evaluator) evalList(env data.Env, n *data.ListNode) data.Node {
-	if len(n.Items) == 0 {
-		return n
-	}
-
-	hd := n.Items[0]
-	args := n.Items[1:]
-
-	if sym, ok1 := hd.(*data.SymbolNode); ok1 {
-		switch sym.Name {
-		case "def!":
-			return e.evalDef(env, sym.Name, args)
-		case "let*":
-			return e.evalLet(env, sym.Name, args)
-		case "fn*":
-			return e.evalFunDef(env, sym.Name, args)
-		case "do":
-			return e.evalDo(env, sym.Name, args)
-		case "if":
-			return e.evalIf(env, sym.Name, args)
-		default:
-			if fun, ok := e.findCoreFun(sym.Name); ok {
-				args = e.evalSeq(env, args)
-				return fun(e, env, args)
+	for {
+		switch {
+		case data.IsList(n):
+			x := n.(*data.ListNode)
+			if len(x.Items) == 0 {
+				return n
 			}
+
+			hd := x.Items[0]
+			args := x.Items[1:]
+
+			if sym, ok1 := hd.(*data.SymbolNode); ok1 {
+				switch sym.Name {
+				case "def!":
+					return e.evalDef(env, args)
+				case "let*":
+					env, n = e.evalLet(env, args)
+					continue
+				case "fn*":
+					return e.evalFunDef(env, args)
+				case "do":
+					env, n = e.evalDo(env, args)
+					continue
+				case "if":
+					env, n = e.evalIf(env, args)
+					continue
+				default:
+					if fun, ok := e.findCoreFun(sym.Name); ok {
+						args = e.evalSeq(env, args)
+						return fun(e, env, args)
+					}
+				}
+			}
+
+			hd = e.EvalEnv(env, hd)
+
+			if fn, ok2 := hd.(*data.FuncNode); ok2 {
+				if len(fn.Pars) != len(args) {
+					return e.Error("Number of arguments not the same as number of parameters.")
+				}
+				// Create a new environment for this function.
+				fn.Env = data.NewEnv(fn.Env)
+				// Evaluate and bind argurments to their parameters in the new function
+				// environment.
+				for i, par := range fn.Pars {
+					arg := e.EvalEnv(env, args[i])
+					fn.Env.Set(par, arg)
+				}
+				env = fn.Env
+				n = fn.Fun
+				continue
+			}
+			return e.Error("List cannot be evaluated.")
+		case data.IsVector(n):
+			return e.evalVector(env, n.(*data.VectorNode))
+		case data.IsHashMap(n):
+			return e.evalHashMap(env, n.(*data.HashMapNode))
+		case data.IsSymbol(n):
+			return e.evalSymbol(env, n.(*data.SymbolNode))
+		default:
+			// Return unchanged. These are immutable atoms.
+			return n
 		}
 	}
-
-	hd = e.EvalEnv(env, hd)
-
-	if fn, ok2 := hd.(*data.FuncNode); ok2 {
-		if len(fn.Pars) != len(args) {
-			return e.Error("Number of arguments not the same as number of parameters.")
-		}
-		// Create a new environment for this function.
-		fn.Env = data.NewEnv(fn.Env)
-		// Evaluate and bind argurments to their parameters in the new function
-		// environment.
-		for i, par := range fn.Pars {
-			arg := e.EvalEnv(env, args[i])
-			fn.Env.Set(par, arg)
-		}
-		return e.EvalEnv(fn.Env, fn.Fun)
-	}
-	return e.Error("List cannot be evaluated.")
 }
 
 func (e *evaluator) evalVector(env data.Env, n *data.VectorNode) data.Node {
@@ -178,7 +182,7 @@ func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
 // evalDef binds a name to a value. Evaluates the value before it get bound to
 // the name and returns it. Redefinitions of the same name in the same
 // environment will overwrite the previous value.
-func (e *evaluator) evalDef(env data.Env, name string, ns []data.Node) data.Node {
+func (e *evaluator) evalDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("def! requires exactly 2 arguments.")
 	}
@@ -205,9 +209,9 @@ func (e *evaluator) evalSet(env data.Env, name data.Node, val data.Node) data.No
 // yields a runtime error. The list of arguments has to be a sequence of name-
 // value pairs. The values will be evaluated before they get bound to their
 // respective names.
-func (e *evaluator) evalLet(env data.Env, name string, ns []data.Node) data.Node {
+func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	if len(ns) != 2 {
-		return e.Error("let* requires exactly 2 arguments.")
+		return env, e.Error("let* requires exactly 2 arguments.")
 	}
 	sub := data.NewEnv(env)
 	switch b := ns[0].(type) {
@@ -218,10 +222,10 @@ func (e *evaluator) evalLet(env data.Env, name string, ns []data.Node) data.Node
 	case *data.HashMapNode:
 		e.evalHashMapBindings(sub, b.Items)
 	default:
-		return e.Error("Cannot let*-bind non-sequence.")
+		return env, e.Error("Cannot let*-bind non-sequence.")
 	}
-	// Evaluate the body with the new local environment.
-	return e.EvalEnv(sub, ns[1])
+	// Return the new environment and the unevaluated body of let* for TCO.
+	return sub, ns[1]
 }
 
 func (e *evaluator) evalSeqBindings(env data.Env, b []data.Node) {
@@ -236,7 +240,7 @@ func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 	}
 }
 
-func (e *evaluator) evalFunDef(env data.Env, name string, ns []data.Node) data.Node {
+func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("fn* requires exactly 2 arguments.")
 	}
@@ -256,32 +260,38 @@ func (e *evaluator) evalFunDef(env data.Env, name string, ns []data.Node) data.N
 
 // evalDo evaluates a list of items and returns the final evaluated result.
 // Returns nil when the list is empty.
-func (e *evaluator) evalDo(env data.Env, name string, ns []data.Node) data.Node {
-	var r data.Node
-	for _, n := range ns {
-		r = e.EvalEnv(env, n)
+func (e *evaluator) evalDo(env data.Env, ns []data.Node) (data.Env, data.Node) {
+	z := len(ns) - 1
+	if z <= 0 {
+		return env, nil
 	}
-	return r
+	for _, n := range ns[:z] {
+		e.EvalEnv(env, n)
+	}
+	// Return the last item unevaluated for TCO.
+	return env, ns[z]
 }
 
 // evalIf evaluates its first argument. If it is true?? evaluates the second
 // argument else evaluates the third argument. If the first argument is not true
 // and no third argument is given then it returns nil.
-func (e *evaluator) evalIf(env data.Env, name string, ns []data.Node) data.Node {
+func (e *evaluator) evalIf(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	len := len(ns)
 	if len != 2 && len != 3 {
-		return e.Error("if requires either 2 or 3 arguments.")
+		return env, e.Error("if requires either 2 or 3 arguments.")
 	}
 	cond := e.EvalEnv(env, ns[0])
 	if data.IsError(cond) {
-		return cond
+		return env, cond
 	}
 	if isTrue(env, cond) {
-		return e.EvalEnv(env, ns[1])
+		// Return unevaluated true branch for TCO.
+		return env, ns[1]
 	} else if len == 3 {
-		return e.EvalEnv(env, ns[2])
+		// Return unevaluated false branch for TCO.
+		return env, ns[2]
 	}
-	return nil
+	return env, nil
 }
 
 func isTrue(env data.Env, n data.Node) bool {
