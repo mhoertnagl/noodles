@@ -5,6 +5,7 @@ import (
 
 	"github.com/mhoertnagl/splis2/internal/data"
 	"github.com/mhoertnagl/splis2/internal/print"
+	"github.com/mhoertnagl/splis2/internal/read"
 )
 
 type CoreFun func(Evaluator, data.Env, []data.Node) data.Node
@@ -21,6 +22,8 @@ type evaluator struct {
 	env     data.Env
 	core    map[string]CoreFun
 	err     []*data.ErrorNode
+	reader  read.Reader
+	parser  read.Parser
 	printer print.Printer
 }
 
@@ -31,16 +34,18 @@ func NewEvaluator(env data.Env) Evaluator {
 		env:     env,
 		core:    make(map[string]CoreFun),
 		err:     []*data.ErrorNode{},
+		reader:  read.NewReader(),
+		parser:  read.NewParser(),
 		printer: print.NewPrinter(),
 	}
 	InitCore(e)
 	return e
 }
 
-func (e *evaluator) debug(format string, args ...data.Node) {
+func (e *evaluator) debug(format string, env data.Env, args ...data.Node) {
 	strs := make([]interface{}, len(args))
 	for i, arg := range args {
-		strs[i] = e.printer.Print(arg)
+		strs[i] = e.printer.PrintEnv(arg, env)
 	}
 	fmt.Printf(format, strs...)
 }
@@ -74,6 +79,8 @@ func (e *evaluator) findCoreFun(name string) (CoreFun, bool) {
 func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 	for {
 		switch {
+		case data.IsSymbol(n):
+			return e.evalSymbol(env, n.(*data.SymbolNode))
 		case data.IsList(n):
 			x := n.(*data.ListNode)
 			if len(x.Items) == 0 {
@@ -98,6 +105,12 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 				case "if":
 					env, n = e.evalIf(env, args)
 					continue
+				// TODO: TCO?
+				case "read":
+					return e.evalRead(env, args)
+				// TODO: TCO?
+				case "eval":
+					return e.evalEval(env, args)
 				default:
 					if fun, ok := e.findCoreFun(sym.Name); ok {
 						args = e.evalSeq(env, args)
@@ -129,8 +142,6 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 			return e.evalVector(env, n.(*data.VectorNode))
 		case data.IsHashMap(n):
 			return e.evalHashMap(env, n.(*data.HashMapNode))
-		case data.IsSymbol(n):
-			return e.evalSymbol(env, n.(*data.SymbolNode))
 		default:
 			// Return unchanged. These are immutable atoms.
 			return n
@@ -138,7 +149,30 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 	}
 }
 
+// evalSymbol returns the symbol if it is a core function. If not, serches the
+// current environment (and all parent environments) and returns its value.
+// Returns an error if no such element exists.
+func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
+	// TODO: core functions should be defined in the environment.
+	// First check if the symbol defines a core function. Return the symbol
+	// unchanged if this is true.
+	if _, ok1 := e.findCoreFun(n.Name); ok1 {
+		return n
+	}
+	// See if a value is bound to the symbol is defined in the environment.
+	// Return the value.
+	if v, ok2 := env.Lookup(n.Name); ok2 {
+		return v
+	}
+	// Else the symbol is undefined. Report an error.
+	return e.Error("Undefined symbol [%s].", n.Name)
+}
+
+// evalVector evaluates all arguments of the vector and returns a new vector
+// with the results in the same order as the original arguments.
 func (e *evaluator) evalVector(env data.Env, n *data.VectorNode) data.Node {
+	// Return the original vector if it is empty.
+	// TODO: Always return a new vector?
 	if len(n.Items) == 0 {
 		return n
 	}
@@ -147,6 +181,11 @@ func (e *evaluator) evalVector(env data.Env, n *data.VectorNode) data.Node {
 }
 
 func (e *evaluator) evalHashMap(env data.Env, n *data.HashMapNode) data.Node {
+	// Return the original hash map if it is empty.
+	// TODO: Always return a new map?
+	if len(n.Items) == 0 {
+		return n
+	}
 	c := data.NewEmptyHashMap()
 	for key, val := range n.Items {
 		k := e.EvalEnv(env, key)
@@ -170,23 +209,13 @@ func (e *evaluator) evalSeq(env data.Env, items []data.Node) []data.Node {
 	return res
 }
 
-// evalSymbol searches for a symbol in the environment (and all parent
-// environments) and returns its value.
-// Returns an error when no such element exists.
-func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
-	if v, ok := env.Lookup(n.Name); ok {
-		return v
-	}
-	return e.Error("Undefined symbol [%s].", n.Name)
-}
-
 // TODO: Should def! be able to overwrite an already defined binding?
 // evalDef binds a name to a value. Evaluates the value before it get bound to
 // the name and returns it. Redefinitions of the same name in the same
 // environment will overwrite the previous value.
 func (e *evaluator) evalDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
-		return e.Error("def! requires exactly 2 arguments.")
+		return e.Error("[def!] requires exactly 2 arguments.")
 	}
 	return e.evalSet(env, ns[0], ns[1])
 }
@@ -214,7 +243,7 @@ func (e *evaluator) evalSet(env data.Env, name data.Node, val data.Node) data.No
 // respective names.
 func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	if len(ns) != 2 {
-		return env, e.Error("let* requires exactly 2 arguments.")
+		return env, e.Error("[let*] requires exactly 2 arguments.")
 	}
 	sub := data.NewEnv(env)
 	switch b := ns[0].(type) {
@@ -225,7 +254,7 @@ func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) 
 	case *data.HashMapNode:
 		e.evalHashMapBindings(sub, b.Items)
 	default:
-		return env, e.Error("Cannot let*-bind non-sequence.")
+		return env, e.Error("Cannot [let*]-bind non-sequence.")
 	}
 	// Return the new environment and the unevaluated body of let* for TCO.
 	return sub, ns[1]
@@ -247,7 +276,7 @@ func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 // environment, the lsit of parameter names and the function body.
 func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
-		return e.Error("fn* requires exactly 2 arguments.")
+		return e.Error("[fn*] requires exactly 2 arguments.")
 	}
 	if ps, ok := ns[0].(*data.ListNode); ok {
 		params := make([]string, len(ps.Items))
@@ -260,7 +289,7 @@ func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 		}
 		return data.NewFuncNode(env, params, ns[1])
 	}
-	return e.Error("First argument to fn* must be a list.")
+	return e.Error("First argument to [fn*] must be a list.")
 }
 
 // evalDo evaluates a list of items and returns the final evaluated result.
@@ -283,13 +312,15 @@ func (e *evaluator) evalDo(env data.Env, ns []data.Node) (data.Env, data.Node) {
 func (e *evaluator) evalIf(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	len := len(ns)
 	if len != 2 && len != 3 {
-		return env, e.Error("if requires either 2 or 3 arguments.")
+		return env, e.Error("[if] requires either 2 or 3 arguments.")
 	}
+	// Evaluate the condition.
 	cond := e.EvalEnv(env, ns[0])
+	// Return immediatly if the condition evaluated to an error.
 	if data.IsError(cond) {
 		return env, cond
 	}
-	if isTrue(env, cond) {
+	if e.isTrue(env, cond) {
 		// Return unevaluated true branch for TCO.
 		return env, ns[1]
 	} else if len == 3 {
@@ -299,9 +330,10 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	return env, nil
 }
 
+// TODO: Create a core function. We need it for (true? ...) and (false? ...)
 // isTrue returns false when the node is nil, false, 0, "", (), [] and {}.
 // It returns true in all remaining cases.
-func isTrue(env data.Env, n data.Node) bool {
+func (e *evaluator) isTrue(env data.Env, n data.Node) bool {
 	switch x := n.(type) {
 	case nil:
 		return false
@@ -312,7 +344,9 @@ func isTrue(env data.Env, n data.Node) bool {
 	case string:
 		return len(x) != 0
 	case *data.SymbolNode:
-		return isTrue(env, x)
+		// TODO: Add a unit test. What if the symbol is not defined?
+		v := e.evalSymbol(env, x)
+		return e.isTrue(env, v)
 	case *data.ListNode:
 		return len(x.Items) != 0
 	case *data.VectorNode:
@@ -322,4 +356,28 @@ func isTrue(env data.Env, n data.Node) bool {
 	default:
 		return true
 	}
+}
+
+func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[read] requires exactly 1 argument.")
+	}
+	if s, ok := ns[0].(string); ok {
+		e.reader.Load(s)
+		return e.parser.Parse(e.reader)
+	}
+	return e.Error("[read] argument must be a string.")
+}
+
+// evalEval evaluates the first argument twice. This is useful in combination
+// with [read] or [quote]. For instance consider (eval (read "(+ 1 1)")). The
+// evaluation of the argument yields (eval (+ 1 1)) and evaluation again gives
+// 2 as expected. On the other hand an expression like (eval (+ 1 1)) where the
+// argument can be evaluated at once is equivalent to (+ 1 1).
+func (e *evaluator) evalEval(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[eval] requires exactly 1 argument.")
+	}
+	n := e.EvalEnv(env, ns[0])
+	return e.EvalEnv(env, n)
 }

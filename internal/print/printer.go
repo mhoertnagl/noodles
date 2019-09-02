@@ -31,31 +31,6 @@ func (p *printer) Print(node data.Node) string {
 	return p.buf.String()
 }
 
-// func (p *printer) print(n data.Node) {
-// 	switch {
-// 	case data.IsError(n):
-// 		p.buf.WriteString("  [ERROR]  ")
-// 	case data.IsNil(n):
-// 		p.buf.WriteString("nil")
-// 	case data.IsBool(n):
-// 		p.buf.WriteString(strconv.FormatBool(n.(bool)))
-// 	case data.IsNumber(n):
-// 		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'g', -1, 64))
-// 	case data.IsString(n):
-// 		p.printString(n.(string))
-// 	case data.IsSymbol(n):
-// 		p.buf.WriteString(n.(*data.SymbolNode).Name)
-// 	case data.IsList(n):
-// 		p.printSeq(n.(*data.ListNode).Items, "(", ")")
-// 	case data.IsVector(n):
-// 		p.printSeq(n.(*data.VectorNode).Items, "[", "]")
-// 	case data.IsHashMap(n):
-// 		p.printHashMap(n.(*data.HashMapNode).Items)
-// 		// case eval.IsFuncNode(n):
-// 		// 	p.buf.WriteString("#<fn>")
-// 	}
-// }
-
 func (p *printer) PrintEnv(node data.Node, env data.Env) string {
 	p.buf.Reset()
 	p.print(node, env)

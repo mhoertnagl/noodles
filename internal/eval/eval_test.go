@@ -9,12 +9,12 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
-func TestEvalNumbers(t *testing.T) {
+func TestNumbers(t *testing.T) {
 	test(t, "1", "1")
 	test(t, "1.1", "1.1")
 }
 
-func TestEvalSum(t *testing.T) {
+func TestSum(t *testing.T) {
 	test(t, "(+)", "0")
 	test(t, "(+ 1)", "1")
 	test(t, "(+ 1 1)", "2")
@@ -23,30 +23,30 @@ func TestEvalSum(t *testing.T) {
 	test(t, "(+ (+ 1 1) (+ 1 1))", "4")
 }
 
-func TestEvalInvalidSum(t *testing.T) {
+func TestInvalidSum(t *testing.T) {
 	test(t, "(+ 1 1 x)", "  [ERROR]  ")
 }
 
-func TestEvalDiff(t *testing.T) {
+func TestDiff(t *testing.T) {
 	test(t, "(- 1)", "-1")
 	test(t, "(- 2 1)", "1")
 	test(t, "(- 1 2)", "-1")
 }
 
-func TestEvalDiff2(t *testing.T) {
+func TestDiff2(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	teste(t, env, "(- :a)", "-2")
 }
 
-func TestEvalDiff3(t *testing.T) {
+func TestDiff3(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	teste(t, env, "(- :a 1)", "1")
 	teste(t, env, "(- 1 :a)", "-1")
 }
 
-func TestEvalInvalidDiff(t *testing.T) {
+func TestInvalidDiff(t *testing.T) {
 	test(t, "(-)", "  [ERROR]  ")
 	test(t, "(- :a)", "  [ERROR]  ")
 	test(t, "(- false)", "  [ERROR]  ")
@@ -56,21 +56,21 @@ func TestEvalInvalidDiff(t *testing.T) {
 	test(t, "(- 1 1 1)", "  [ERROR]  ")
 }
 
-func TestEvalDef1(t *testing.T) {
+func TestDef1(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a 1)", "1")
 	testenv(t, env, ":a", "1")
 	teste(t, env, ":a", "1")
 }
 
-func TestEvalDef2(t *testing.T) {
+func TestDef2(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a (+ 1 1))", "2")
 	testenv(t, env, ":a", "2")
 	teste(t, env, ":a", "2")
 }
 
-func TestEvalDef3(t *testing.T) {
+func TestDef3(t *testing.T) {
 	env := data.NewEnv(nil)
 	// Define
 	teste(t, env, "(def! :a 1)", "1")
@@ -82,14 +82,14 @@ func TestEvalDef3(t *testing.T) {
 	teste(t, env, ":a", "2")
 }
 
-func TestEvalInvalidDef(t *testing.T) {
+func TestInvalidDef(t *testing.T) {
 	test(t, "(def!)", "  [ERROR]  ")
 	test(t, "(def! :a)", "  [ERROR]  ")
 	test(t, "(def! :a 1 :b)", "  [ERROR]  ")
 	test(t, "(def! 5 2)", "  [ERROR]  ")
 }
 
-func TestEvalLet(t *testing.T) {
+func TestLet(t *testing.T) {
 	test(t, "(let* (:a 1) :a)", "1")
 	test(t, "(let* (:a (+ 1 1)) :a)", "2")
 	test(t, "(let* (:a 1) (+ :a :a))", "2")
@@ -97,7 +97,7 @@ func TestEvalLet(t *testing.T) {
 	test(t, "(let* (p (+ 2 3) q (+ 2 p)) (+ p q))", "12")
 }
 
-func TestEvalLetVectorBinding(t *testing.T) {
+func TestLetVectorBinding(t *testing.T) {
 	test(t, "(let* [:a 1] :a)", "1")
 	test(t, "(let* [p (+ 2 3) q (+ 2 p)] (+ p q))", "12")
 	test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
@@ -107,19 +107,19 @@ func TestEvalLetVectorBinding(t *testing.T) {
 
 // TODO: Test outer environment.
 
-func TestEvalInvalidLet(t *testing.T) {
+func TestInvalidLet(t *testing.T) {
 	test(t, "(let*)", "  [ERROR]  ")
 	test(t, "(let* (:a 1))", "  [ERROR]  ")
 	test(t, "(let* (:a 1) :a :b)", "  [ERROR]  ")
 }
 
-func TestEvalDo(t *testing.T) {
+func TestDo(t *testing.T) {
 	test(t, "(do)", "nil")
 	test(t, "(do (+ 1 1) (+ 2 2))", "4")
 	test(t, "(do (def! a 3) (def! b 7) (+ a b))", "10")
 }
 
-func TestEvalIf(t *testing.T) {
+func TestIf(t *testing.T) {
 	test(t, "(if nil 1 0)", "0") // Error?
 	test(t, "(if false 1 0)", "0")
 	test(t, "(if true 1 0)", "1")
@@ -146,12 +146,12 @@ func TestEvalIf(t *testing.T) {
 	test(t, "(if (> 1 0) 1 0)", "1")
 }
 
-func TestEvalIfWithoutElse(t *testing.T) {
+func TestIfWithoutElse(t *testing.T) {
 	test(t, "(if false 1)", "nil")
 	test(t, "(if true 1)", "1")
 }
 
-func TestEvalInvalidIf(t *testing.T) {
+func TestInvalidIf(t *testing.T) {
 	test(t, "(if)", "  [ERROR]  ")
 	test(t, "(if true)", "  [ERROR]  ")
 	test(t, "(if true 1 0 2)", "  [ERROR]  ")
@@ -161,6 +161,8 @@ func TestList(t *testing.T) {
 	test(t, "(list)", "()")
 	test(t, "(list 0)", "(0)")
 	test(t, "(list 0 1)", "(0 1)")
+	test(t, "(list (+ 4 4) 8)", "(8 8)")
+	test(t, "(list + 4 4)", "(+ 4 4)")
 }
 
 func TestIsList(t *testing.T) {
@@ -218,20 +220,20 @@ func TestInvalidCEmpty(t *testing.T) {
 	test(t, `(empty? () ())`, "  [ERROR]  ")
 }
 
-func TestEvalLT(t *testing.T) {
+func TestLT(t *testing.T) {
 	test(t, "(< 0 1)", "true")
 	test(t, "(< 0 0)", "false")
 	test(t, "(< 1 0)", "false")
 }
 
-func TestEvalLT2(t *testing.T) {
+func TestLT2(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! N 0)", "0")
 	teste(t, env, "(< N 1)", "true")
 	teste(t, env, "(< N 0)", "false")
 }
 
-func TestEvalLT3(t *testing.T) {
+func TestLT3(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! N 1)", "1")
 	teste(t, env, "(< N 1)", "false")
@@ -240,7 +242,7 @@ func TestEvalLT3(t *testing.T) {
 
 // TODO: variable second argument.
 
-func TestEvalInvalidLT(t *testing.T) {
+func TestInvalidLT(t *testing.T) {
 	test(t, "(<)", "  [ERROR]  ")
 	test(t, "(< 0)", "  [ERROR]  ")
 	test(t, "(< 1 0 1)", "  [ERROR]  ")
@@ -249,13 +251,13 @@ func TestEvalInvalidLT(t *testing.T) {
 	test(t, "(< x x)", "  [ERROR]  ")
 }
 
-func TestEvalGT(t *testing.T) {
+func TestGT(t *testing.T) {
 	test(t, "(> 0 1)", "false")
 	test(t, "(> 0 0)", "false")
 	test(t, "(> 1 0)", "true")
 }
 
-func TestEvalInvalidGT(t *testing.T) {
+func TestInvalidGT(t *testing.T) {
 	test(t, "(>)", "  [ERROR]  ")
 	test(t, "(> 0)", "  [ERROR]  ")
 	test(t, "(> 1 0 1)", "  [ERROR]  ")
@@ -264,7 +266,7 @@ func TestEvalInvalidGT(t *testing.T) {
 	test(t, "(> x x)", "  [ERROR]  ")
 }
 
-func TestEvalLE(t *testing.T) {
+func TestLE(t *testing.T) {
 	test(t, "(<= 0 1)", "true")
 	test(t, "(<= 0 0)", "true")
 	test(t, "(<= 1 0)", "false")
@@ -273,19 +275,19 @@ func TestEvalLE(t *testing.T) {
 	test(t, "(<= x x)", "  [ERROR]  ")
 }
 
-func TestEvalInvalidLE(t *testing.T) {
+func TestInvalidLE(t *testing.T) {
 	test(t, "(<=)", "  [ERROR]  ")
 	test(t, "(<= 0)", "  [ERROR]  ")
 	test(t, "(<= 1 0 1)", "  [ERROR]  ")
 }
 
-func TestEvalGE(t *testing.T) {
+func TestGE(t *testing.T) {
 	test(t, "(>= 0 1)", "false")
 	test(t, "(>= 0 0)", "true")
 	test(t, "(>= 1 0)", "true")
 }
 
-func TestEvalInvalidGE(t *testing.T) {
+func TestInvalidGE(t *testing.T) {
 	test(t, "(>=)", "  [ERROR]  ")
 	test(t, "(>= 0)", "  [ERROR]  ")
 	test(t, "(>= 1 0 1)", "  [ERROR]  ")
@@ -294,20 +296,20 @@ func TestEvalInvalidGE(t *testing.T) {
 	test(t, "(>= x x)", "  [ERROR]  ")
 }
 
-func TestEvalNilEquivalence(t *testing.T) {
+func TestNilEquivalence(t *testing.T) {
 	test(t, "(= nil nil)", "true")
 	test(t, "(= 0 nil)", "false")
 	test(t, "(= nil 0)", "false")
 }
 
-func TestEvalBooleanEquivalence(t *testing.T) {
+func TestBooleanEquivalence(t *testing.T) {
 	test(t, "(= false false)", "true")
 	test(t, "(= false true)", "false")
 	test(t, "(= true false)", "false")
 	test(t, "(= true true)", "true")
 }
 
-func TestEvalNumberEquivalence(t *testing.T) {
+func TestNumberEquivalence(t *testing.T) {
 	test(t, "(= 1 1)", "true")
 	test(t, "(= 1 0)", "false")
 	test(t, "(= 0 1)", "false")
@@ -316,7 +318,7 @@ func TestEvalNumberEquivalence(t *testing.T) {
 	test(t, "(= 1.1 1.1)", "true")
 }
 
-func TestEvalEnvVarEquivalence(t *testing.T) {
+func TestEnvVarEquivalence(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! x 1", "1")
 	teste(t, env, "(= x 1)", "true")
@@ -324,14 +326,14 @@ func TestEvalEnvVarEquivalence(t *testing.T) {
 	teste(t, env, "(= x x)", "true")
 }
 
-func TestEvalStringEquivalence(t *testing.T) {
+func TestStringEquivalence(t *testing.T) {
 	test(t, `(= "" "")`, "true")
 	test(t, `(= "x" "")`, "false")
 	test(t, `(= "" "x")`, "false")
 	test(t, `(= "xyz" "xyz")`, "true")
 }
 
-func TestEvalListEquivalence(t *testing.T) {
+func TestListEquivalence(t *testing.T) {
 	test(t, `(= (list) nil)`, "false")
 	test(t, `(= nil (list))`, "false")
 	test(t, `(= (list) (list))`, "true")
@@ -342,7 +344,7 @@ func TestEvalListEquivalence(t *testing.T) {
 	test(t, `(= (list 1 2) (list 2 1))`, "false")
 }
 
-func TestEvalVectorEquivalence(t *testing.T) {
+func TestVectorEquivalence(t *testing.T) {
 	test(t, `(= [] nil)`, "false")
 	test(t, `(= nil [])`, "false")
 	test(t, `(= [] [])`, "true")
@@ -354,7 +356,7 @@ func TestEvalVectorEquivalence(t *testing.T) {
 	test(t, `(= [1 2] [2 1])`, "false")
 }
 
-func TestEvalHashMapEquivalence(t *testing.T) {
+func TestHashMapEquivalence(t *testing.T) {
 	test(t, `(= {} nil)`, "false")
 	test(t, `(= nil {})`, "false")
 	test(t, `(= {} {})`, "true")
@@ -372,12 +374,12 @@ func TestEvalHashMapEquivalence(t *testing.T) {
 	test(t, `(= {"a" 1 "b" 2} {"c" 1 "d" 2})`, "false")
 }
 
-func TestEvalInvalidEquivalence(t *testing.T) {
+func TestInvalidEquivalence(t *testing.T) {
 	test(t, "(=)", "  [ERROR]  ")
 	test(t, "(= 1 1 1)", "  [ERROR]  ")
 }
 
-func TestEvalFun(t *testing.T) {
+func TestFun(t *testing.T) {
 	//test(t, "(fn* () 42)", "#<fn>")
 	test(t, "((fn* () 42))", "42")
 	test(t, "((fn* (a) a) 42)", "42")
@@ -387,28 +389,28 @@ func TestEvalFun(t *testing.T) {
 	test(t, "(((fn* (a) (fn* (b) (+ a b))) 5) 7)", "12")
 }
 
-func TestEvalFun2(t *testing.T) {
+func TestFun2(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! gen-plus5 (fn* () (fn* (b) (+ 5 b))))", "")
 	teste(t, env, "(def! plus5 (gen-plus5))", "")
 	teste(t, env, "(plus5 7)", "12")
 }
 
-func TestEvalFun3(t *testing.T) {
+func TestFun3(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! gen-plusX (fn* (x) (fn* (b) (+ x b))))", "")
 	teste(t, env, "(def! plus7 (gen-plusX 7))", "")
 	teste(t, env, "(plus7 8)", "15")
 }
 
-func TestEvalFun4(t *testing.T) {
+func TestFun4(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! iffun (fn* (N) (if (> N 0) 33 22)))", "")
 	teste(t, env, "(iffun 0)", "22")
 	teste(t, env, "(iffun 1)", "33")
 }
 
-func TestEvalFun5(t *testing.T) {
+func TestFun5(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! sumdown (fn* (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
 	teste(t, env, "(sumdown 1)", "1")
@@ -416,7 +418,7 @@ func TestEvalFun5(t *testing.T) {
 	teste(t, env, "(sumdown 6)", "21")
 }
 
-func TestEvalFib(t *testing.T) {
+func TestFib(t *testing.T) {
 	env := data.NewEnv(nil)
 	fib := `
 		(def! fib (fn* (N)
@@ -434,7 +436,7 @@ func TestEvalFib(t *testing.T) {
 	teste(t, env, "(fib 5)", "8")
 }
 
-func TestEvalSum2(t *testing.T) {
+func TestSum2(t *testing.T) {
 	env := data.NewEnv(nil)
 	sum2 := `
 		(def! sum2 (fn* (n acc)
@@ -450,12 +452,25 @@ func TestEvalSum2(t *testing.T) {
 }
 
 // NOTE: Slow test.
-// func TestEvalMutualRecursive(t *testing.T) {
+// func TestMutualRecursive(t *testing.T) {
 // 	env := data.NewEnv(nil)
 // 	teste(t, env, "(def! foo (fn* (n) (if (= n 0) 0 (bar (- n 1)))))", "")
 // 	teste(t, env, "(def! bar (fn* (n) (if (= n 0) 0 (foo (- n 1)))))", "")
 // 	teste(t, env, "(foo 10000)", "0")
 // }
+
+func TestRead(t *testing.T) {
+	// test(t, `(read "(1 2 (3 4) nil)")`, "(1 2 (3 4) nil)")
+	// test(t, `(read "(+ 2 3)")`, "(+ 2 3)")
+	// test(t, `(read "7 ;; comment")`, "7")
+	// test(t, `(read ";; comment")`, "")
+}
+
+func TestEval(t *testing.T) {
+	test(t, "(eval 4)", "4")
+	test(t, "(eval (+ 4 4))", "8")
+	test(t, `(eval (read "(+ 2 3)"))`, "5")
+}
 
 func test(t *testing.T, i string, e string) {
 	teste(t, data.NewEnv(nil), i, e)
@@ -470,9 +485,9 @@ func teste(t *testing.T, env data.Env, i string, e string) {
 	n := p.Parse(r)
 	m := v.Eval(n)
 	a := w.Print(m)
-	for _, err := range v.Errors() {
-		w.PrintError(err)
-	}
+	//for _, err := range v.Errors() {
+	//fmt.Print(w.PrintError(err))
+	//}
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)
 	}
