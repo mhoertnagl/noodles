@@ -20,7 +20,7 @@ type reader struct {
 	pos    int
 }
 
-// New creates a new Reader instance.
+// NewReader creates a new Reader instance.
 func NewReader() Reader {
 	r := &reader{}
 	pat := buildPattern()
