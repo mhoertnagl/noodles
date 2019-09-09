@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/mhoertnagl/splis2/internal/data"
 	"github.com/mhoertnagl/splis2/internal/print"
@@ -106,11 +107,13 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 					env, n = e.evalIf(env, args)
 					continue
 				// TODO: TCO?
-				case "read":
-					return e.evalRead(env, args)
+				case "parse":
+					return e.evalParse(env, args)
 				// TODO: TCO?
 				case "eval":
 					return e.evalEval(env, args)
+				case "read-file":
+					return e.evalReadFile(env, args)
 				default:
 					if fun, ok := e.findCoreFun(sym.Name); ok {
 						args = e.evalSeq(env, args)
@@ -278,18 +281,34 @@ func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("[fn*] requires exactly 2 arguments.")
 	}
-	if ps, ok := ns[0].(*data.ListNode); ok {
-		params := make([]string, len(ps.Items))
-		for i, param := range ps.Items {
-			if p, ok2 := param.(*data.SymbolNode); ok2 {
-				params[i] = p.Name
-			} else {
-				return e.Error("Function parameter must be a symbol.")
-			}
+	switch ps := ns[0].(type) {
+	case *data.ListNode:
+		if params, ok2 := paramNames(ps.Items); ok2 {
+			return data.NewFuncNode(env, params, ns[1])
 		}
-		return data.NewFuncNode(env, params, ns[1])
+		return e.Error("Function parameter must be a symbol.")
+	case *data.VectorNode:
+		if params, ok2 := paramNames(ps.Items); ok2 {
+			return data.NewFuncNode(env, params, ns[1])
+		}
+		return e.Error("Function parameter must be a symbol.")
+	default:
+		return e.Error("First argument to [fn*] must be a list or vector.")
 	}
-	return e.Error("First argument to [fn*] must be a list.")
+}
+
+// paramNames assumes that all nodes in [ns] are symbol nodes and returns the
+// string list of the names of these symbols preserving order.
+func paramNames(ns []data.Node) ([]string, bool) {
+	params := make([]string, len(ns))
+	for i, n := range ns {
+		if p, ok := n.(*data.SymbolNode); ok {
+			params[i] = p.Name
+		} else {
+			return nil, false
+		}
+	}
+	return params, true
 }
 
 // evalDo evaluates a list of items and returns the final evaluated result.
@@ -358,26 +377,46 @@ func (e *evaluator) isTrue(env data.Env, n data.Node) bool {
 	}
 }
 
-func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
+func (e *evaluator) evalParse(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
-		return e.Error("[read] requires exactly 1 argument.")
+		return e.Error("[parse] requires exactly 1 argument.")
 	}
-	if s, ok := ns[0].(string); ok {
+	n := e.EvalEnv(env, ns[0])
+	if s, ok := n.(string); ok {
 		e.reader.Load(s)
 		return e.parser.Parse(e.reader)
 	}
-	return e.Error("[read] argument must be a string.")
+	return e.Error("[parse] argument must be a string.")
 }
 
 // evalEval evaluates the first argument twice. This is useful in combination
-// with [read] or [quote]. For instance consider (eval (read "(+ 1 1)")). The
+// with [parse] or [quote]. For instance consider (eval (read "(+ 1 1)")). The
 // evaluation of the argument yields (eval (+ 1 1)) and evaluation again gives
 // 2 as expected. On the other hand an expression like (eval (+ 1 1)) where the
 // argument can be evaluated at once is equivalent to (+ 1 1).
+// Evaluates the node in the local environment.
 func (e *evaluator) evalEval(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[eval] requires exactly 1 argument.")
 	}
 	n := e.EvalEnv(env, ns[0])
 	return e.EvalEnv(env, n)
+}
+
+// evalReadFile reads the contents of a file into a string and returns the
+// result. The only argument to this function is the file path string. Returns
+// an error if the file could not be found or read.
+func (e *evaluator) evalReadFile(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[read-file] requires exactly 1 argument.")
+	}
+	n := e.EvalEnv(env, ns[0])
+	if s, ok := n.(string); ok {
+		f, err := ioutil.ReadFile(s)
+		if err != nil {
+			return e.Error("[read-file] %s", err)
+		}
+		return string(f)
+	}
+	return e.Error("[read-file] argument must be a string.")
 }

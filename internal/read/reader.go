@@ -2,6 +2,7 @@ package read
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 )
 
@@ -30,8 +31,10 @@ func NewReader() Reader {
 
 func (r *reader) Load(input string) {
 	mm := r.re.FindAllStringSubmatch(input, -1)
+	fmt.Print(mm)
 	r.tokens = make([]string, len(mm))
 	for i, m := range mm {
+		//fmt.Printf("%s\n", m[1])
 		r.tokens[i] = m[1]
 	}
 	r.pos = 0
@@ -55,19 +58,23 @@ func (r *reader) Pos() int {
 	return r.pos + 1
 }
 
+// https://regex101.com/r/Awgqpk/1
 func buildPattern() string {
 	var pat bytes.Buffer
-	pat.WriteString("[\\s,]*")                     // whitespace or commas
+	pat.WriteString(`[\s,]*`)                      // whitespace or commas
 	pat.WriteString("(")                           // Begin capture group
 	pat.WriteString("~@")                          // ~@
 	pat.WriteString("|")                           // or
 	pat.WriteString("[\\[\\]{}\\(\\)'`~^@]")       // any of [, ], {, }, (, ), ', `, ~, ^, @
 	pat.WriteString("|")                           // or
-	pat.WriteString("\"(?:\\.|[^\\\"])*\"?")       // strings with escape characters and an optional " at the end
+	pat.WriteString(`"[^"]*"?`)                    // strings with escape characters and an optional " at the end
 	pat.WriteString("|")                           // or
 	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]*") // symbols (including numbers)
 	pat.WriteString(")")                           // End capture group
 	pat.WriteString("|")                           // or
-	pat.WriteString(";.*")                         // comments
+	//pat.WriteString(`[\s,]+`)                      // whitespace or commas
+	//pat.WriteString("|")                           // or
+	pat.WriteString(`;[^\n]*\n`) // comments
 	return pat.String()
+	//return "[\\s,]*(~@|[\\[\\]{}\\(\\)'`~^@]|\"[^\"]*\"?|[^\\s\\[\\]{}\\('\"`,;\\)]*)|;[^\n]*"
 }

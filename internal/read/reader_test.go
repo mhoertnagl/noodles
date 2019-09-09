@@ -39,11 +39,34 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestComments(t *testing.T) {
-	testr(t, "; This is a comment", "")
+	testr(t, "; This is a comment.", "")
+}
+
+func TestComments2(t *testing.T) {
+	testr(t, "  ;; This is a comment.", "")
+}
+
+func TestComments3(t *testing.T) {
+	src := `
+    ;; Returns the negation of x.
+    1
+  `
+	testr(t, src, "1", "")
 }
 
 func TestList(t *testing.T) {
 	testr(t, "  (+ 1   2  )   ", "(", "+", "1", "2", ")", "")
+}
+
+func TestProg(t *testing.T) {
+	src := `
+  ;; Returns the negation of x.
+  (def! not (fn* [x]
+    (if x false true)))
+  `
+	testr(t, src,
+		"(", "def!", "not", "(", "fn*", "[", "x", "]",
+		"(", "if", "x", "false", "true", ")", ")", ")", "")
 }
 
 func testr(t *testing.T, i string, es ...string) {

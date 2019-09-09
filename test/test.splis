@@ -1,0 +1,3 @@
+;; Returns the negation of `x`.
+(def! not (fn* [x]
+  (if x false true)))
