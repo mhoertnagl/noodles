@@ -2,7 +2,6 @@ package read
 
 import (
 	"bytes"
-	"fmt"
 	"regexp"
 )
 
@@ -31,11 +30,11 @@ func NewReader() Reader {
 
 func (r *reader) Load(input string) {
 	mm := r.re.FindAllStringSubmatch(input, -1)
-	fmt.Print(mm)
-	r.tokens = make([]string, len(mm))
-	for i, m := range mm {
-		//fmt.Printf("%s\n", m[1])
-		r.tokens[i] = m[1]
+	r.tokens = []string{}
+	for _, m := range mm {
+		if m[1] != "" {
+			r.tokens = append(r.tokens, m[1])
+		}
 	}
 	r.pos = 0
 }
@@ -69,12 +68,9 @@ func buildPattern() string {
 	pat.WriteString("|")                           // or
 	pat.WriteString(`"[^"]*"?`)                    // strings with escape characters and an optional " at the end
 	pat.WriteString("|")                           // or
-	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]*") // symbols (including numbers)
+	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]+") // symbols (including numbers)
 	pat.WriteString(")")                           // End capture group
 	pat.WriteString("|")                           // or
-	//pat.WriteString(`[\s,]+`)                      // whitespace or commas
-	//pat.WriteString("|")                           // or
-	pat.WriteString(`;[^\n]*\n`) // comments
+	pat.WriteString(";[^\n]*(?:$|\n)")             // comments
 	return pat.String()
-	//return "[\\s,]*(~@|[\\[\\]{}\\(\\)'`~^@]|\"[^\"]*\"?|[^\\s\\[\\]{}\\('\"`,;\\)]*)|;[^\n]*"
 }
