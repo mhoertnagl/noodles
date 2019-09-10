@@ -40,6 +40,9 @@ func NewEvaluator(env data.Env) Evaluator {
 		printer: print.NewPrinter(),
 	}
 	InitCore(e)
+	// TODO: Import prelude.
+	// TODO: partial evaluation.
+	// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
 	return e
 }
 

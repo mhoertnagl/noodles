@@ -7,10 +7,23 @@ import (
 )
 
 func InitCore(e Evaluator) {
+	e.AddCoreFun("nil?", eval1n("nil?", isNil))
 	e.AddCoreFun("list", list)
-	e.AddCoreFun("list?", isList)
+	e.AddCoreFun("list?", eval1n("list?", isList))
 	e.AddCoreFun("count", count)
-	e.AddCoreFun("empty?", isEmpty)
+	e.AddCoreFun("empty?", eval1n("empty?", isEmpty))
+	// TODO: (vector )
+	// TODO: (vector? )
+	// TODO: (dict? )
+	// TODO: (dict )
+	// TODO: (cons/:: <elem> <list/vector>)
+	// TODO: (head <list/vector>)
+	// TODO: (tail <list/vector>)
+	// TODO: (join <list/vector> <list/vector>)
+	// TODO: (join <string> <string>)
+	// TODO: (join <dict> <dict>)
+	// TODO: (print ...)
+	// TODO: (... (x1 x2 x3 ...)) -> x1 x2 x3?
 	e.AddCoreFun("+", evalxf("+", sum))
 	e.AddCoreFun("-", eval12f("-", neg, diff))
 	e.AddCoreFun("*", evalxf("*", prod))
@@ -34,15 +47,16 @@ func gt(a, b float64) data.Node { return a > b }
 func le(a, b float64) data.Node { return a <= b }
 func ge(a, b float64) data.Node { return a >= b }
 
+func isNil(e Evaluator, env data.Env, arg data.Node) data.Node {
+	return data.IsNil(arg)
+}
+
 func list(e Evaluator, env data.Env, args []data.Node) data.Node {
 	return data.NewList(args)
 }
 
-func isList(e Evaluator, env data.Env, args []data.Node) data.Node {
-	if len(args) != 1 {
-		return e.Error("[list?] expects 1 argument.")
-	}
-	return data.IsList(args[0])
+func isList(e Evaluator, env data.Env, arg data.Node) data.Node {
+	return data.IsList(arg)
 }
 
 func count(e Evaluator, env data.Env, args []data.Node) data.Node {
@@ -61,11 +75,8 @@ func count(e Evaluator, env data.Env, args []data.Node) data.Node {
 	}
 }
 
-func isEmpty(e Evaluator, env data.Env, args []data.Node) data.Node {
-	if len(args) != 1 {
-		return e.Error("[empty?] expects 1 argument.")
-	}
-	switch x := args[0].(type) {
+func isEmpty(e Evaluator, env data.Env, arg data.Node) data.Node {
+	switch x := arg.(type) {
 	case *data.ListNode:
 		return len(x.Items) == 0
 	case *data.VectorNode:
@@ -129,6 +140,16 @@ func eqHashMap(e Evaluator, env data.Env, as, bs data.Map) data.Node {
 		}
 	}
 	return true
+}
+
+func eval1n(name string, f func(Evaluator, data.Env, data.Node) data.Node) CoreFun {
+	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
+		switch len(args) {
+		case 1:
+			return f(e, env, args[0])
+		}
+		return e.Error("[%s] expects 1 arguments.", name)
+	}
 }
 
 func evalxf(name string, f func(float64, float64) float64) CoreFun {

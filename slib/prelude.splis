@@ -1,3 +1,25 @@
+;; TODO: (println ...)
+
+;; Function definitions.
+(def! fun (fn* [name args body]
+  (def! name (fn* args body))))
+
 ;; Returns the negation of `x`.
-(def! not (fn* [x]
-  (if x false true)))
+(fun not [x] (if x false true))
+; not(x) = if x then false else true end
+;; (def! not (fn* [x]
+;;  (if x false true)))
+
+;; Maps a function to each element of a list.
+; (fun map [f xs]
+;   (if (empty? xs)
+;     xs ; Will preserve the type of the sequence.
+;     (cons (f (head xs)) (map f (tail xs)))))
+
+; fun map(f xs)
+;   if (empty? xs) then
+;     ()
+;   else
+;     f(head(xs)) :: map(f tail(xs))
+;   end
+; end
