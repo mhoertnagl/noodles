@@ -16,7 +16,8 @@ func InitCore(e Evaluator) {
 	// TODO: (vector? )
 	// TODO: (dict? )
 	// TODO: (dict )
-	// TODO: (cons/:: <elem> <list/vector>)
+	e.AddCoreFun("::", cons)
+	e.AddCoreFun(":::", concat)
 	// TODO: (head <list/vector>)
 	// TODO: (tail <list/vector>)
 	// TODO: (join <list/vector> <list/vector>)
@@ -87,6 +88,87 @@ func isEmpty(e Evaluator, env data.Env, arg data.Node) data.Node {
 		return e.Error("[%s] cannot be an argument to [empty?].", "")
 	}
 }
+
+func cons(e Evaluator, env data.Env, args []data.Node) data.Node {
+	if len(args) != 2 {
+		return e.Error("[cons] expects 2 arguments.")
+	}
+	switch x := args[1].(type) {
+	case *data.ListNode:
+		ns := cons2(args[0], x.Items)
+		return data.NewList(ns)
+	// case *data.VectorNode:
+	// 	ns := cons2(args[0], x.Items)
+	// 	return data.NewVector(ns)
+	default:
+		return e.Error("Second argument to [cons] must be a list or vector.")
+	}
+}
+
+func cons2(hd data.Node, tl []data.Node) []data.Node {
+	ns := make([]data.Node, len(tl)+1)
+	ns[0] = hd
+	for i, a := range tl {
+		ns[i+1] = a
+	}
+	return ns
+}
+
+func concat(e Evaluator, env data.Env, args []data.Node) data.Node {
+	ns := []data.Node{}
+	for _, arg := range args {
+		switch x := arg.(type) {
+		case *data.ListNode:
+			ns = append(ns, x.Items...)
+		// case *data.VectorNode:
+		// 	ns = append(ns, x.Items...)
+		default:
+			return e.Error("Second argument to [cons] must be a list or vector.")
+		}
+	}
+	return data.NewList(ns)
+}
+
+// func head(e Evaluator, env data.Env, args []data.Node) data.Node {
+// 	if len(args) != 1 {
+// 		return e.Error("[head] expects 1 argument.")
+// 	}
+// 	switch x := args[0].(type) {
+// 	case *data.ListNode:
+// 		if len(x.Items) == 0 {
+// 			return e.Error("Argument to [head] cannot be the empty list.")
+// 		}
+// 		return x.Items[0]
+// 	case *data.VectorNode:
+// 		if len(x.Items) == 0 {
+// 			return e.Error("Argument to [head] cannot be the empty vector.")
+// 		}
+// 		return x.Items[0]
+// 	default:
+// 		return e.Error("Argument to [head] must be a list or vector.")
+// 	}
+// }
+//
+// func tail(e Evaluator, env data.Env, args []data.Node) data.Node {
+// 	if len(args) != 1 {
+// 		return e.Error("[tail] expects 1 argument.")
+// 	}
+// 	switch x := args[0].(type) {
+// 	case *data.ListNode:
+// 		len := len(x.Items)
+// 		if len == 0 {
+// 			return e.Error("Argument to [tail] cannot be the empty list.")
+// 		}
+// 		return x.Items[1:len]
+// 	// case *data.VectorNode:
+// 	// 	if len(x.Items) == 0 {
+// 	// 		return e.Error("Argument to [tail] cannot be the empty vector.")
+// 	// 	}
+// 	// 	return x.Items[0]
+// 	default:
+// 		return e.Error("Argument to [tail] must be a list or vector.")
+// 	}
+// }
 
 func eq(e Evaluator, env data.Env, args []data.Node) data.Node {
 	if len(args) != 2 {

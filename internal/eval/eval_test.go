@@ -523,6 +523,44 @@ func TestExecuteFile(t *testing.T) {
 	teste(t, env, "(not false)", "true")
 }
 
+func TestCons(t *testing.T) {
+	test(t, "(:: 42 (list))", "(42)")
+	test(t, "(:: 1 (list 2 3 4))", "(1 2 3 4)")
+	test(t, "(:: (list 1 2) (list))", "((1 2))")
+	test(t, "(:: (list 1 2) (list (list 3 4)))", "((1 2) (3 4))")
+}
+
+func TestInvalidCons(t *testing.T) {
+	test(t, "(::)", "  [ERROR]  ")
+	test(t, "(:: 1 (2 3 4) 5)", "  [ERROR]  ")
+	test(t, "(:: (1 2) 2)", "  [ERROR]  ")
+}
+
+func TestConcat(t *testing.T) {
+	test(t, "(:::)", "()")
+	test(t, "(::: (list))", "()")
+	test(t, "(::: (list) (list))", "()")
+	test(t, "(::: (list) (list) (list))", "()")
+	test(t, "(::: (list 1 2) (list))", "(1 2)")
+	test(t, "(::: (list) (list 3 4))", "(3 4)")
+	test(t, "(::: (list 1 2) (list 3 4))", "(1 2 3 4)")
+	test(t, "(::: (list 1 2) (list 3 4) (list 5 6))", "(1 2 3 4 5 6)")
+	test(t, "(::: (list (list 1 2)) (list (list 3 4)))", "((1 2) (3 4))")
+}
+
+func TestConcatEnv(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(def! a (list 1 2))", "(1 2)")
+	teste(t, env, "(def! b (list 3 4))", "(3 4)")
+	teste(t, env, "(::: a b (list 5 6))", "(1 2 3 4 5 6)")
+}
+
+func TestInvalidConcat(t *testing.T) {
+	test(t, "(::: 2)", "  [ERROR]  ")
+	test(t, "(::: (1 2) 2)", "  [ERROR]  ")
+	test(t, "(::: 1 (2 3 4) 5)", "  [ERROR]  ")
+}
+
 func test(t *testing.T, i string, e string) {
 	teste(t, data.NewEnv(nil), i, e)
 }
