@@ -117,6 +117,8 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 					return e.evalEval(env, args)
 				case "read-file":
 					return e.evalReadFile(env, args)
+				case "quote":
+					return e.evalQuote(env, args)
 				default:
 					if fun, ok := e.findCoreFun(sym.Name); ok {
 						args = e.evalSeq(env, args)
@@ -380,6 +382,7 @@ func (e *evaluator) isTrue(env data.Env, n data.Node) bool {
 	}
 }
 
+// evalParse parses the string input and returns the parsed AST.
 func (e *evaluator) evalParse(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[parse] requires exactly 1 argument.")
@@ -422,4 +425,12 @@ func (e *evaluator) evalReadFile(env data.Env, ns []data.Node) data.Node {
 		return string(f)
 	}
 	return e.Error("[read-file] argument must be a string.")
+}
+
+// evalQuote returns its only argument unevaluated.
+func (e *evaluator) evalQuote(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[quote] requires exactly 1 argument.")
+	}
+	return ns[0]
 }

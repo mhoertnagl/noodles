@@ -226,12 +226,41 @@ func TestEmpty(t *testing.T) {
 	test(t, `(empty? {"a" 1 "b" 2 "c" 3 "d" 4})`, "false")
 }
 
-func TestInvalidCEmpty(t *testing.T) {
+func TestInvalidEmpty(t *testing.T) {
 	test(t, "(empty?)", "  [ERROR]  ")
 	test(t, "(empty? nil)", "  [ERROR]  ")
 	test(t, "(empty? 0)", "  [ERROR]  ")
 	test(t, `(empty? "a")`, "  [ERROR]  ")
 	test(t, `(empty? () ())`, "  [ERROR]  ")
+}
+
+// TODO: rawstr -> escape sequenzen werden nicht übersetzt
+// TODO: str    -> escape sequencen werden übersetzt
+
+func TestStr(t *testing.T) {
+	test(t, `(str)`, `""`)
+	test(t, `(str "")`, `""`)
+	test(t, `(str "abc")`, `"abc"`)
+	test(t, `(str "\"")`, `"""`)
+	test(t, `(str 1 "abc" 3)`, `"1abc3"`)
+	test(t, `(str "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
+	test(t, `(str "abc\ndef\nghi")`, `"`+"abc\ndef\nghi"+`"`)
+	test(t, `(str "abc\\def\\ghi")`, `"abc\def\ghi"`)
+	test(t, `(str (list 1 2 "abc" "\"") "def")`, `"(1 2 abc ")def"`)
+	test(t, `(str (list))`, `"()"`)
+}
+
+func TestRawstr(t *testing.T) {
+	test(t, `(rawstr)`, `""`)
+	test(t, `(rawstr "")`, `""`)
+	test(t, `(rawstr "abc")`, `"abc"`)
+	test(t, `(rawstr "\"")`, `"\""`)
+	test(t, `(rawstr 1 "abc" 3)`, `"1abc3"`)
+	test(t, `(rawstr "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
+	test(t, `(rawstr "abc\ndef\nghi")`, `"abc\ndef\nghi"`)
+	test(t, `(rawstr "abc\\def\\ghi")`, `"abc\\def\\ghi"`)
+	test(t, `(rawstr (list 1 2 "abc" "\"") "def")`, `"(1 2 abc \")def"`)
+	test(t, `(rawstr (list))`, `"()"`)
 }
 
 func TestLT(t *testing.T) {
@@ -559,6 +588,60 @@ func TestInvalidConcat(t *testing.T) {
 	test(t, "(::: 2)", "  [ERROR]  ")
 	test(t, "(::: (1 2) 2)", "  [ERROR]  ")
 	test(t, "(::: 1 (2 3 4) 5)", "  [ERROR]  ")
+}
+
+func TestQuote(t *testing.T) {
+	test(t, "(quote 42)", "42")
+	test(t, "(quote (1 2 3))", "(1 2 3)")
+	test(t, "(quote (1 (2 (3))))", "(1 (2 (3)))")
+	test(t, "(quote [6 5 4])", "[6 5 4]")
+}
+
+func TestQuote2(t *testing.T) {
+	test(t, "(= (quote abc) (quote abc))", "true")
+	test(t, "(= (quote abc) (quote abcd))", "false")
+	test(t, `(= (quote abc) "abc")`, "false")
+	test(t, `(= "abc" (quote abc))`, "false")
+	test(t, `(= "abc" (str (quote abc)))`, "true")
+	test(t, "(= (quote abc) nil)", "false")
+	test(t, "(= nil (quote abc))", "false")
+}
+
+func TestInvalidQuote(t *testing.T) {
+	test(t, "(quote)", "  [ERROR]  ")
+	test(t, "(quote 1 2)", "  [ERROR]  ")
+}
+
+func TestQuasiquote(t *testing.T) {
+	test(t, "(quasiquote 42)", "42")
+	test(t, "(quasiquote (1 2 3))", "(1 2 3)")
+	test(t, "(quasiquote (1 (2 (3))))", "(1 (2 (3)))")
+	test(t, "(quasiquote [6 5 4])", "[6 5 4]")
+	test(t, "(quasiquote (nil))", "(nil)")
+	test(t, "(quasiquote (unquote 7))", "7")
+}
+
+func TestQuasiquote2(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(def! a 8)", "8")
+	teste(t, env, "(quasiquote a)", "a")
+	teste(t, env, "(quasiquote (unquote a))", "8")
+	teste(t, env, "(quasiquote (1 a 3))", "(1 a 3)")
+	teste(t, env, "(quasiquote (1 (unquote a) 3))", "(1 8 3)")
+
+	teste(t, env, `(def! b (quote (1 "b" "d")))`, `(1 "b" "d")`)
+	teste(t, env, "(quasiquote (1 b 3))", "(1 b 3)")
+	teste(t, env, `(quasiquote (1 (unquote b) 3))`, `(1 (1 "b" "d") 3)`)
+	teste(t, env, "(quasiquote ((unquote 1) (unquote 2)))", "(1 2)")
+
+	teste(t, env, `(def! c (quote (1 "b" "d")))`, `(1 "b" "d")`)
+	teste(t, env, `(quasiquote (1 c 3))`, `(1 c 3)`)
+	teste(t, env, `(quasiquote (1 (splice-unquote c) 3))`, `(1 1 "b" "d" 3)`)
+}
+
+func TestInvalidQuasiquote(t *testing.T) {
+	test(t, "(quasiquote)", "  [ERROR]  ")
+	test(t, "(quasiquote 1 2)", "  [ERROR]  ")
 }
 
 func test(t *testing.T, i string, e string) {
