@@ -119,6 +119,8 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 					return e.evalReadFile(env, args)
 				case "quote":
 					return e.evalQuote(env, args)
+				case "quasiquote":
+					return e.evalQuasiquote(env, args)
 				default:
 					if fun, ok := e.findCoreFun(sym.Name); ok {
 						args = e.evalSeq(env, args)
@@ -431,6 +433,13 @@ func (e *evaluator) evalReadFile(env data.Env, ns []data.Node) data.Node {
 func (e *evaluator) evalQuote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quote] requires exactly 1 argument.")
+	}
+	return ns[0]
+}
+
+func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[quasiquote] requires exactly 1 argument.")
 	}
 	return ns[0]
 }

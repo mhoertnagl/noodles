@@ -432,6 +432,7 @@ func TestFun(t *testing.T) {
 	test(t, "(((fn* (a) (fn* (b) (+ a b))) 5) 7)", "12")
 	test(t, "((fn* [x] (if x false true)) true)", "false")
 	test(t, "((fn* [x] (if x false true)) false)", "true")
+	test(t, "((fn* [f x] (f x)) (fn* [a] (+ 1 a)) 7)", "8")
 }
 
 func TestFun2(t *testing.T) {
@@ -637,6 +638,12 @@ func TestQuasiquote2(t *testing.T) {
 	teste(t, env, `(def! c (quote (1 "b" "d")))`, `(1 "b" "d")`)
 	teste(t, env, `(quasiquote (1 c 3))`, `(1 c 3)`)
 	teste(t, env, `(quasiquote (1 (splice-unquote c) 3))`, `(1 1 "b" "d" 3)`)
+}
+
+func TestQuasiquoteQuine(t *testing.T) {
+	test(t,
+		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))",
+		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))")
 }
 
 func TestInvalidQuasiquote(t *testing.T) {

@@ -24,7 +24,6 @@ func InitCore(e Evaluator) {
 	// TODO: (join <string> <string>)
 	// TODO: (join <dict> <dict>)
 	// TODO: (print ...)
-	// TODO: (... (x1 x2 x3 ...)) -> x1 x2 x3?
 	e.AddCoreFun("+", evalxf("+", sum))
 	e.AddCoreFun("-", eval12f("-", neg, diff))
 	e.AddCoreFun("*", evalxf("*", prod))
