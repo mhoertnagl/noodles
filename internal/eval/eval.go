@@ -104,10 +104,10 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 				case "fn*":
 					return e.evalFunDef(env, args)
 				case "do":
-					env, n = e.evalDo(env, args)
+					n = e.evalDo(env, args)
 					continue
 				case "if":
-					env, n = e.evalIf(env, args)
+					n = e.evalIf(env, args)
 					continue
 				// TODO: TCO?
 				case "parse":
@@ -120,7 +120,8 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 				case "quote":
 					return e.evalQuote(env, args)
 				case "quasiquote":
-					return e.evalQuasiquote(env, args)
+					n = e.evalQuasiquote(env, args)
+					continue
 				default:
 					if fun, ok := e.findCoreFun(sym.Name); ok {
 						args = e.evalSeq(env, args)
@@ -320,40 +321,40 @@ func paramNames(ns []data.Node) ([]string, bool) {
 
 // evalDo evaluates a list of items and returns the final evaluated result.
 // Returns nil when the list is empty.
-func (e *evaluator) evalDo(env data.Env, ns []data.Node) (data.Env, data.Node) {
+func (e *evaluator) evalDo(env data.Env, ns []data.Node) data.Node {
 	z := len(ns) - 1
 	if z <= 0 {
-		return env, nil
+		return nil
 	}
 	for _, n := range ns[:z] {
 		e.EvalEnv(env, n)
 	}
 	// Return the last item unevaluated for TCO.
-	return env, ns[z]
+	return ns[z]
 }
 
 // evalIf evaluates its first argument. If it is true?? evaluates the second
 // argument else evaluates the third argument. If the first argument is not true
 // and no third argument is given then it returns nil.
-func (e *evaluator) evalIf(env data.Env, ns []data.Node) (data.Env, data.Node) {
+func (e *evaluator) evalIf(env data.Env, ns []data.Node) data.Node {
 	len := len(ns)
 	if len != 2 && len != 3 {
-		return env, e.Error("[if] requires either 2 or 3 arguments.")
+		return e.Error("[if] requires either 2 or 3 arguments.")
 	}
 	// Evaluate the condition.
 	cond := e.EvalEnv(env, ns[0])
 	// Return immediatly if the condition evaluated to an error.
 	if data.IsError(cond) {
-		return env, cond
+		return cond
 	}
 	if e.isTrue(env, cond) {
 		// Return unevaluated true branch for TCO.
-		return env, ns[1]
+		return ns[1]
 	} else if len == 3 {
 		// Return unevaluated false branch for TCO.
-		return env, ns[2]
+		return ns[2]
 	}
-	return env, nil
+	return nil
 }
 
 // TODO: Create a core function. We need it for (true? ...) and (false? ...)
@@ -434,6 +435,7 @@ func (e *evaluator) evalQuote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quote] requires exactly 1 argument.")
 	}
+	//e.debug("QUOTE: %s\n", env, ns[0])
 	return ns[0]
 }
 
@@ -441,5 +443,22 @@ func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quasiquote] requires exactly 1 argument.")
 	}
-	return ns[0]
+	switch x := ns[0].(type) {
+	case *data.ListNode:
+		if len(x.Items) == 2 {
+			switch y := x.Items[0].(type) {
+			case *data.SymbolNode:
+				switch y.Name {
+				case "unquote":
+					// Return the only argument of [unquote] as-is for further evaluation.
+					e.debug("UNQUOTE: %s\n", env, x.Items[1])
+					return x.Items[1]
+				}
+			}
+			n := e.evalQuasiquote(env, x.Items)
+			return data.NewList2(data.NewSymbol("quote"), n)
+		}
+		return data.NewList2(data.NewSymbol("quote"), x)
+	}
+	return data.NewList2(data.NewSymbol("quote"), ns[0])
 }

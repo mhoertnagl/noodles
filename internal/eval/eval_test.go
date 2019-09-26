@@ -614,7 +614,8 @@ func TestInvalidQuote(t *testing.T) {
 }
 
 func TestQuasiquote(t *testing.T) {
-	test(t, "(quasiquote 42)", "42")
+	test(t, "(quasiquote ())", "()")
+	test(t, "(quasiquote 43)", "43")
 	test(t, "(quasiquote (1 2 3))", "(1 2 3)")
 	test(t, "(quasiquote (1 (2 (3))))", "(1 (2 (3)))")
 	test(t, "(quasiquote [6 5 4])", "[6 5 4]")
