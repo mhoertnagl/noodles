@@ -68,6 +68,18 @@ func NewList2(items ...Node) *ListNode {
 	return &ListNode{Items: items}
 }
 
+func Quote(n Node) *ListNode {
+	return NewList2(NewSymbol("quote"), n)
+}
+
+func Cons(n Node, m Node) *ListNode {
+	return NewList2(NewSymbol("::"), n, m)
+}
+
+func Concat(n Node, m Node) *ListNode {
+	return NewList2(NewSymbol(":::"), n, m)
+}
+
 type VectorNode struct {
 	Items []Node
 }

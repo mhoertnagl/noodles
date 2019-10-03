@@ -615,6 +615,7 @@ func TestInvalidQuote(t *testing.T) {
 
 func TestQuasiquote(t *testing.T) {
 	test(t, "(quasiquote ())", "()")
+	test(t, "(quasiquote (()))", "(())")
 	test(t, "(quasiquote 43)", "43")
 	test(t, "(quasiquote (1 2 3))", "(1 2 3)")
 	test(t, "(quasiquote (1 (2 (3))))", "(1 (2 (3)))")
@@ -641,12 +642,11 @@ func TestQuasiquote2(t *testing.T) {
 	teste(t, env, `(quasiquote (1 (splice-unquote c) 3))`, `(1 1 "b" "d" 3)`)
 }
 
-//
-// func TestQuasiquoteQuine(t *testing.T) {
-// 	test(t,
-// 		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))",
-// 		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))")
-// }
+func TestQuasiquoteQuine(t *testing.T) {
+	test(t,
+		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))",
+		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))")
+}
 
 func TestInvalidQuasiquote(t *testing.T) {
 	test(t, "(quasiquote)", "  [ERROR]  ")

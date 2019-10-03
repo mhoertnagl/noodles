@@ -428,7 +428,6 @@ func (e *evaluator) evalQuote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quote] requires exactly 1 argument.")
 	}
-	//e.debug("QUOTE: %s\n", env, ns[0])
 	return ns[0]
 }
 
@@ -441,44 +440,35 @@ func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
 
 func (e *evaluator) quasiquote1(env data.Env, n data.Node) data.Node {
 	if x, ok := n.(*data.ListNode); ok {
-		fmt.Printf("x = %v\n", e.printer.Print(x))
 		if len(x.Items) == 0 {
 			return data.NewList2(data.NewSymbol("quote"), x)
 		}
-		if len(x.Items) == 2 {
-			return e.quasiquotePair(env, x)
-			// m := e.evalQuasiquote(env, x.Items)
-			// return data.NewList2(data.NewSymbol("quote"), m)
-		}
-		// If the list is not of length 2 quote the element.
-		return data.NewList2(
-			data.NewSymbol("::"),
-			e.quasiquote1(env, x.Items[0]),
-			e.quasiquote1(env, data.NewList(x.Items[1:])),
-		)
-		//return data.NewList2(data.NewSymbol("quote"), x)
+		return e.quasiquoteList(env, x)
 	}
 	// If it is not a list quote the element.
-	return data.NewList2(data.NewSymbol("quote"), n)
+	return data.Quote(n)
 }
 
-func (e *evaluator) quasiquotePair(env data.Env, n *data.ListNode) data.Node {
-	if y, ok := n.Items[0].(*data.SymbolNode); ok {
-		switch y.Name {
-		case "unquote":
-			// Return the only argument of [unquote] as-is for further evaluation.
-			// e.debug("UNQUOTE: %s\n", env, x.Items[1])
+func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
+	switch y := n.Items[0].(type) {
+	case *data.SymbolNode:
+		if y.Name == "unquote" {
 			return n.Items[1]
-		case "splice-unquote":
-			return data.NewList2(
-				data.NewSymbol(":::"),
-				n.Items[1],
-				e.quasiquote1(env, data.NewList(n.Items[1:])),
-			)
+		}
+	case *data.ListNode:
+		if len(y.Items) == 0 {
+			return data.Quote(y)
+		}
+		if z, ok := y.Items[0].(*data.SymbolNode); ok {
+			if z.Name == "splice-unquote" {
+				return data.Concat(
+					y.Items[1],
+					e.quasiquote1(env, data.NewList(n.Items[1:])),
+				)
+			}
 		}
 	}
-	return data.NewList2(
-		data.NewSymbol("::"),
+	return data.Cons(
 		e.quasiquote1(env, n.Items[0]),
 		e.quasiquote1(env, data.NewList(n.Items[1:])),
 	)
