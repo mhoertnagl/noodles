@@ -72,13 +72,6 @@ func (e *evaluator) AddCoreFun(name string, fun CoreFun) {
 	e.core[name] = fun
 }
 
-func (e *evaluator) findCoreFun(name string) (CoreFun, bool) {
-	if fun, ok := e.core[name]; ok {
-		return fun, true
-	}
-	return nil, false
-}
-
 // TODO: Can be private.
 func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 	for {
@@ -123,7 +116,7 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 					n = e.evalQuasiquote(env, args)
 					continue
 				default:
-					if fun, ok := e.findCoreFun(sym.Name); ok {
+					if fun, ok := e.core[sym.Name]; ok {
 						args = e.evalSeq(env, args)
 						return fun(e, env, args)
 					}
@@ -167,7 +160,7 @@ func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
 	// TODO: core functions should be defined in the environment.
 	// First check if the symbol defines a core function. Return the symbol
 	// unchanged if this is true.
-	if _, ok1 := e.findCoreFun(n.Name); ok1 {
+	if _, ok1 := e.core[n.Name]; ok1 {
 		return n
 	}
 	// See if a value is bound to the symbol is defined in the environment.
@@ -443,22 +436,50 @@ func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quasiquote] requires exactly 1 argument.")
 	}
-	switch x := ns[0].(type) {
-	case *data.ListNode:
-		if len(x.Items) == 2 {
-			switch y := x.Items[0].(type) {
-			case *data.SymbolNode:
-				switch y.Name {
-				case "unquote":
-					// Return the only argument of [unquote] as-is for further evaluation.
-					e.debug("UNQUOTE: %s\n", env, x.Items[1])
-					return x.Items[1]
-				}
-			}
-			n := e.evalQuasiquote(env, x.Items)
-			return data.NewList2(data.NewSymbol("quote"), n)
+	return e.quasiquote1(env, ns[0])
+}
+
+func (e *evaluator) quasiquote1(env data.Env, n data.Node) data.Node {
+	if x, ok := n.(*data.ListNode); ok {
+		fmt.Printf("x = %v\n", e.printer.Print(x))
+		if len(x.Items) == 0 {
+			return data.NewList2(data.NewSymbol("quote"), x)
 		}
-		return data.NewList2(data.NewSymbol("quote"), x)
+		if len(x.Items) == 2 {
+			return e.quasiquotePair(env, x)
+			// m := e.evalQuasiquote(env, x.Items)
+			// return data.NewList2(data.NewSymbol("quote"), m)
+		}
+		// If the list is not of length 2 quote the element.
+		return data.NewList2(
+			data.NewSymbol("::"),
+			e.quasiquote1(env, x.Items[0]),
+			e.quasiquote1(env, data.NewList(x.Items[1:])),
+		)
+		//return data.NewList2(data.NewSymbol("quote"), x)
 	}
-	return data.NewList2(data.NewSymbol("quote"), ns[0])
+	// If it is not a list quote the element.
+	return data.NewList2(data.NewSymbol("quote"), n)
+}
+
+func (e *evaluator) quasiquotePair(env data.Env, n *data.ListNode) data.Node {
+	if y, ok := n.Items[0].(*data.SymbolNode); ok {
+		switch y.Name {
+		case "unquote":
+			// Return the only argument of [unquote] as-is for further evaluation.
+			// e.debug("UNQUOTE: %s\n", env, x.Items[1])
+			return n.Items[1]
+		case "splice-unquote":
+			return data.NewList2(
+				data.NewSymbol(":::"),
+				n.Items[1],
+				e.quasiquote1(env, data.NewList(n.Items[1:])),
+			)
+		}
+	}
+	return data.NewList2(
+		data.NewSymbol("::"),
+		e.quasiquote1(env, n.Items[0]),
+		e.quasiquote1(env, data.NewList(n.Items[1:])),
+	)
 }
