@@ -42,6 +42,7 @@ func NewEvaluator(env data.Env) Evaluator {
 	// TODO: Import prelude.
 	// TODO: partial evaluation.
 	// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
+	// TODO: ' (quote) and ` (quasiquote)
 	return e
 }
 

@@ -60,7 +60,7 @@ func TestHashMap(t *testing.T) {
 	test(t, `{}`, `{}`)
 	test(t, `{"a" 1}`, `{"a" 1}`)
 	test(t, `{"a" 1 "b" 2}`, `{"a" 1 "b" 2}`)
-	// TODO: Support for atoms (beginning with a :)
+	// TODO: Support for keywords (beginning with a :)
 	test(t, `{:a 1}`, `{:a 1}`)
 }
 
