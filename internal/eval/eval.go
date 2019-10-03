@@ -254,6 +254,7 @@ func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) 
 	case *data.VectorNode:
 		e.evalSeqBindings(sub, b.Items)
 	case *data.HashMapNode:
+		fmt.Printf("%v\n", b.Items)
 		e.evalHashMapBindings(sub, b.Items)
 	default:
 		return env, e.Error("Cannot [let*]-bind non-sequence.")
@@ -430,6 +431,12 @@ func (e *evaluator) evalQuote(env data.Env, ns []data.Node) data.Node {
 	return ns[0]
 }
 
+// evalQuasiquote is a quoting operations where one can specify unquoted or
+// splice-unquoted holes in the quoted expression.
+// An unquoted subexpression will be evaluated first and the result will
+// replace the original expression in the quoted expression.
+// A splice-unquoted list will be evaluated and the results will be spliced
+// into the quoted parent list.
 func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[quasiquote] requires exactly 1 argument.")
@@ -438,13 +445,10 @@ func (e *evaluator) evalQuasiquote(env data.Env, ns []data.Node) data.Node {
 }
 
 func (e *evaluator) quasiquote1(env data.Env, n data.Node) data.Node {
-	if x, ok := n.(*data.ListNode); ok {
-		if len(x.Items) == 0 {
-			return data.NewList2(data.NewSymbol("quote"), x)
-		}
+	if x, ok := n.(*data.ListNode); ok && len(x.Items) > 0 {
 		return e.quasiquoteList(env, x)
 	}
-	// If it is not a list quote the element.
+	// If it is not a list, quote the element.
 	return data.Quote(n)
 }
 
@@ -452,6 +456,7 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 	switch y := n.Items[0].(type) {
 	case *data.SymbolNode:
 		if y.Name == "unquote" {
+			// Return the element without an enclosing quote.
 			return n.Items[1]
 		}
 	case *data.ListNode:

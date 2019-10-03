@@ -56,6 +56,14 @@ func TestInvalidDiff(t *testing.T) {
 	test(t, "(- 1 1 1)", "  [ERROR]  ")
 }
 
+func TestHashMap(t *testing.T) {
+	test(t, `{}`, `{}`)
+	test(t, `{"a" 1}`, `{"a" 1}`)
+	test(t, `{"a" 1 "b" 2}`, `{"a" 1 "b" 2}`)
+	// TODO: Support for atoms (beginning with a :)
+	test(t, `{:a 1}`, `{:a 1}`)
+}
+
 func TestDef1(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(def! :a 1)", "1")
@@ -105,11 +113,7 @@ func TestLetVectorBinding(t *testing.T) {
 
 func TestLetHashMapBinding(t *testing.T) {
 	test(t, "(let* {:a 1} :a)", "1")
-	// test(t, "(let* [p (+ 2 3) q (+ 2 p)] (+ p q))", "12")
-	// test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
 }
-
-// TODO: Test HashMap let binding.
 
 // TODO: Test outer environment.
 
