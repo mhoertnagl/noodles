@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/mhoertnagl/splis2/internal/data"
 	"github.com/mhoertnagl/splis2/internal/eval"
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
@@ -19,7 +20,7 @@ func Start(in io.Reader, out io.Writer, args Args) {
 	scanner := bufio.NewScanner(in)
 	reader := read.NewReader()
 	parser := read.NewParser()
-	env := eval.NewEnv(nil)
+	env := data.NewEnv(nil)
 	eval := eval.NewEvaluator(env)
 	printer := print.NewPrinter()
 
@@ -32,7 +33,7 @@ func Start(in io.Reader, out io.Writer, args Args) {
 		input := scanner.Text()
 		reader.Load(input)
 		src := parser.Parse(reader)
-		errors := printer.PrintErrors(parser.Errors())
+		errors := printer.PrintErrors(parser.Errors()...)
 		fmt.Fprintf(out, "\n%s", errors)
 		res := eval.Eval(src)
 		output := printer.Print(res)

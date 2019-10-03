@@ -103,12 +103,19 @@ func TestLetVectorBinding(t *testing.T) {
 	test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
 }
 
+func TestLetHashMapBinding(t *testing.T) {
+	test(t, "(let* {:a 1} :a)", "1")
+	// test(t, "(let* [p (+ 2 3) q (+ 2 p)] (+ p q))", "12")
+	// test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
+}
+
 // TODO: Test HashMap let binding.
 
 // TODO: Test outer environment.
 
 func TestInvalidLet(t *testing.T) {
 	test(t, "(let*)", "  [ERROR]  ")
+	test(t, "(let* 1 2)", "  [ERROR]  ")
 	test(t, "(let* (:a 1))", "  [ERROR]  ")
 	test(t, "(let* (:a 1) :a :b)", "  [ERROR]  ")
 }

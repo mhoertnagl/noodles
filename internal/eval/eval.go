@@ -13,7 +13,6 @@ type CoreFun func(Evaluator, data.Env, []data.Node) data.Node
 
 type Evaluator interface {
 	Eval(node data.Node) data.Node
-	EvalEnv(env data.Env, n data.Node) data.Node
 	Error(format string, args ...interface{}) data.Node
 	Errors() []*data.ErrorNode
 	AddCoreFun(name string, fun CoreFun)
@@ -54,10 +53,6 @@ func (e *evaluator) debug(format string, env data.Env, args ...data.Node) {
 	fmt.Printf(format, strs...)
 }
 
-func (e *evaluator) Eval(node data.Node) data.Node {
-	return e.EvalEnv(e.env, node)
-}
-
 func (e *evaluator) Error(format string, args ...interface{}) data.Node {
 	err := data.NewError(fmt.Sprintf(format, args...))
 	e.err = append(e.err, err)
@@ -72,8 +67,11 @@ func (e *evaluator) AddCoreFun(name string, fun CoreFun) {
 	e.core[name] = fun
 }
 
-// TODO: Can be private.
-func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
+func (e *evaluator) Eval(node data.Node) data.Node {
+	return e.eval(e.env, node)
+}
+
+func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
 		switch {
 		case data.IsSymbol(n):
@@ -123,7 +121,7 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 				}
 			}
 
-			hd = e.EvalEnv(env, hd)
+			hd = e.eval(env, hd)
 
 			if fn, ok2 := hd.(*data.FuncNode); ok2 {
 				if len(fn.Pars) != len(args) {
@@ -134,7 +132,7 @@ func (e *evaluator) EvalEnv(env data.Env, n data.Node) data.Node {
 				// Evaluate and bind argurments to their parameters in the new function
 				// environment.
 				for i, par := range fn.Pars {
-					arg := e.EvalEnv(env, args[i])
+					arg := e.eval(env, args[i])
 					fn.Env.Set(par, arg)
 				}
 				env = fn.Env
@@ -192,8 +190,8 @@ func (e *evaluator) evalHashMap(env data.Env, n *data.HashMapNode) data.Node {
 	}
 	c := data.NewEmptyHashMap()
 	for key, val := range n.Items {
-		k := e.EvalEnv(env, key)
-		v := e.EvalEnv(env, val)
+		k := e.eval(env, key)
+		v := e.eval(env, val)
 		if sk, ok := k.(string); ok {
 			c.Items[sk] = v
 		} else {
@@ -208,7 +206,7 @@ func (e *evaluator) evalHashMap(env data.Env, n *data.HashMapNode) data.Node {
 func (e *evaluator) evalSeq(env data.Env, items []data.Node) []data.Node {
 	res := make([]data.Node, len(items))
 	for i, item := range items {
-		res[i] = e.EvalEnv(env, item)
+		res[i] = e.eval(env, item)
 	}
 	return res
 }
@@ -227,12 +225,12 @@ func (e *evaluator) evalDef(env data.Env, ns []data.Node) data.Node {
 // evalSet evaluates the name and the val argument and binds name to val in the
 // environment.
 func (e *evaluator) evalSet(env data.Env, name data.Node, val data.Node) data.Node {
-	v := e.EvalEnv(env, val)
+	v := e.eval(env, val)
 	if x, ok := name.(*data.SymbolNode); ok {
 		return env.Set(x.Name, v)
 	}
 	// TODO: Perhaps we can evaluate a node if it is not a symbol node.
-	// n := e.EvalEnv(env, name)
+	// n := e.eval(env, name)
 	// TODO: StringNode. We should append an obscure unicode character to the
 	// string to make it different from other symbols. Or we add "".
 	// This would make debugging easier.
@@ -271,6 +269,7 @@ func (e *evaluator) evalSeqBindings(env data.Env, b []data.Node) {
 }
 
 func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
+	fmt.Printf("%v\n", b)
 	for k, v := range b {
 		e.evalSet(env, k, v)
 	}
@@ -320,7 +319,7 @@ func (e *evaluator) evalDo(env data.Env, ns []data.Node) data.Node {
 		return nil
 	}
 	for _, n := range ns[:z] {
-		e.EvalEnv(env, n)
+		e.eval(env, n)
 	}
 	// Return the last item unevaluated for TCO.
 	return ns[z]
@@ -335,7 +334,7 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) data.Node {
 		return e.Error("[if] requires either 2 or 3 arguments.")
 	}
 	// Evaluate the condition.
-	cond := e.EvalEnv(env, ns[0])
+	cond := e.eval(env, ns[0])
 	// Return immediatly if the condition evaluated to an error.
 	if data.IsError(cond) {
 		return cond
@@ -383,7 +382,7 @@ func (e *evaluator) evalParse(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[parse] requires exactly 1 argument.")
 	}
-	n := e.EvalEnv(env, ns[0])
+	n := e.eval(env, ns[0])
 	if s, ok := n.(string); ok {
 		e.reader.Load(s)
 		return e.parser.Parse(e.reader)
@@ -401,8 +400,8 @@ func (e *evaluator) evalEval(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[eval] requires exactly 1 argument.")
 	}
-	n := e.EvalEnv(env, ns[0])
-	return e.EvalEnv(env, n)
+	n := e.eval(env, ns[0])
+	return e.eval(env, n)
 }
 
 // evalReadFile reads the contents of a file into a string and returns the
@@ -412,7 +411,7 @@ func (e *evaluator) evalReadFile(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[read-file] requires exactly 1 argument.")
 	}
-	n := e.EvalEnv(env, ns[0])
+	n := e.eval(env, ns[0])
 	if s, ok := n.(string); ok {
 		f, err := ioutil.ReadFile(s)
 		if err != nil {
