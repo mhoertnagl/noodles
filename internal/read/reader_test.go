@@ -31,6 +31,9 @@ func TestStrings(t *testing.T) {
 	testr(t, `"\n"`, `"\n"`, "")
 	testr(t, `"([{'^~@}])"`, `"([{'^~@}])"`, "")
 	testr(t, `"xxx`, `"xxx`, "")
+	testr(t, `"\n"`, `"\n"`, "")
+	testr(t, `"\\"`, `"\\"`, "")
+	testr(t, `"\""`, `"\""`, "")
 }
 
 func TestSymbols(t *testing.T) {

@@ -49,7 +49,7 @@ func NewEvaluator(env data.Env) Evaluator {
 func (e *evaluator) debug(format string, env data.Env, args ...data.Node) {
 	strs := make([]interface{}, len(args))
 	for i, arg := range args {
-		strs[i] = e.printer.PrintEnv(arg, env)
+		strs[i] = e.printer.Print(arg)
 	}
 	fmt.Printf(format, strs...)
 }

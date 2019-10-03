@@ -237,31 +237,31 @@ func TestInvalidEmpty(t *testing.T) {
 // TODO: rawstr -> escape sequenzen werden nicht übersetzt
 // TODO: str    -> escape sequencen werden übersetzt
 
-func TestStr(t *testing.T) {
-	test(t, `(str)`, `""`)
-	test(t, `(str "")`, `""`)
-	test(t, `(str "abc")`, `"abc"`)
-	test(t, `(str "\"")`, `"""`)
-	test(t, `(str 1 "abc" 3)`, `"1abc3"`)
-	test(t, `(str "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
-	test(t, `(str "abc\ndef\nghi")`, `"`+"abc\ndef\nghi"+`"`)
-	test(t, `(str "abc\\def\\ghi")`, `"abc\def\ghi"`)
-	test(t, `(str (list 1 2 "abc" "\"") "def")`, `"(1 2 abc ")def"`)
-	test(t, `(str (list))`, `"()"`)
-}
-
-func TestRawstr(t *testing.T) {
-	test(t, `(rawstr)`, `""`)
-	test(t, `(rawstr "")`, `""`)
-	test(t, `(rawstr "abc")`, `"abc"`)
-	test(t, `(rawstr "\"")`, `"\""`)
-	test(t, `(rawstr 1 "abc" 3)`, `"1abc3"`)
-	test(t, `(rawstr "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
-	test(t, `(rawstr "abc\ndef\nghi")`, `"abc\ndef\nghi"`)
-	test(t, `(rawstr "abc\\def\\ghi")`, `"abc\\def\\ghi"`)
-	test(t, `(rawstr (list 1 2 "abc" "\"") "def")`, `"(1 2 abc \")def"`)
-	test(t, `(rawstr (list))`, `"()"`)
-}
+// func TestStr(t *testing.T) {
+// 	test(t, `(str)`, `""`)
+// 	test(t, `(str "")`, `""`)
+// 	test(t, `(str "abc")`, `"abc"`)
+// 	test(t, `(str "\"")`, `"""`)
+// 	test(t, `(str 1 "abc" 3)`, `"1abc3"`)
+// 	test(t, `(str "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
+// 	test(t, `(str "abc\ndef\nghi")`, `"`+"abc\ndef\nghi"+`"`)
+// 	test(t, `(str "abc\\def\\ghi")`, `"abc\def\ghi"`)
+// 	test(t, `(str (list 1 2 "abc" "\"") "def")`, `"(1 2 abc ")def"`)
+// 	test(t, `(str (list))`, `"()"`)
+// }
+//
+// func TestRawstr(t *testing.T) {
+// 	test(t, `(rawstr)`, `""`)
+// 	test(t, `(rawstr "")`, `""`)
+// 	test(t, `(rawstr "abc")`, `"abc"`)
+// 	test(t, `(rawstr "\"")`, `"\""`)
+// 	test(t, `(rawstr 1 "abc" 3)`, `"1abc3"`)
+// 	test(t, `(rawstr "abc  def" "ghi jkl")`, `"abc  defghi jkl"`)
+// 	test(t, `(rawstr "abc\ndef\nghi")`, `"abc\ndef\nghi"`)
+// 	test(t, `(rawstr "abc\\def\\ghi")`, `"abc\\def\\ghi"`)
+// 	test(t, `(rawstr (list 1 2 "abc" "\"") "def")`, `"(1 2 abc \")def"`)
+// 	test(t, `(rawstr (list))`, `"()"`)
+// }
 
 func TestLT(t *testing.T) {
 	test(t, "(< 0 1)", "true")
@@ -603,7 +603,7 @@ func TestQuote2(t *testing.T) {
 	test(t, "(= (quote abc) (quote abcd))", "false")
 	test(t, `(= (quote abc) "abc")`, "false")
 	test(t, `(= "abc" (quote abc))`, "false")
-	test(t, `(= "abc" (str (quote abc)))`, "true")
+	// test(t, `(= "abc" (str (quote abc)))`, "true")
 	test(t, "(= (quote abc) nil)", "false")
 	test(t, "(= nil (quote abc))", "false")
 }

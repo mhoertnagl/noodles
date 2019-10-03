@@ -24,6 +24,7 @@ func InitCore(e Evaluator) {
 	// TODO: (join <string> <string>)
 	// TODO: (join <dict> <dict>)
 	// TODO: (print ...)
+	// e.AddCoreFun("str", printArgs(false))
 	e.AddCoreFun("+", evalxf("+", sum))
 	e.AddCoreFun("-", eval12f("-", neg, diff))
 	e.AddCoreFun("*", evalxf("*", prod))
@@ -169,6 +170,72 @@ func concat(e Evaluator, env data.Env, args []data.Node) data.Node {
 // 	}
 // }
 
+// func printArgs(escape bool) CoreFun {
+// 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
+// 		var buf bytes.Buffer
+// 		for _, arg := range args {
+// 			printArg(&buf, arg, escape)
+// 		}
+// 		return buf.String()
+// 	}
+// }
+//
+// func printArg(buf *bytes.Buffer, n data.Node, escape bool) {
+// 	switch {
+// 	case data.IsError(n):
+// 		buf.WriteString("  [ERROR]  ")
+// 	case data.IsNil(n):
+// 		buf.WriteString("nil")
+// 	case data.IsBool(n):
+// 		buf.WriteString(strconv.FormatBool(n.(bool)))
+// 	case data.IsNumber(n):
+// 		buf.WriteString(strconv.FormatFloat(n.(float64), 'f', -1, 64))
+// 	case data.IsString(n):
+// 		if escape {
+// 			buf.WriteString(n.(string))
+// 		} else {
+// 			buf.WriteString(n.(string))
+// 		}
+// 	case data.IsSymbol(n):
+// 		buf.WriteString(n.(*data.SymbolNode).Name)
+// 	case data.IsList(n):
+// 		printSeq(buf, n.(*data.ListNode).Items, "(", ")", escape)
+// 	case data.IsVector(n):
+// 		printSeq(buf, n.(*data.VectorNode).Items, "[", "]", escape)
+// 	case data.IsHashMap(n):
+// 		printHashMap(buf, n.(*data.HashMapNode).Items, escape)
+// 		// case data.IsFuncNode(n):
+// 		// 	p.buf.WriteString(n.(*data.FuncNode).Name)
+// 	}
+// }
+//
+// func printSeq(buf *bytes.Buffer, items []data.Node, start string, end string, escape bool) {
+// 	buf.WriteString(start)
+// 	for i, item := range items {
+// 		if i > 0 {
+// 			buf.WriteString(" ")
+// 		}
+// 		printArg(buf, item, escape)
+// 	}
+// 	buf.WriteString(end)
+// }
+//
+// func printHashMap(buf *bytes.Buffer, items data.Map, escape bool) {
+// 	buf.WriteString("{")
+// 	// TODO: Unfortunate.
+// 	init := false
+// 	for key, val := range items {
+// 		if init {
+// 			buf.WriteString(" ")
+// 		}
+// 		init = true
+// 		printArg(buf, key, escape)
+// 		buf.WriteString(" ")
+// 		printArg(buf, val, escape)
+// 	}
+// 	buf.WriteString("}")
+// }
+
 func eq(e Evaluator, env data.Env, args []data.Node) data.Node {
 	if len(args) != 2 {
 		return e.Error("[=] expects 2 arguments.")
@@ -181,6 +248,9 @@ func eq2(e Evaluator, env data.Env, a, b data.Node) data.Node {
 		return false
 	}
 	switch x := a.(type) {
+	case *data.SymbolNode:
+		y := b.(*data.SymbolNode)
+		return x.Name == y.Name
 	case *data.ListNode:
 		y := b.(*data.ListNode)
 		return eqSeq(e, env, x.Items, y.Items)

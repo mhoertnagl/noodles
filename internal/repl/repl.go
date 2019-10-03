@@ -3,10 +3,11 @@ package repl
 import (
 	"bufio"
 	"fmt"
+	"io"
+
 	"github.com/mhoertnagl/splis2/internal/eval"
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
-	"io"
 )
 
 // TODO: Repl struct with parameters for the header text, input prefix, ...
@@ -27,14 +28,14 @@ func Start(in io.Reader, out io.Writer, args Args) {
 		if ok := scanner.Scan(); !ok {
 			return
 		}
-    // TODO: Print environment.
+		// TODO: Print environment.
 		input := scanner.Text()
 		reader.Load(input)
 		src := parser.Parse(reader)
-		errors := printer.PrintErrors(parser)
+		errors := printer.PrintErrors(parser.Errors())
 		fmt.Fprintf(out, "\n%s", errors)
-    res := eval.Eval(src)
-    output := printer.Print(res)
-    fmt.Fprintf(out, "%s\n", output)
+		res := eval.Eval(src)
+		output := printer.Print(res)
+		fmt.Fprintf(out, "%s\n", output)
 	}
 }

@@ -66,7 +66,7 @@ func buildPattern() string {
 	pat.WriteString("|")                           // or
 	pat.WriteString("[\\[\\]{}\\(\\)'`~^@]")       // any of [, ], {, }, (, ), ', `, ~, ^, @
 	pat.WriteString("|")                           // or
-	pat.WriteString(`"[^"]*"?`)                    // strings with escape characters and an optional " at the end
+	pat.WriteString(`"(?:\\"|[^"])*"?`)            // strings with escape characters and an optional " at the end
 	pat.WriteString("|")                           // or
 	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]+") // symbols (including numbers)
 	pat.WriteString(")")                           // End capture group
