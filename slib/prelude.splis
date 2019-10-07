@@ -11,10 +11,10 @@
 ;;  (if x false true)))
 
 ;; Maps a function to each element of a list.
-; (fun map [f xs]
-;   (if (empty? xs)
-;     xs ; Will preserve the type of the sequence.
-;     (cons (f (head xs)) (map f (tail xs)))))
+(fun map [f xs]
+  (if (empty? xs)
+    xs ; Will preserve the type of the sequence.
+    (:: (f (head xs)) (map f (tail xs)))))
 
 ; fun map(f xs)
 ;   if (empty? xs) then
@@ -23,3 +23,18 @@
 ;     f(head(xs)) :: map(f tail(xs))
 ;   end
 ; end
+
+; map(f ())    = ()
+; map(f x::xs) = f(x) :: map(f xs)
+;
+;
+; map(f l) = _map(f l ())
+;
+; _map(f () a)    = a
+; _map(f x::xs a) = _map(f xs a ::: [f(x)])
+
+;; Left-reduce a list.
+(fun reduce [f b xs]
+  (if (empty? xs)
+    b
+    (reduce f (f b head(xs)) tail(xs))))

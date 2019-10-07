@@ -99,6 +99,7 @@ func NewVector2(items ...Node) *VectorNode {
 
 type Map map[string]Node
 
+// TODO: Wrapper is not required.
 type HashMapNode struct {
 	Items Map
 }
@@ -117,13 +118,14 @@ func NewEmptyHashMap() *HashMapNode {
 }
 
 type FuncNode struct {
-	Env  Env
-	Pars []string
-	Fun  Node
+	Env     Env
+	Pars    []string
+	Fun     Node
+	IsMacro bool
 }
 
 func NewFuncNode(env Env, pars []string, fun Node) Node {
-	return &FuncNode{Env: env, Pars: pars, Fun: fun}
+	return &FuncNode{Env: env, Pars: pars, Fun: fun, IsMacro: false}
 }
 
 func IsFuncNode(n Node) bool {

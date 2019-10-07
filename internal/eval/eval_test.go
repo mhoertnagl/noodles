@@ -9,6 +9,10 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
+func TestEmptyList(t *testing.T) {
+	test(t, "()", "()")
+}
+
 func TestNumbers(t *testing.T) {
 	test(t, "1", "1")
 	test(t, "1.1", "1.1")
@@ -662,6 +666,40 @@ func TestQuasiquoteQuine(t *testing.T) {
 func TestInvalidQuasiquote(t *testing.T) {
 	test(t, "(quasiquote)", "  [ERROR]  ")
 	test(t, "(quasiquote 1 2)", "  [ERROR]  ")
+}
+
+func TestTrivialMacros(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(defmacro! one (fn* () 1))", "")
+	teste(t, env, "(one)", "1")
+	teste(t, env, "(defmacro! two (fn* () 2))", "")
+	teste(t, env, "(two)", "2")
+}
+
+func TestUnlessMacros(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(defmacro! unless2 (fn* (pred a b) (list 'if (list 'not pred) a b)))", "")
+	teste(t, env, "(unless2 false 7 8)", "7")
+	teste(t, env, "(unless2 false 7 8)", "8")
+}
+
+func TestMacroExpand(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(macroexpand (unless2 2 3 4))", "(if (not 2) 3 4)")
+}
+
+func TestMacroResultEvaluation(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(defmacro! identity (fn* (x) x))", "")
+	teste(t, env, "(let* (a 123) (identity a))", "123")
+}
+
+func TestMacroUsesClosures(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(def! x 2)", "2")
+	teste(t, env, "(defmacro! a (fn* [] x))", "")
+	teste(t, env, "(a)", "2")
+	teste(t, env, "(let* (x 3) (a))", "2")
 }
 
 func test(t *testing.T, i string, e string) {
