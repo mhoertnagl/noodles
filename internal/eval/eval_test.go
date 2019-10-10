@@ -575,6 +575,13 @@ func TestCons(t *testing.T) {
 	test(t, "(:: (list 1 2) (list (list 3 4)))", "((1 2) (3 4))")
 }
 
+func TestConsVectors(t *testing.T) {
+	test(t, "(:: 42 [])", "(42)")
+	test(t, "(:: 1 [2 3 4])", "(1 2 3 4)")
+	test(t, "(:: [1 2] []", "([1 2])")
+	test(t, "(:: [1 2] [[3 4]])", "([1 2] [3 4])")
+}
+
 func TestInvalidCons(t *testing.T) {
 	test(t, "(::)", "  [ERROR]  ")
 	test(t, "(:: 1 (2 3 4) 5)", "  [ERROR]  ")
@@ -591,6 +598,17 @@ func TestConcat(t *testing.T) {
 	test(t, "(::: (list 1 2) (list 3 4))", "(1 2 3 4)")
 	test(t, "(::: (list 1 2) (list 3 4) (list 5 6))", "(1 2 3 4 5 6)")
 	test(t, "(::: (list (list 1 2)) (list (list 3 4)))", "((1 2) (3 4))")
+}
+
+func TestConcatVectors(t *testing.T) {
+	test(t, "(::: [])", "()")
+	test(t, "(::: [] [])", "()")
+	test(t, "(::: [] [] [])", "()")
+	test(t, "(::: [1 2] [])", "(1 2)")
+	test(t, "(::: [] [3 4])", "(3 4)")
+	test(t, "(::: [1 2] [3 4])", "(1 2 3 4)")
+	test(t, "(::: [1 2] [3 4] [5 6])", "(1 2 3 4 5 6)")
+	test(t, "(::: [[1 2]] [[3 4]])", "([1 2] [3 4])")
 }
 
 func TestConcatEnv(t *testing.T) {
@@ -677,6 +695,13 @@ func TestTrivialMacros(t *testing.T) {
 }
 
 func TestUnlessMacros(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(defmacro! unless (fn* (pred a b) `(if ~pred ~b ~a)))", "")
+	teste(t, env, "(unless false 7 8)", "7")
+	teste(t, env, "(unless false 7 8)", "8")
+}
+
+func TestUnlessMacros2(t *testing.T) {
 	env := data.NewEnv(nil)
 	teste(t, env, "(defmacro! unless2 (fn* (pred a b) (list 'if (list 'not pred) a b)))", "")
 	teste(t, env, "(unless2 false 7 8)", "7")

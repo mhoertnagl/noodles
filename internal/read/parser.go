@@ -69,6 +69,18 @@ func (p *parser) parse() data.Node {
 		return p.error("Unexpected [}].\n")
 	case p.tok == "{":
 		return p.parseHashMap()
+	case p.tok == "'":
+		p.consume("'")
+		return data.Quote(p.parse())
+	case p.tok == "`":
+		p.consume("`")
+		return data.Quasiquote(p.parse())
+	case p.tok == "~":
+		p.consume("~")
+		return data.Unquote(p.parse())
+	case p.tok == "~@":
+		p.consume("~@")
+		return data.SpliceUnquote(p.parse())
 	default:
 		return p.parseAtom()
 	}

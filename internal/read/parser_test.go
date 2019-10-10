@@ -84,6 +84,34 @@ func TestParseIncompleteHashMaps(t *testing.T) {
 	testpw(t, ` {"a" 1 `, `{"a" 1}`)
 }
 
+func TestParseQuote(t *testing.T) {
+	testpw(t, " '42 ", "(quote 42)")
+	testpw(t, ` '"x" `, `(quote "x")`)
+	testpw(t, " '() ", "(quote ())")
+	testpw(t, " '(+ 1 1) ", "(quote (+ 1 1))")
+	testpw(t, " '[1 2 3] ", "(quote [1 2 3])")
+	testpw(t, ` '{ "a" 1 } `, `(quote {"a" 1})`)
+}
+
+func TestParseQuasiquote(t *testing.T) {
+	testpw(t, " `42 ", "(quasiquote 42)")
+	testpw(t, " `\"x\" ", `(quasiquote "x")`)
+	testpw(t, " `() ", "(quasiquote ())")
+	testpw(t, " `(+ 1 1) ", "(quasiquote (+ 1 1))")
+	testpw(t, " `[1 2 3] ", "(quasiquote [1 2 3])")
+	testpw(t, " `{ \"a\" 1 } ", `(quasiquote {"a" 1})`)
+}
+
+func TestParseQuasiquoteUnquote(t *testing.T) {
+	testpw(t, " `~42 ", "(quasiquote (unquote 42))")
+	testpw(t, " `(+ ~a ~b) ", "(quasiquote (+ (unquote a) (unquote b)))")
+}
+
+func TestParseQuasiquoteSpliceUnquote(t *testing.T) {
+	testpw(t, " `~@(42) ", "(quasiquote (splice-unquote (42)))")
+	testpw(t, " `(+ ~@(a b) c) ", "(quasiquote (+ (splice-unquote (a b)) c))")
+}
+
 func testpw(t *testing.T, i string, e string) {
 	r := read.NewReader()
 	r.Load(i)

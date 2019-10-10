@@ -114,6 +114,8 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "quasiquote":
 					n = e.evalQuasiquote(env, args)
 					continue
+				case "defmacro!":
+					return e.evalDefMacro(env, args)
 				default:
 					if fun, ok := e.core[sym.Name]; ok {
 						args = e.evalSeq(env, args)
@@ -477,4 +479,23 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 		e.quasiquote1(env, n.Items[0]),
 		e.quasiquote1(env, data.NewList(n.Items[1:])),
 	)
+}
+
+// evalDefMacro binds the second argument to the first one and declares the
+// second argument a macro. The first argument has to be a symbol and the
+// second argument a function.
+func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 2 {
+		return e.Error("[macrodef!] requires exactly 2 arguments.")
+	}
+	if sym, ok1 := ns[0].(*data.SymbolNode); ok1 {
+		v := e.eval(env, ns[1])
+		if fun, ok2 := v.(*data.FuncNode); ok2 {
+			// Delcare this function a macro.
+			fun.IsMacro = true
+			return env.Set(sym.Name, fun)
+		}
+		return e.Error("[macrodef!] requires second argument to be a function.")
+	}
+	return e.Error("[macrodef!] Cannot bind to [%s].", ns[0])
 }
