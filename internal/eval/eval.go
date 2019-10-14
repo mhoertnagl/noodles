@@ -75,8 +75,6 @@ func (e *evaluator) Eval(node data.Node) data.Node {
 func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
 		switch {
-		case data.IsSymbol(n):
-			return e.evalSymbol(env, n.(*data.SymbolNode))
 		case data.IsList(n):
 			x := n.(*data.ListNode)
 			if len(x.Items) == 0 {
@@ -123,7 +121,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					}
 				}
 			}
-
+			e.debug("%s\n", env, hd)
 			hd = e.eval(env, hd)
 
 			if fn, ok2 := hd.(*data.FuncNode); ok2 {
@@ -142,7 +140,10 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				n = fn.Fun
 				continue
 			}
+
 			return e.Error("List cannot be evaluated.")
+		case data.IsSymbol(n):
+			return e.evalSymbol(env, n.(*data.SymbolNode))
 		case data.IsVector(n):
 			return e.evalVector(env, n.(*data.VectorNode))
 		case data.IsHashMap(n):
