@@ -442,13 +442,17 @@ func TestFun(t *testing.T) {
 	test(t, "((fn* () 40))", "40")
 	test(t, "((fn* (a) a) 41)", "41")
 	test(t, "((fn* (a b) b) 0 42)", "42")
-	test(t, "(((fn* [a b] b) 0) 43)", "43")
 	test(t, "((fn* (a b c) (+ a b c)) 1 2 3)", "6")
 	test(t, "((fn* (f x) (f x)) (fn* (a) (+ 1 a)) 7)", "8")
 	test(t, "(((fn* (a) (fn* (b) (+ a b))) 5) 7)", "12")
 	test(t, "((fn* [x] (if x false true)) true)", "false")
 	test(t, "((fn* [x] (if x false true)) false)", "true")
 	test(t, "((fn* [f x] (f x)) (fn* [a] (+ 1 a)) 7)", "8")
+	test(t, "(((fn* [a b] b)) 0 43)", "43")
+}
+
+func TestPartialFun(t *testing.T) {
+	test(t, "(((fn* [a b] b) 0) 43)", "43")
 }
 
 func TestFun2(t *testing.T) {

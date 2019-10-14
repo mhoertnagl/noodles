@@ -121,7 +121,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					}
 				}
 			}
-			e.debug("%s\n", env, hd)
+			// e.debug("%s\n", env, hd)
 			hd = e.eval(env, hd)
 
 			if fn, ok2 := hd.(*data.FuncNode); ok2 {
