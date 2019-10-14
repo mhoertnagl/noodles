@@ -74,9 +74,8 @@ func (e *evaluator) Eval(node data.Node) data.Node {
 
 func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
-		switch {
-		case data.IsList(n):
-			x := n.(*data.ListNode)
+		switch x := n.(type) {
+		case *data.ListNode:
 			if len(x.Items) == 0 {
 				return n
 			}
@@ -142,12 +141,12 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 			}
 
 			return e.Error("List cannot be evaluated.")
-		case data.IsSymbol(n):
-			return e.evalSymbol(env, n.(*data.SymbolNode))
-		case data.IsVector(n):
-			return e.evalVector(env, n.(*data.VectorNode))
-		case data.IsHashMap(n):
-			return e.evalHashMap(env, n.(*data.HashMapNode))
+		case *data.SymbolNode:
+			return e.evalSymbol(env, x)
+		case *data.VectorNode:
+			return e.evalVector(env, x)
+		case *data.HashMapNode:
+			return e.evalHashMap(env, x)
 		default:
 			// Return unchanged. These are immutable atoms.
 			return n
