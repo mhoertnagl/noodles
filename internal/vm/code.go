@@ -15,10 +15,22 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
+
 	OpAdd
 	OpSub
 	OpMul
 	OpDiv
+
+	OpEq
+	OpNe
+	OpLT
+	OpLE
+
+	//	OpTrue
+	//	OpFalse
+	OpAnd
+	OpOr
+
 	OpPushEnv
 	OpPopEnv
 	OpLoad
