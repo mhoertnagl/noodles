@@ -14,8 +14,15 @@ type Op = byte
 type Ins = []byte
 
 const (
-	// OpConst <float64>
 	OpConst Op = iota
+	OpAdd
+	OpSub
+	OpMul
+	OpDiv
+	OpPushEnv
+	OpPopEnv
+	OpLoad
+	OpStore
 )
 
 // OpMeta contains the human-readable name of the operation and the length in
@@ -25,6 +32,14 @@ type OpMeta struct {
 	Args []int
 }
 
+var meta = map[Op]*OpMeta{
+	OpConst: {"const", []int{8}},
+	OpAdd:   {"add", []int{}},
+	OpSub:   {"sub", []int{}},
+	OpMul:   {"mul", []int{}},
+	OpDiv:   {"div", []int{}},
+}
+
 // Size returns the number of bytes for all arguments of an instruction.
 func (m *OpMeta) Size() int {
 	sz := 0
@@ -32,10 +47,6 @@ func (m *OpMeta) Size() int {
 		sz += as
 	}
 	return sz
-}
-
-var meta = map[Op]*OpMeta{
-	OpConst: {"CONST", []int{8}},
 }
 
 // LookupMeta returns meta data for an opcode or an error if the code is
