@@ -31,10 +31,14 @@ const (
 	OpAnd
 	OpOr
 
-	OpPushEnv
+	OpJump        // <uint64>
+	OpJumpIfTrue  // <bool> <uint64>
+	OpJumpIfFalse // <bool> <uint64>
+
+	OpNewEnv
 	OpPopEnv
-	OpLoad
-	OpStore
+	OpSet
+	OpGet
 )
 
 // OpMeta contains the human-readable name of the operation and the length in
