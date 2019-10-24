@@ -15,6 +15,7 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
+	OpPop
 
 	OpAdd
 	OpSub
@@ -26,8 +27,8 @@ const (
 	OpLT
 	OpLE
 
-	//	OpTrue
-	//	OpFalse
+	OpTrue
+	OpFalse
 	OpAnd
 	OpOr
 
@@ -49,11 +50,15 @@ type OpMeta struct {
 }
 
 var meta = map[Op]*OpMeta{
-	OpConst: {"const", []int{8}},
-	OpAdd:   {"add", []int{}},
-	OpSub:   {"sub", []int{}},
-	OpMul:   {"mul", []int{}},
-	OpDiv:   {"div", []int{}},
+	OpConst:       {"const", []int{8}},
+	OpPop:         {"pop", []int{}},
+	OpAdd:         {"add", []int{}},
+	OpSub:         {"sub", []int{}},
+	OpMul:         {"mul", []int{}},
+	OpDiv:         {"div", []int{}},
+	OpTrue:        {"true", []int{}},
+	OpFalse:       {"false", []int{}},
+	OpJumpIfFalse: {"jumpf", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

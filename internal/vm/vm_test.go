@@ -22,6 +22,14 @@ func TestConst2(t *testing.T) {
 	testVal(t, m.Inspect(1), uint64(42))
 }
 
+func TestPop(t *testing.T) {
+	testToS(t, uint64(42),
+		vm.Instr(vm.OpConst, 42),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpPop),
+	)
+}
+
 // func TestAdd0(t *testing.T) {
 // 	testToS(t, uint64(1),
 // 		vm.Instr(vm.OpStop),
@@ -68,6 +76,45 @@ func TestDiv2(t *testing.T) {
 		vm.Instr(vm.OpDiv),
 	)
 }
+
+func TestFalse(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpFalse),
+	)
+}
+
+func TestTrue(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpTrue),
+	)
+}
+
+func TestIfFalse1(t *testing.T) {
+	testToS(t, uint64(0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfFalse, 10),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpConst, 1),
+	)
+}
+
+func TestIfTrue1(t *testing.T) {
+	testToS(t, uint64(1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfFalse, 10),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpConst, 1),
+	)
+}
+
+// TODO: If with else.
+// TODO: If, elseif, else
+// TODO: ||
+// TODO: &&
+
+// TODO: Environments,locals.
 
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
