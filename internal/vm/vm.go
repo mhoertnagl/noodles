@@ -67,10 +67,18 @@ func (m *vm) Run(code Ins) {
 			m.push(false)
 		case OpTrue:
 			m.push(true)
+		case OpJump:
+			m.ip += m.readInt64()
 		case OpJumpIfFalse:
 			c := m.pop().(bool)
 			t := m.readInt64()
 			if !c {
+				m.ip += t
+			}
+		case OpJumpIfTrue:
+			c := m.pop().(bool)
+			t := m.readInt64()
+			if c {
 				m.ip += t
 			}
 		default:

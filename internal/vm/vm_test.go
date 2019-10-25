@@ -109,7 +109,26 @@ func TestIfTrue1(t *testing.T) {
 	)
 }
 
-// TODO: If with else.
+func TestIfElseFalse1(t *testing.T) {
+	testToS(t, uint64(0),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfFalse, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
+}
+
+func TestIfElseTrue1(t *testing.T) {
+	testToS(t, uint64(1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfFalse, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
+}
+
 // TODO: If, elseif, else
 // TODO: ||
 // TODO: &&

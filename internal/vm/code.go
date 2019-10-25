@@ -16,30 +16,42 @@ type Ins = []byte
 const (
 	OpConst Op = iota
 	OpPop
+	// OpDup
+
+	OpTrue
+	OpFalse
 
 	OpAdd
+	// OpNeg			0 - x == -x
 	OpSub
 	OpMul
 	OpDiv
+
+	OpAnd
+	OpOr
+	// OpInv
+	// OpNor			x nor x == !x
+	// OpXor
+
+	OpSll
+	OpSrl
+	OpSra
 
 	OpEq
 	OpNe
 	OpLT
 	OpLE
 
-	OpTrue
-	OpFalse
-	OpAnd
-	OpOr
-
-	OpJump        // <uint64>
-	OpJumpIfTrue  // <bool> <uint64>
-	OpJumpIfFalse // <bool> <uint64>
+	OpJump
+	OpJumpIfTrue
+	OpJumpIfFalse
 
 	OpNewEnv
 	OpPopEnv
-	OpSet
-	OpGet
+	OpSetLocal
+	OpGetLocal
+	OpSetGlobal
+	OpGetGlobal
 )
 
 // OpMeta contains the human-readable name of the operation and the length in
@@ -58,7 +70,9 @@ var meta = map[Op]*OpMeta{
 	OpDiv:         {"div", []int{}},
 	OpTrue:        {"true", []int{}},
 	OpFalse:       {"false", []int{}},
-	OpJumpIfFalse: {"jumpf", []int{8}},
+	OpJump:        {"jump", []int{8}},
+	OpJumpIfFalse: {"jumpFalse", []int{8}},
+	OpJumpIfTrue:  {"jumpTrue", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
