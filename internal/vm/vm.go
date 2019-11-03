@@ -2,35 +2,49 @@ package vm
 
 import (
 	"encoding/binary"
+	//"fmt"
 )
 
 type VM interface {
 	Run(code Ins)
-	Inspect(offset int64) Val
+	InspectStack(offset int64) Val
+	InspectLocals(offset int64) Val
 	StackSize() int64
 }
 
 type vm struct {
-	ip    int64
-	sp    int64
-	ep    int64
+	ip int64
+	sp int64
+	lp int64
+	//	ep    int64
 	stack []Val
-	envs  []Env
-	code  Ins
+	//	envs  []Env
+	locals []Val
+	code   Ins
 }
 
-func New(size uint32) VM {
+func New(stackSize int64, localsSize int64) VM {
 	return &vm{
-		ip:    0,
-		sp:    0,
-		ep:    0,
-		stack: make([]Val, size),
-		envs:  make([]Env, 1),
+		ip: 0,
+		sp: 0,
+		lp: 0,
+		//		ep:    0,
+		stack:  make([]Val, stackSize),
+		locals: make([]Val, localsSize),
+		//		envs:  make([]Env, 1),
 	}
 }
 
-func (m *vm) Inspect(offset int64) Val {
-	return m.stack[m.sp-offset-1]
+func (m *vm) InspectStack(offset int64) Val {
+	a := m.sp - offset - 1
+	if a >= 0 {
+		return m.stack[a]
+	}
+	return nil
+}
+
+func (m *vm) InspectLocals(offset int64) Val {
+	return m.locals[offset]
 }
 
 func (m *vm) StackSize() int64 {
@@ -44,24 +58,24 @@ func (m *vm) Run(code Ins) {
 	for m.ip < len {
 		switch m.readOp() {
 		case OpConst:
-			m.push(m.readUint64())
+			m.push(m.readInt64())
 		case OpPop:
 			m.pop()
 		case OpAdd:
-			r := m.pop().(uint64)
-			l := m.pop().(uint64)
+			r := m.popInt64()
+			l := m.popInt64()
 			m.push(l + r)
 		case OpSub:
-			r := m.pop().(uint64)
-			l := m.pop().(uint64)
+			r := m.popInt64()
+			l := m.popInt64()
 			m.push(l - r)
 		case OpMul:
-			r := m.pop().(uint64)
-			l := m.pop().(uint64)
+			r := m.popInt64()
+			l := m.popInt64()
 			m.push(l * r)
 		case OpDiv:
-			r := m.pop().(uint64)
-			l := m.pop().(uint64)
+			r := m.popInt64()
+			l := m.popInt64()
 			m.push(l / r)
 		case OpFalse:
 			m.push(false)
@@ -70,17 +84,26 @@ func (m *vm) Run(code Ins) {
 		case OpJump:
 			m.ip += m.readInt64()
 		case OpJumpIfFalse:
-			c := m.pop().(bool)
-			t := m.readInt64()
-			if !c {
-				m.ip += t
+			d := m.readInt64()
+			if m.popBool() == false {
+				m.ip += d
 			}
 		case OpJumpIfTrue:
-			c := m.pop().(bool)
-			t := m.readInt64()
-			if c {
-				m.ip += t
+			d := m.readInt64()
+			if m.popBool() {
+				m.ip += d
 			}
+		case OpNewEnv:
+			// m.readInt64()
+		case OpPopEnv:
+			m.readInt64()
+		case OpSetLocal:
+			a := m.readInt64()
+			v := m.pop()
+			m.locals[a] = v
+		case OpGetLocal:
+			a := m.readInt64()
+			m.push(m.locals[a])
 		default:
 			panic("Unsupported operation.")
 		}
@@ -105,9 +128,13 @@ func (m *vm) pop() Val {
 	return v
 }
 
-// func (m *vm) peekOp() Op {
-// 	return Op(m.code[m.ip])
-// }
+func (m *vm) popBool() bool {
+	return m.pop().(bool)
+}
+
+func (m *vm) popInt64() int64 {
+	return m.pop().(int64)
+}
 
 func (m *vm) readOp() Op {
 	op := Op(m.code[m.ip])

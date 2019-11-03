@@ -73,6 +73,10 @@ var meta = map[Op]*OpMeta{
 	OpJump:        {"jump", []int{8}},
 	OpJumpIfFalse: {"jumpFalse", []int{8}},
 	OpJumpIfTrue:  {"jumpTrue", []int{8}},
+	OpNewEnv:      {"newEnv", []int{}},
+	OpPopEnv:      {"popEnv", []int{8}},
+	OpSetLocal:    {"setLocal", []int{8}},
+	OpGetLocal:    {"getLocal", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

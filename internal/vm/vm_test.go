@@ -8,7 +8,7 @@ import (
 )
 
 func TestConst1(t *testing.T) {
-	testToS(t, uint64(42),
+	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 42),
 	)
 }
@@ -18,12 +18,12 @@ func TestConst2(t *testing.T) {
 		vm.Instr(vm.OpConst, 42),
 		vm.Instr(vm.OpConst, 43),
 	)
-	testVal(t, m.Inspect(0), uint64(43))
-	testVal(t, m.Inspect(1), uint64(42))
+	testVal(t, int64(43), m.InspectStack(0))
+	testVal(t, int64(42), m.InspectStack(1))
 }
 
 func TestPop(t *testing.T) {
-	testToS(t, uint64(42),
+	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 42),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpPop),
@@ -46,7 +46,7 @@ func TestPop(t *testing.T) {
 // }
 
 func TestAdd2(t *testing.T) {
-	testToS(t, uint64(42),
+	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 19),
 		vm.Instr(vm.OpConst, 23),
 		vm.Instr(vm.OpAdd),
@@ -54,7 +54,7 @@ func TestAdd2(t *testing.T) {
 }
 
 func TestSub2(t *testing.T) {
-	testToS(t, uint64(42),
+	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 43),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
@@ -62,7 +62,7 @@ func TestSub2(t *testing.T) {
 }
 
 func TestMul2(t *testing.T) {
-	testToS(t, uint64(42),
+	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 21),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpMul),
@@ -70,7 +70,7 @@ func TestMul2(t *testing.T) {
 }
 
 func TestDiv2(t *testing.T) {
-	testToS(t, uint64(21),
+	testToS(t, int64(21),
 		vm.Instr(vm.OpConst, 42),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpDiv),
@@ -90,7 +90,7 @@ func TestTrue(t *testing.T) {
 }
 
 func TestIfFalse1(t *testing.T) {
-	testToS(t, uint64(0),
+	testToS(t, int64(0),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpFalse),
 		vm.Instr(vm.OpJumpIfFalse, 10),
@@ -100,7 +100,7 @@ func TestIfFalse1(t *testing.T) {
 }
 
 func TestIfTrue1(t *testing.T) {
-	testToS(t, uint64(1),
+	testToS(t, int64(1),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpTrue),
 		vm.Instr(vm.OpJumpIfFalse, 10),
@@ -110,7 +110,7 @@ func TestIfTrue1(t *testing.T) {
 }
 
 func TestIfElseFalse1(t *testing.T) {
-	testToS(t, uint64(0),
+	testToS(t, int64(0),
 		vm.Instr(vm.OpFalse),
 		vm.Instr(vm.OpJumpIfFalse, 18),
 		vm.Instr(vm.OpConst, 1),
@@ -120,7 +120,7 @@ func TestIfElseFalse1(t *testing.T) {
 }
 
 func TestIfElseTrue1(t *testing.T) {
-	testToS(t, uint64(1),
+	testToS(t, int64(1),
 		vm.Instr(vm.OpTrue),
 		vm.Instr(vm.OpJumpIfFalse, 18),
 		vm.Instr(vm.OpConst, 1),
@@ -135,6 +135,43 @@ func TestIfElseTrue1(t *testing.T) {
 
 // TODO: Environments,locals.
 
+func TestLocals1(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv, 1),
+	)
+	testVal(t, int64(2), m.InspectLocals(0))
+	testVal(t, int64(4), m.InspectStack(0))
+}
+
+func TestLocals2(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpSetLocal, 1),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpSetLocal, 2),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 1),
+		vm.Instr(vm.OpGetLocal, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv, 2),
+		vm.Instr(vm.OpPopEnv, 1),
+	)
+	testVal(t, int64(1), m.InspectLocals(0))
+	testVal(t, int64(2), m.InspectLocals(1))
+	testVal(t, int64(3), m.InspectLocals(2))
+	testVal(t, int64(5), m.InspectStack(0))
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of
@@ -142,7 +179,7 @@ func TestIfElseTrue1(t *testing.T) {
 func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 	t.Helper()
 	m := testRun(t, c...)
-	testVal(t, expected, m.Inspect(0))
+	testVal(t, expected, m.InspectStack(0))
 	if m.StackSize() != 1 {
 		t.Errorf("Stack size should be [%v] but is [%v].", 1, m.StackSize())
 	}
@@ -152,7 +189,7 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 // VM thereafter.
 func testRun(t *testing.T, c ...vm.Ins) vm.VM {
 	t.Helper()
-	m := vm.New(1024)
+	m := vm.New(1024, 512)
 	m.Run(vm.Concat(c))
 	return m
 }
