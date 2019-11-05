@@ -19,6 +19,7 @@ type Evaluator interface {
 }
 
 type evaluator struct {
+	i       int
 	env     data.Env
 	core    map[string]CoreFun
 	err     []*data.ErrorNode
@@ -31,6 +32,7 @@ type evaluator struct {
 
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
+		i:       0,
 		env:     env,
 		core:    make(map[string]CoreFun),
 		err:     []*data.ErrorNode{},
@@ -74,6 +76,20 @@ func (e *evaluator) Eval(node data.Node) data.Node {
 
 func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
+		e.i++
+		fmt.Printf("LOOP: %d\n", e.i)
+
+		// for {
+		// 	if ls, ok := n.(*data.ListNode); ok && len(ls.Items) > 0 {
+		// 		hd := ls.Items[0]
+		// 		// args := ls.Items[1:]
+		// 		hd = e.eval(env, hd)
+		//     if fn, ok := hd.(*data.FuncNode); ok {
+		//
+		//     }
+		// 	}
+		// }
+
 		switch x := n.(type) {
 		case *data.ListNode:
 			if len(x.Items) == 0 {
@@ -83,7 +99,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 			hd := x.Items[0]
 			args := x.Items[1:]
 
-			if sym, ok1 := hd.(*data.SymbolNode); ok1 {
+			if sym, ok := hd.(*data.SymbolNode); ok {
 				switch sym.Name {
 				case "def!":
 					return e.evalDef(env, args)
@@ -91,11 +107,15 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					env, n = e.evalLet(env, args)
 					continue
 				case "fn*":
+					e.debug("%s\n", env, n)
+					fmt.Printf("LOOP END: %d\n", e.i)
+					e.i--
 					return e.evalFunDef(env, args)
 				case "do":
 					n = e.evalDo(env, args)
 					continue
 				case "if":
+					e.debug("%s\n", env, n)
 					n = e.evalIf(env, args)
 					continue
 				// TODO: TCO?
@@ -107,23 +127,89 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "read-file":
 					return e.evalReadFile(env, args)
 				case "quote":
+					e.debug("%s\n", env, n)
+					fmt.Printf("LOOP END: %d\n", e.i)
+					e.i--
 					return e.evalQuote(env, args)
 				case "quasiquote":
+					e.debug("%s\n", env, n)
 					n = e.evalQuasiquote(env, args)
+					e.debug("%s\n", env, n)
+					fmt.Printf("LOOP END: %d\n", e.i)
+					e.i--
 					continue
 				case "defmacro!":
 					return e.evalDefMacro(env, args)
 				default:
 					if fun, ok := e.core[sym.Name]; ok {
 						args = e.evalSeq(env, args)
-						return fun(e, env, args)
+						e.debug("%s\n", env, n)
+						// return fun(e, env, args)
+						g := fun(e, env, args)
+						fmt.Printf("[%s]: ", sym.Name)
+						e.debug("%s\n", env, g)
+						fmt.Printf("LOOP END: %d\n", e.i)
+						e.i--
+						return g
 					}
 				}
 			}
+			// TODO: Evaluate head.
+			// if func node
+			//   if macro
+			//     expand
+			//   else if num already bound args < num params
+			//     bind args
+			//     continue with n again
+			//   else
+			//     call func
 			// e.debug("%s\n", env, hd)
 			hd = e.eval(env, hd)
 
-			if fn, ok2 := hd.(*data.FuncNode); ok2 {
+			// for fn, ok := hd.(*data.FuncNode); ok && fn.IsMacro; {
+			// 	// TODO: repeat macro expansion for as long as it is a function and
+			// 	//       it is a functionNode.
+			// 	if len(fn.Pars) != len(args) {
+			// 		return e.Error("Number of arguments not the same as number of parameters.")
+			// 	}
+			// 	// Create a new environment for this function.
+			// 	fn.Env = data.NewEnv(fn.Env)
+			// 	// Evaluate and bind argurments to their parameters in the new function
+			// 	// environment.
+			// 	for i, par := range fn.Pars {
+			// 		arg := e.eval(env, args[i])
+			// 		fn.Env.Set(par, arg)
+			// 	}
+			// 	env = fn.Env
+			// 	n = fn.Fun
+			// }
+
+			// if fn, ok := hd.(*data.FuncNode); ok {
+			//
+			// 	if len(fn.Pars) != len(args) {
+			// 		return e.Error("Number of arguments not the same as number of parameters.")
+			// 	}
+			// 	// Create a new environment for this function.
+			// 	fn.Env = data.NewEnv(fn.Env)
+			// 	// Evaluate and bind argurments to their parameters in the new function
+			// 	// environment.
+			// 	for i, par := range fn.Pars {
+			// 		arg := e.eval(env, args[i])
+			// 		fn.Env.Set(par, arg)
+			// 	}
+			// 	env = fn.Env
+			// 	n = fn.Fun
+			// 	if fn.IsMacro {
+			// 		e.debug("MACRO: %s\n", env, n)
+			// 	} else {
+			// 		e.debug("FUNC: %s\n", env, n)
+			// 	}
+			// 	fmt.Printf("LOOP END: %d\n", e.i)
+			// 	e.i--
+			// 	continue
+			// }
+			if fn, ok := hd.(*data.FuncNode); ok {
+
 				if len(fn.Pars) != len(args) {
 					return e.Error("Number of arguments not the same as number of parameters.")
 				}
@@ -135,10 +221,36 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					arg := e.eval(env, args[i])
 					fn.Env.Set(par, arg)
 				}
-				env = fn.Env
-				n = fn.Fun
-				continue
+
+				if fn.IsMacro {
+					env = fn.Env
+					n = e.eval(fn.Env, fn.Fun)
+					continue
+				} else {
+					env = fn.Env
+					n = fn.Fun
+
+					if fn.IsMacro {
+						e.debug("MACRO: %s\n", env, n)
+					} else {
+						e.debug("FUNC: %s\n", env, n)
+					}
+					fmt.Printf("LOOP END: %d\n", e.i)
+					e.i--
+
+					continue
+					// cont = true
+					// break
+				}
 			}
+			// cont := false
+			// for {
+			//
+			// }
+			//
+			// if cont {
+			// 	continue
+			// }
 
 			return e.Error("List cannot be evaluated.")
 		case *data.SymbolNode:
@@ -149,6 +261,9 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 			return e.evalHashMap(env, x)
 		default:
 			// Return unchanged. These are immutable atoms.
+			e.debug("ATOM: %s\n", env, n)
+			fmt.Printf("LOOP END: %d\n", e.i)
+			e.i--
 			return n
 		}
 	}
@@ -161,12 +276,12 @@ func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
 	// TODO: core functions should be defined in the environment.
 	// First check if the symbol defines a core function. Return the symbol
 	// unchanged if this is true.
-	if _, ok1 := e.core[n.Name]; ok1 {
+	if _, ok := e.core[n.Name]; ok {
 		return n
 	}
 	// See if a value is bound to the symbol is defined in the environment.
 	// Return the value.
-	if v, ok2 := env.Lookup(n.Name); ok2 {
+	if v, ok := env.Lookup(n.Name); ok {
 		return v
 	}
 	// Else the symbol is undefined. Report an error.
@@ -353,6 +468,14 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) data.Node {
 	return nil
 }
 
+// These could be in core:
+// TODO: (true? x)
+// TODO: (false? x)
+
+// TODO: (not x)
+// TODO: (and x1 x2 ...)
+// TODO: (or x1 x2 ...)
+
 // TODO: Create a core function. We need it for (true? ...) and (false? ...)
 // isTrue returns false when the node is nil, false, 0, "", (), [] and {}.
 // It returns true in all remaining cases.
@@ -368,6 +491,7 @@ func (e *evaluator) isTrue(env data.Env, n data.Node) bool {
 		return len(x) != 0
 	case *data.SymbolNode:
 		// TODO: Add a unit test. What if the symbol is not defined?
+		// TODO: e.eval(env, x)?
 		v := e.evalSymbol(env, x)
 		return e.isTrue(env, v)
 	case *data.ListNode:
@@ -488,7 +612,7 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("[macrodef!] requires exactly 2 arguments.")
 	}
-	if sym, ok1 := ns[0].(*data.SymbolNode); ok1 {
+	if sym, ok := ns[0].(*data.SymbolNode); ok {
 		v := e.eval(env, ns[1])
 		if fun, ok2 := v.(*data.FuncNode); ok2 {
 			// Delcare this function a macro.
