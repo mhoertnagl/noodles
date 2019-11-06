@@ -1,40 +1,54 @@
-;; TODO: (println ...)
+(do
+  ;; TODO: (println ...)
 
-;; Function definitions.
-(def! fun (fn* [name args body]
-  (def! name (fn* args body))))
+  ;; `fun` provides a macro to streamline function definition.
+  ;; Instead of defining the not-function the conventional way
+  ;;
+  ;; ```(def! not (fn* [x] (if x false true)))```
+  ;;
+  ;; one can leverage `fun` to achief a mor concise definition:
+  ;;
+  ;; ```(fun not [x] (if x false true))```
+  ;;
+  ;; @sym   name  The name of the function.
+  ;; @(sym) args  The list of arument symbols.
+  ;; @(any) body  The body of the function.
+  (defmacro! fun
+    (fn* [name args body]
+      `(def! ~name (fn* ~args ~body)) ))
 
-;; Returns the negation of `x`.
-(fun not [x] (if x false true))
-; not(x) = if x then false else true end
-;; (def! not (fn* [x]
-;;  (if x false true)))
+  ;; `use` reads, parses and evaluates a splis source file.
+  ;;
+  ;; @str path  The path to a splis source file.
+  (fun use [path]
+    (eval (parse (read-file path))))
 
-;; Maps a function to each element of a list.
-(fun map [f xs]
-  (if (empty? xs)
-    xs ; Will preserve the type of the sequence.
-    (:: (f (head xs)) (map f (tail xs)))))
+  ;; `not` returns `false` if `x` is truthy; `true` otherwise.
+  ;;
+  ;; @any x  The value.
+  ;; @return [bool] `false` if `x` is truthy; `true` otherwise.
+  (fun not [x] (if x false true))
 
-; fun map(f xs)
-;   if (empty? xs) then
-;     ()
-;   else
-;     f(head(xs)) :: map(f tail(xs))
-;   end
-; end
+  ;; `+1` increments the number `n` by one.
+  ;;
+  ;; @num n  A number.
+  (fun +1 [n] (+ n 1))
 
-; map(f ())    = ()
-; map(f x::xs) = f(x) :: map(f xs)
-;
-;
-; map(f l) = _map(f l ())
-;
-; _map(f () a)    = a
-; _map(f x::xs a) = _map(f xs a ::: [f(x)])
+  ;; `map` applies a function of one argument to each element of a list and
+  ;; returns a list of the application results in the same order as the
+  ;; elements.
+  ;;
+  ;; @fun(T)any f   A unary function.
+  ;; @(T)       xs  A list of elements.
+  ;; @return  The list of elements applied to the unary function individually.
+  (fun map [f xs]
+    (if (empty? xs)
+      xs ; Will preserve the type of the sequence.
+      (:: (f (head xs)) (map f (tail xs)))))
 
-;; Left-reduce a list.
-(fun reduce [f b xs]
-  (if (empty? xs)
-    b
-    (reduce f (f b head(xs)) tail(xs))))
+  ;; Left-reduce a list.
+  ; (fun reduce [f b xs]
+  ;   (if (empty? xs)
+  ;     b
+  ;     (reduce f (f b head(xs)) tail(xs))))
+)

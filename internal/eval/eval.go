@@ -13,6 +13,7 @@ type CoreFun func(Evaluator, data.Env, []data.Node) data.Node
 
 type Evaluator interface {
 	Eval(node data.Node) data.Node
+	EvalFile(path string) data.Node
 	Error(format string, args ...interface{}) data.Node
 	Errors() []*data.ErrorNode
 	AddCoreFun(name string, fun CoreFun)
@@ -32,7 +33,7 @@ type evaluator struct {
 
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
-		i:       0,
+		//i:       0,
 		env:     env,
 		core:    make(map[string]CoreFun),
 		err:     []*data.ErrorNode{},
@@ -44,7 +45,6 @@ func NewEvaluator(env data.Env) Evaluator {
 	// TODO: Import prelude.
 	// TODO: partial evaluation.
 	// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
-	// TODO: ' (quote) and ` (quasiquote)
 	return e
 }
 
@@ -74,21 +74,16 @@ func (e *evaluator) Eval(node data.Node) data.Node {
 	return e.eval(e.env, node)
 }
 
+func (e *evaluator) EvalFile(path string) data.Node {
+	s := e.evalReadFile(e.env, []data.Node{path})
+	t := e.evalParse(e.env, []data.Node{s})
+	return e.evalEval(e.env, []data.Node{t})
+}
+
 func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
-		e.i++
-		fmt.Printf("LOOP: %d\n", e.i)
-
-		// for {
-		// 	if ls, ok := n.(*data.ListNode); ok && len(ls.Items) > 0 {
-		// 		hd := ls.Items[0]
-		// 		// args := ls.Items[1:]
-		// 		hd = e.eval(env, hd)
-		//     if fn, ok := hd.(*data.FuncNode); ok {
-		//
-		//     }
-		// 	}
-		// }
+		//e.i++
+		//fmt.Printf("LOOP: %d\n", e.i)
 
 		switch x := n.(type) {
 		case *data.ListNode:
@@ -107,15 +102,15 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					env, n = e.evalLet(env, args)
 					continue
 				case "fn*":
-					e.debug("%s\n", env, n)
-					fmt.Printf("LOOP END: %d\n", e.i)
-					e.i--
+					//e.debug("%s\n", env, n)
+					//fmt.Printf("LOOP END: %d\n", e.i)
+					//e.i--
 					return e.evalFunDef(env, args)
 				case "do":
 					n = e.evalDo(env, args)
 					continue
 				case "if":
-					e.debug("%s\n", env, n)
+					//e.debug("%s\n", env, n)
 					n = e.evalIf(env, args)
 					continue
 				// TODO: TCO?
@@ -127,29 +122,29 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "read-file":
 					return e.evalReadFile(env, args)
 				case "quote":
-					e.debug("%s\n", env, n)
-					fmt.Printf("LOOP END: %d\n", e.i)
-					e.i--
+					//e.debug("%s\n", env, n)
+					//fmt.Printf("LOOP END: %d\n", e.i)
+					//e.i--
 					return e.evalQuote(env, args)
 				case "quasiquote":
-					e.debug("%s\n", env, n)
+					//e.debug("%s\n", env, n)
 					n = e.evalQuasiquote(env, args)
-					e.debug("%s\n", env, n)
-					fmt.Printf("LOOP END: %d\n", e.i)
-					e.i--
+					//e.debug("%s\n", env, n)
+					//fmt.Printf("LOOP END: %d\n", e.i)
+					//e.i--
 					continue
 				case "defmacro!":
 					return e.evalDefMacro(env, args)
 				default:
 					if fun, ok := e.core[sym.Name]; ok {
 						args = e.evalSeq(env, args)
-						e.debug("%s\n", env, n)
+						//e.debug("%s\n", env, n)
 						// return fun(e, env, args)
 						g := fun(e, env, args)
-						fmt.Printf("[%s]: ", sym.Name)
-						e.debug("%s\n", env, g)
-						fmt.Printf("LOOP END: %d\n", e.i)
-						e.i--
+						//fmt.Printf("[%s]: ", sym.Name)
+						//e.debug("%s\n", env, g)
+						//fmt.Printf("LOOP END: %d\n", e.i)
+						//e.i--
 						return g
 					}
 				}
@@ -215,32 +210,30 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				}
 				// Create a new environment for this function.
 				fn.Env = data.NewEnv(fn.Env)
-				// Evaluate and bind argurments to their parameters in the new function
-				// environment.
-				for i, par := range fn.Pars {
-					arg := e.eval(env, args[i])
-					fn.Env.Set(par, arg)
-				}
 
 				if fn.IsMacro {
+					// Do not evaluate the arguments. Just bind them to their names.
+					// We will expand the macro and evaluate the final result including
+					// the unevaluated arguments.
+					// TODO: Breaks <<TestMacroResultEvaluation>>
+					for i, par := range fn.Pars {
+						fn.Env.Set(par, args[i])
+					}
+
 					env = fn.Env
 					n = e.eval(fn.Env, fn.Fun)
 					continue
 				} else {
+					// Evaluate and bind argurments to their parameters in the new
+					// function environment.
+					for i, par := range fn.Pars {
+						arg := e.eval(env, args[i])
+						fn.Env.Set(par, arg)
+					}
+
 					env = fn.Env
 					n = fn.Fun
-
-					if fn.IsMacro {
-						e.debug("MACRO: %s\n", env, n)
-					} else {
-						e.debug("FUNC: %s\n", env, n)
-					}
-					fmt.Printf("LOOP END: %d\n", e.i)
-					e.i--
-
 					continue
-					// cont = true
-					// break
 				}
 			}
 			// cont := false
@@ -261,9 +254,9 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 			return e.evalHashMap(env, x)
 		default:
 			// Return unchanged. These are immutable atoms.
-			e.debug("ATOM: %s\n", env, n)
-			fmt.Printf("LOOP END: %d\n", e.i)
-			e.i--
+			// e.debug("ATOM: %s\n", env, n)
+			// fmt.Printf("LOOP END: %d\n", e.i)
+			// e.i--
 			return n
 		}
 	}
@@ -329,15 +322,15 @@ func (e *evaluator) evalSeq(env data.Env, items []data.Node) []data.Node {
 	return res
 }
 
-// TODO: Should def! be able to overwrite an already defined binding?
-// evalDef binds a name to a value. Evaluates the value before it get bound to
-// the name and returns it. Redefinitions of the same name in the same
-// environment will overwrite the previous value.
+// evalDef binds a name to a value in the root environment. Evaluates the
+// value before it gets bound to the name and returns it. Redefinitions of the
+// same name will overwrite the previous value.
 func (e *evaluator) evalDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("[def!] requires exactly 2 arguments.")
 	}
-	return e.evalSet(env, ns[0], ns[1])
+	// return e.evalSet(env, ns[0], ns[1])
+	return e.evalSet(e.env, ns[0], ns[1])
 }
 
 // evalSet evaluates the name and the val argument and binds name to val in the
@@ -434,7 +427,7 @@ func paramNames(ns []data.Node) ([]string, bool) {
 // Returns nil when the list is empty.
 func (e *evaluator) evalDo(env data.Env, ns []data.Node) data.Node {
 	z := len(ns) - 1
-	if z <= 0 {
+	if z < 0 {
 		return nil
 	}
 	for _, n := range ns[:z] {

@@ -27,6 +27,15 @@ func (p *printer) Print(node data.Node) string {
 	return p.buf.String()
 }
 
+func (p *printer) PrintErrors(errs ...*data.ErrorNode) string {
+	var errBuf bytes.Buffer
+	for _, e := range errs {
+		s := fmt.Sprintf("ERROR: %s\n", e.Msg)
+		errBuf.WriteString(s)
+	}
+	return errBuf.String()
+}
+
 func (p *printer) print(n data.Node) {
 	switch {
 	case data.IsError(n):
@@ -83,15 +92,6 @@ func (p *printer) printHashMap(items data.Map) {
 		p.print(val)
 	}
 	p.buf.WriteString("}")
-}
-
-func (p *printer) PrintErrors(errs ...*data.ErrorNode) string {
-	var errBuf bytes.Buffer
-	for _, e := range errs {
-		s := fmt.Sprintf("ERROR: %s\n", e.Msg)
-		errBuf.WriteString(s)
-	}
-	return errBuf.String()
 }
 
 // func (p *printer) PrintEnv(e data.Env) string {
