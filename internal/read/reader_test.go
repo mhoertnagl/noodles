@@ -72,6 +72,10 @@ func TestProg(t *testing.T) {
 		"(", "if", "x", "false", "true", ")", ")", ")", "")
 }
 
+func TestPlusOne(t *testing.T) {
+	testr(t, "  (+1    0 )   ", "(", "+1", "0", ")", "")
+}
+
 func testr(t *testing.T, i string, es ...string) {
 	r := read.NewReader()
 	r.Load(i)

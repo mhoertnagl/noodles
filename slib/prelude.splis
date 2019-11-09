@@ -29,10 +29,15 @@
   ;; @return [bool] `false` if `x` is truthy; `true` otherwise.
   (fun not [x] (if x false true))
 
-  ;; `+1` increments the number `n` by one.
+  ;; `inc` increments the number `n` by one.
   ;;
   ;; @num n  A number.
-  (fun +1 [n] (+ n 1))
+  (fun inc [n] (+ n 1))
+
+  ;; `dec` decrements the number `n` by one.
+  ;;
+  ;; @num n  A number.
+  (fun dec [n] (- n 1))
 
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the

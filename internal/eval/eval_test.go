@@ -547,13 +547,13 @@ func TestFunShorthand(t *testing.T) {
 }
 
 //
-// // NOTE: Slow test.
-// // func TestMutualRecursive(t *testing.T) {
-// // 	env := data.NewEnv(nil)
-// // 	teste(t, env, "(def! foo (fn* (n) (if (= n 0) 0 (bar (- n 1)))))", "")
-// // 	teste(t, env, "(def! bar (fn* (n) (if (= n 0) 0 (foo (- n 1)))))", "")
-// // 	teste(t, env, "(foo 10000)", "0")
-// // }
+// NOTE: Slow test.
+// func TestMutualRecursive(t *testing.T) {
+// 	env := data.NewEnv(nil)
+// 	teste(t, env, "(def! foo (fn* (n) (if (= n 0) 0 (bar (- n 1)))))", "")
+// 	teste(t, env, "(def! bar (fn* (n) (if (= n 0) 0 (foo (- n 1)))))", "")
+// 	teste(t, env, "(foo 10000)", "0")
+// }
 //
 func TestRead(t *testing.T) {
 	test(t, `(parse "(1 2 (3 4) nil)")`, "(1 2 (3 4) nil)")
@@ -745,7 +745,8 @@ func TestUnlessMacros2(t *testing.T) {
 
 func TestMacroResultEvaluation(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(defmacro! identity (fn* (x) x))", "")
+	teste(t, env, "(defmacro! identity (fn* [x] x))", "")
+	teste(t, env, "(identity 1)", "1")
 	teste(t, env, "(let* (a 123) (identity a))", "123")
 }
 
@@ -795,18 +796,24 @@ func TestPreludeNot(t *testing.T) {
 }
 
 func TestPreludeInc(t *testing.T) {
-	test(t, "(+1 0)", "1")
-	test(t, "(+1 6)", "7")
+	test(t, "(inc 0)", "1")
+	test(t, "(inc 6)", "7")
+
+	test(t, "(dec 0)", "-1")
+	test(t, "(dec 6)", "5")
 }
 
+// TODO: Use (fn* [x] (+ x 1)) instead of +1
 func TestPreludeMap(t *testing.T) {
-	test(t, "(map +1 '())", "()")
-	test(t, "(map +1 '(1 2 3))", "(2 3 4)")
-	test(t, "(map +1 '(3 2 1))", "(4 3 2)")
+	test(t, "(map inc '())", "()")
+	test(t, "(map inc '(1 2 3))", "(2 3 4)")
+	test(t, "(map inc '(3 2 1))", "(4 3 2)")
 
-	test(t, "(map +1 '[]", "[]")
-	test(t, "(map +1 '[1 2 3])", "[2 3 4]")
-	test(t, "(map +1 '[3 2 1])", "[4 3 2]")
+	test(t, "(map dec '[]", "[]")
+	test(t, "(map dec '[1 2 3])", "[0 1 2]")
+	test(t, "(map dec '[3 2 1])", "[2 1 0]")
+
+	test(t, "(map (fn* [x] (+ x 10)) [1 2 3])", "[11 12 13]")
 }
 
 func test(t *testing.T, i string, e string) {
