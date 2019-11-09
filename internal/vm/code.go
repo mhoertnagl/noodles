@@ -52,6 +52,12 @@ const (
 	OpGetLocal
 	OpSetGlobal
 	OpGetGlobal
+
+	// OpCall
+	// OpCallRec
+	// OpReturn
+
+	// OpHalt
 )
 
 // OpMeta contains the human-readable name of the operation and the length in

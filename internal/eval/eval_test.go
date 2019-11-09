@@ -815,6 +815,7 @@ func TestPreludeMap(t *testing.T) {
 	test(t, "(map (fn* [x] (+ x 10)) [1 2 3])", "[11 12 13]")
 }
 
+// TODO: Checkout Clojure syntax.
 // TODO: Relative File paths.
 // TODO: how to import/use modules.
 // TODO: Unit Test Framework.
