@@ -803,7 +803,6 @@ func TestPreludeInc(t *testing.T) {
 	test(t, "(dec 6)", "5")
 }
 
-// TODO: Use (fn* [x] (+ x 1)) instead of +1
 func TestPreludeMap(t *testing.T) {
 	test(t, "(map inc '())", "()")
 	test(t, "(map inc '(1 2 3))", "(2 3 4)")
@@ -815,6 +814,24 @@ func TestPreludeMap(t *testing.T) {
 
 	test(t, "(map (fn* [x] (+ x 10)) [1 2 3])", "[11 12 13]")
 }
+
+// TODO: Relative File paths.
+// TODO: how to import/use modules.
+// TODO: Unit Test Framework.
+// (tests "Prelude [map]"
+//
+// 	(test "[map] empty list"
+// 		'()
+// 		(map inc '())
+// 	)
+//
+// 	(test "[map] inc (1 2 3)"
+// 		'(2 3 4)
+// 		(map int '(1 2 3))
+// 	)
+// )
+// TODO: Turn TODOs into github tickets.
+// TODO: Start structure and interpretation of computer programs.
 
 func test(t *testing.T, i string, e string) {
 	t.Helper()
