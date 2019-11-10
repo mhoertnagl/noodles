@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/mhoertnagl/splis2/internal/data"
+	//	"github.com/mhoertnagl/splis2/internal/fungo"
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
 )
@@ -53,6 +54,7 @@ func (e *evaluator) debug(format string, env data.Env, args ...data.Node) {
 	for i, arg := range args {
 		strs[i] = e.printer.Print(arg)
 	}
+	// strs := fungo.Apply(args, e.printer.Print)
 	fmt.Printf(format, strs...)
 }
 
@@ -82,9 +84,6 @@ func (e *evaluator) EvalFile(path string) data.Node {
 
 func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
-		//e.i++
-		//fmt.Printf("LOOP: %d\n", e.i)
-
 		switch x := n.(type) {
 		case *data.ListNode:
 			if len(x.Items) == 0 {
@@ -102,15 +101,11 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					env, n = e.evalLet(env, args)
 					continue
 				case "fn*":
-					//e.debug("%s\n", env, n)
-					//fmt.Printf("LOOP END: %d\n", e.i)
-					//e.i--
 					return e.evalFunDef(env, args)
 				case "do":
 					n = e.evalDo(env, args)
 					continue
 				case "if":
-					//e.debug("%s\n", env, n)
 					n = e.evalIf(env, args)
 					continue
 				// TODO: TCO?
@@ -122,87 +117,22 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "read-file":
 					return e.evalReadFile(env, args)
 				case "quote":
-					//e.debug("%s\n", env, n)
-					//fmt.Printf("LOOP END: %d\n", e.i)
-					//e.i--
 					return e.evalQuote(env, args)
 				case "quasiquote":
-					//e.debug("%s\n", env, n)
 					n = e.evalQuasiquote(env, args)
-					//e.debug("%s\n", env, n)
-					//fmt.Printf("LOOP END: %d\n", e.i)
-					//e.i--
 					continue
 				case "defmacro!":
 					return e.evalDefMacro(env, args)
 				default:
 					if fun, ok := e.core[sym.Name]; ok {
 						args = e.evalSeq(env, args)
-						//e.debug("%s\n", env, n)
-						// return fun(e, env, args)
-						g := fun(e, env, args)
-						//fmt.Printf("[%s]: ", sym.Name)
-						//e.debug("%s\n", env, g)
-						//fmt.Printf("LOOP END: %d\n", e.i)
-						//e.i--
-						return g
+						return fun(e, env, args)
 					}
 				}
 			}
-			// TODO: Evaluate head.
-			// if func node
-			//   if macro
-			//     expand
-			//   else if num already bound args < num params
-			//     bind args
-			//     continue with n again
-			//   else
-			//     call func
-			// e.debug("%s\n", env, hd)
+
 			hd = e.eval(env, hd)
 
-			// for fn, ok := hd.(*data.FuncNode); ok && fn.IsMacro; {
-			// 	// TODO: repeat macro expansion for as long as it is a function and
-			// 	//       it is a functionNode.
-			// 	if len(fn.Pars) != len(args) {
-			// 		return e.Error("Number of arguments not the same as number of parameters.")
-			// 	}
-			// 	// Create a new environment for this function.
-			// 	fn.Env = data.NewEnv(fn.Env)
-			// 	// Evaluate and bind argurments to their parameters in the new function
-			// 	// environment.
-			// 	for i, par := range fn.Pars {
-			// 		arg := e.eval(env, args[i])
-			// 		fn.Env.Set(par, arg)
-			// 	}
-			// 	env = fn.Env
-			// 	n = fn.Fun
-			// }
-
-			// if fn, ok := hd.(*data.FuncNode); ok {
-			//
-			// 	if len(fn.Pars) != len(args) {
-			// 		return e.Error("Number of arguments not the same as number of parameters.")
-			// 	}
-			// 	// Create a new environment for this function.
-			// 	fn.Env = data.NewEnv(fn.Env)
-			// 	// Evaluate and bind argurments to their parameters in the new function
-			// 	// environment.
-			// 	for i, par := range fn.Pars {
-			// 		arg := e.eval(env, args[i])
-			// 		fn.Env.Set(par, arg)
-			// 	}
-			// 	env = fn.Env
-			// 	n = fn.Fun
-			// 	if fn.IsMacro {
-			// 		e.debug("MACRO: %s\n", env, n)
-			// 	} else {
-			// 		e.debug("FUNC: %s\n", env, n)
-			// 	}
-			// 	fmt.Printf("LOOP END: %d\n", e.i)
-			// 	e.i--
-			// 	continue
-			// }
 			if fn, ok := hd.(*data.FuncNode); ok {
 
 				if len(fn.Pars) != len(args) {
@@ -236,15 +166,6 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					continue
 				}
 			}
-			// cont := false
-			// for {
-			//
-			// }
-			//
-			// if cont {
-			// 	continue
-			// }
-
 			return e.Error("List cannot be evaluated.")
 		case *data.SymbolNode:
 			return e.evalSymbol(env, x)
@@ -253,10 +174,6 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 		case *data.HashMapNode:
 			return e.evalHashMap(env, x)
 		default:
-			// Return unchanged. These are immutable atoms.
-			// e.debug("ATOM: %s\n", env, n)
-			// fmt.Printf("LOOP END: %d\n", e.i)
-			// e.i--
 			return n
 		}
 	}
