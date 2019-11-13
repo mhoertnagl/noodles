@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 
 	"github.com/mhoertnagl/splis2/internal/data"
-	//	"github.com/mhoertnagl/splis2/internal/fungo"
 	"github.com/mhoertnagl/splis2/internal/print"
 	"github.com/mhoertnagl/splis2/internal/read"
 )
@@ -21,7 +20,6 @@ type Evaluator interface {
 }
 
 type evaluator struct {
-	i       int
 	env     data.Env
 	core    map[string]CoreFun
 	err     []*data.ErrorNode
@@ -31,10 +29,31 @@ type evaluator struct {
 }
 
 // TODO: PrintErrors
+// TODO: Doc strings?
+// TODO: Import prelude in REPL.
+// TODO: partial evaluation.
+// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
+// TODO: https://clojuredocs.org/clojure.core
+// TODO: Relative File paths.
+// TODO: how to import/use modules.
+// TODO: Unit Test Framework.
+// (tests "Prelude [map]"
+//
+// 	(test "[map] empty list"
+// 		'()
+// 		(map inc '())
+// 	)
+//
+// 	(test "[map] inc (1 2 3)"
+// 		'(2 3 4)
+// 		(map int '(1 2 3))
+// 	)
+// )
+// TODO: Turn TODOs into github tickets.
+// TODO: Start structure and interpretation of computer programs.
 
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
-		//i:       0,
 		env:     env,
 		core:    make(map[string]CoreFun),
 		err:     []*data.ErrorNode{},
@@ -43,9 +62,6 @@ func NewEvaluator(env data.Env) Evaluator {
 		printer: print.NewPrinter(),
 	}
 	InitCore(e)
-	// TODO: Import prelude.
-	// TODO: partial evaluation.
-	// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
 	return e
 }
 
@@ -54,7 +70,6 @@ func (e *evaluator) debug(format string, env data.Env, args ...data.Node) {
 	for i, arg := range args {
 		strs[i] = e.printer.Print(arg)
 	}
-	// strs := fungo.Apply(args, e.printer.Print)
 	fmt.Printf(format, strs...)
 }
 
@@ -95,12 +110,12 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 
 			if sym, ok := hd.(*data.SymbolNode); ok {
 				switch sym.Name {
-				case "def!":
+				case "def":
 					return e.evalDef(env, args)
-				case "let*":
+				case "let":
 					env, n = e.evalLet(env, args)
 					continue
-				case "fn*":
+				case "fn":
 					return e.evalFunDef(env, args)
 				case "do":
 					n = e.evalDo(env, args)
@@ -121,7 +136,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "quasiquote":
 					n = e.evalQuasiquote(env, args)
 					continue
-				case "defmacro!":
+				case "defmacro":
 					return e.evalDefMacro(env, args)
 				default:
 					if fun, ok := e.core[sym.Name]; ok {
@@ -520,7 +535,7 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 // second argument a function.
 func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
-		return e.Error("[macrodef!] requires exactly 2 arguments.")
+		return e.Error("[defmacro] requires exactly 2 arguments.")
 	}
 	if sym, ok := ns[0].(*data.SymbolNode); ok {
 		v := e.eval(env, ns[1])
@@ -529,7 +544,7 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 			fun.IsMacro = true
 			return env.Set(sym.Name, fun)
 		}
-		return e.Error("[macrodef!] requires second argument to be a function.")
+		return e.Error("[defmacro] requires second argument to be a function.")
 	}
-	return e.Error("[macrodef!] Cannot bind to [%s].", ns[0])
+	return e.Error("[defmacro] Cannot bind to [%s].", ns[0])
 }

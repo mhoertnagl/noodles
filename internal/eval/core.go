@@ -7,27 +7,25 @@ import (
 )
 
 func InitCore(e Evaluator) {
-	e.AddCoreFun("nil?", eval1n("nil?", isNil))
-	e.AddCoreFun("list", list)
 	e.AddCoreFun("list?", eval1n("list?", isList))
-	e.AddCoreFun("count", count)
-	e.AddCoreFun("empty?", eval1n("empty?", isEmpty))
-	// TODO: (vector )
 	// TODO: (vector? )
 	// TODO: (dict? )
+	e.AddCoreFun("list", list)
+	// TODO: (vector )
 	// TODO: (dict )
+	e.AddCoreFun("count", count)
+	e.AddCoreFun("empty?", eval1n("empty?", isEmpty))
 	e.AddCoreFun("::", cons)
 	e.AddCoreFun(":::", concat)
 	e.AddCoreFun("head", eval1n("head", head))
 	e.AddCoreFun("tail", eval1n("tail", tail))
-	// TODO: (join <list/vector> <list/vector>)
 	// TODO: (join <string> <string>)
 	// TODO: (join <dict> <dict>)
 	// TODO: (print ...)
 	// e.AddCoreFun("str", printArgs(false))
-	e.AddCoreFun("+", evalxf("+", sum))
+	e.AddCoreFun("+", evalxf("+", 0, sum))
 	e.AddCoreFun("-", eval12f("-", neg, diff))
-	e.AddCoreFun("*", evalxf("*", prod))
+	e.AddCoreFun("*", evalxf("*", 1, prod))
 	e.AddCoreFun("/", eval12f("/", reciproc, div))
 	e.AddCoreFun("=", eq)
 	e.AddCoreFun("<", eval2f("<", lt))
@@ -36,8 +34,14 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun(">=", eval2f(">=", ge))
 }
 
-func sum(acc, v float64) float64   { return acc + v }
-func neg(n float64) data.Node      { return -n }
+func sum(acc, v float64) float64 { return acc + v }
+func neg(n float64) data.Node {
+	// Negating 0 would give -0 which is not equal to 0.
+	if n == 0 {
+		return n
+	}
+	return -n
+}
 func diff(a, b float64) data.Node  { return a - b }
 func prod(acc, v float64) float64  { return acc * v }
 func reciproc(n float64) data.Node { return 1 / n }
@@ -47,10 +51,6 @@ func lt(a, b float64) data.Node { return a < b }
 func gt(a, b float64) data.Node { return a > b }
 func le(a, b float64) data.Node { return a <= b }
 func ge(a, b float64) data.Node { return a >= b }
-
-func isNil(e Evaluator, env data.Env, arg data.Node) data.Node {
-	return data.IsNil(arg)
-}
 
 func list(e Evaluator, env data.Env, args []data.Node) data.Node {
 	return data.NewList(args)
@@ -299,9 +299,9 @@ func eval1n(name string, f func(Evaluator, data.Env, data.Node) data.Node) CoreF
 	}
 }
 
-func evalxf(name string, f func(float64, float64) float64) CoreFun {
+func evalxf(name string, b float64, f func(float64, float64) float64) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
-		var acc float64
+		acc := b
 		for i, arg := range args {
 			if v, ok := arg.(float64); ok {
 				acc = f(acc, v)

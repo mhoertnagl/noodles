@@ -33,6 +33,7 @@ func TestInvalidSum(t *testing.T) {
 }
 
 func TestDiff(t *testing.T) {
+	test(t, "(- 0)", "0")
 	test(t, "(- 1)", "-1")
 	test(t, "(- 2 1)", "1")
 	test(t, "(- 1 2)", "-1")
@@ -40,13 +41,13 @@ func TestDiff(t *testing.T) {
 
 func TestDiff2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! :a (+ 1 1))", "2")
+	teste(t, env, "(def :a (+ 1 1))", "2")
 	teste(t, env, "(- :a)", "-2")
 }
 
 func TestDiff3(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! :a (+ 1 1))", "2")
+	teste(t, env, "(def :a (+ 1 1))", "2")
 	teste(t, env, "(- :a 1)", "1")
 	teste(t, env, "(- 1 :a)", "-1")
 }
@@ -61,6 +62,31 @@ func TestInvalidDiff(t *testing.T) {
 	test(t, "(- 1 1 1)", "  [ERROR]  ")
 }
 
+func TestSumAndDiff(t *testing.T) {
+	test(t, "(+ 1 (- 0))", "1")
+	test(t, "(+ (- 0) (- 0))", "0")
+}
+
+func TestProd(t *testing.T) {
+	test(t, "(*)", "1")
+	test(t, "(* 0)", "0")
+	test(t, "(* 0 1)", "0")
+	test(t, "(* 2 3)", "6")
+	test(t, "(* 2 (- 3))", "-6")
+}
+
+func TestDiv(t *testing.T) {
+	test(t, "(/ 0)", "+Inf")
+	test(t, "(/ (- 1) 0)", "-Inf")
+	test(t, "(/ 0 1)", "0")
+	test(t, "(/ 2)", "0.5")
+	test(t, "(/ 2 (- 4))", "-0.5")
+}
+
+func TestInvalidDiv(t *testing.T) {
+	test(t, "(/)", "  [ERROR]  ")
+}
+
 func TestHashMap(t *testing.T) {
 	test(t, `{}`, `{}`)
 	test(t, `{"a" 1}`, `{"a" 1}`)
@@ -71,14 +97,14 @@ func TestHashMap(t *testing.T) {
 
 func TestDef1(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! :a 1)", "1")
+	teste(t, env, "(def :a 1)", "1")
 	testenv(t, env, ":a", "1")
 	teste(t, env, ":a", "1")
 }
 
 func TestDef2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! :a (+ 1 1))", "2")
+	teste(t, env, "(def :a (+ 1 1))", "2")
 	testenv(t, env, ":a", "2")
 	teste(t, env, ":a", "2")
 }
@@ -86,54 +112,54 @@ func TestDef2(t *testing.T) {
 func TestDef3(t *testing.T) {
 	env := data.NewEnv(nil)
 	// Define
-	teste(t, env, "(def! :a 1)", "1")
+	teste(t, env, "(def :a 1)", "1")
 	testenv(t, env, ":a", "1")
 	teste(t, env, ":a", "1")
 	// Redefine
-	teste(t, env, "(def! :a 2)", "2")
+	teste(t, env, "(def :a 2)", "2")
 	testenv(t, env, ":a", "2")
 	teste(t, env, ":a", "2")
 }
 
 func TestInvalidDef(t *testing.T) {
-	test(t, "(def!)", "  [ERROR]  ")
-	test(t, "(def! :a)", "  [ERROR]  ")
-	test(t, "(def! :a 1 :b)", "  [ERROR]  ")
-	test(t, "(def! 5 2)", "  [ERROR]  ")
+	test(t, "(def)", "  [ERROR]  ")
+	test(t, "(def :a)", "  [ERROR]  ")
+	test(t, "(def :a 1 :b)", "  [ERROR]  ")
+	test(t, "(def 5 2)", "  [ERROR]  ")
 }
 
 func TestLet(t *testing.T) {
-	test(t, "(let* (:a 1) :a)", "1")
-	test(t, "(let* (:a (+ 1 1)) :a)", "2")
-	test(t, "(let* (:a 1) (+ :a :a))", "2")
-	test(t, "(let* (:a (+ 1 1)) (+ :a :a))", "4")
-	test(t, "(let* (p (+ 2 3) q (+ 2 p)) (+ p q))", "12")
+	test(t, "(let (:a 1) :a)", "1")
+	test(t, "(let (:a (+ 1 1)) :a)", "2")
+	test(t, "(let (:a 1) (+ :a :a))", "2")
+	test(t, "(let (:a (+ 1 1)) (+ :a :a))", "4")
+	test(t, "(let (p (+ 2 3) q (+ 2 p)) (+ p q))", "12")
 }
 
 func TestLetVectorBinding(t *testing.T) {
-	test(t, "(let* [:a 1] :a)", "1")
-	test(t, "(let* [p (+ 2 3) q (+ 2 p)] (+ p q))", "12")
-	test(t, "(let* (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
+	test(t, "(let [:a 1] :a)", "1")
+	test(t, "(let [p (+ 2 3) q (+ 2 p)] (+ p q))", "12")
+	test(t, "(let (a 5 b 6) [3 4 a [b 7] 8])", "[3 4 5 [6 7] 8]")
 }
 
 // func TestLetHashMapBinding(t *testing.T) {
-// 	test(t, "(let* {:a 1} :a)", "1")
+// 	test(t, "(let {:a 1} :a)", "1")
 // }
 
 // TODO: Test outer environment.
 
 func TestInvalidLet(t *testing.T) {
-	test(t, "(let*)", "  [ERROR]  ")
-	test(t, "(let* 1 2)", "  [ERROR]  ")
-	test(t, "(let* (:a 1))", "  [ERROR]  ")
-	test(t, "(let* (:a 1) :a :b)", "  [ERROR]  ")
+	test(t, "(let)", "  [ERROR]  ")
+	test(t, "(let 1 2)", "  [ERROR]  ")
+	test(t, "(let (:a 1))", "  [ERROR]  ")
+	test(t, "(let (:a 1) :a :b)", "  [ERROR]  ")
 }
 
 func TestDo(t *testing.T) {
 	test(t, "(do)", "nil")
 	test(t, "(do (+ 1 1))", "2")
 	test(t, "(do (+ 1 1) (+ 2 2))", "4")
-	test(t, "(do (def! a 3) (def! b 7) (+ a b))", "10")
+	test(t, "(do (def a 3) (def b 7) (+ a b))", "10")
 }
 
 func TestIf(t *testing.T) {
@@ -172,20 +198,6 @@ func TestInvalidIf(t *testing.T) {
 	test(t, "(if)", "  [ERROR]  ")
 	test(t, "(if true)", "  [ERROR]  ")
 	test(t, "(if true 1 0 2)", "  [ERROR]  ")
-}
-
-func TestIsNil(t *testing.T) {
-	test(t, "(nil? nil)", "true")
-	test(t, "(nil? 0)", "false")
-	test(t, "(nil? ())", "false")
-	test(t, "(nil? []", "false")
-	test(t, "(nil? {}", "false")
-	test(t, "(nil? x)", "false")
-}
-
-func TestInvalidIsNil(t *testing.T) {
-	test(t, "(nil?)", "  [ERROR]  ")
-	test(t, "(nil? () [])", "  [ERROR]  ")
 }
 
 func TestList(t *testing.T) {
@@ -288,14 +300,14 @@ func TestLT(t *testing.T) {
 
 func TestLT2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! N 0)", "0")
+	teste(t, env, "(def N 0)", "0")
 	teste(t, env, "(< N 1)", "true")
 	teste(t, env, "(< N 0)", "false")
 }
 
 func TestLT3(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! N 1)", "1")
+	teste(t, env, "(def N 1)", "1")
 	teste(t, env, "(< N 1)", "false")
 	teste(t, env, "(< N 0)", "false")
 }
@@ -380,7 +392,7 @@ func TestNumberEquivalence(t *testing.T) {
 
 func TestEnvVarEquivalence(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! x 1", "1")
+	teste(t, env, "(def x 1", "1")
 	teste(t, env, "(= x 1)", "true")
 	teste(t, env, "(= 1 x)", "true")
 	teste(t, env, "(= x x)", "true")
@@ -440,47 +452,47 @@ func TestInvalidEquivalence(t *testing.T) {
 }
 
 func TestFun(t *testing.T) {
-	//test(t, "(fn* () 42)", "#<fn>")
-	test(t, "((fn* () 40))", "40")
-	test(t, "((fn* (a) a) 41)", "41")
-	test(t, "((fn* (a b) b) 0 42)", "42")
-	test(t, "((fn* (a b c) (+ a b c)) 1 2 3)", "6")
-	test(t, "((fn* (f x) (f x)) (fn* (a) (+ 1 a)) 7)", "8")
-	test(t, "(((fn* (a) (fn* (b) (+ a b))) 5) 7)", "12")
-	test(t, "((fn* [x] (if x false true)) true)", "false")
-	test(t, "((fn* [x] (if x false true)) false)", "true")
-	test(t, "((fn* [f x] (f x)) (fn* [a] (+ 1 a)) 7)", "8")
-	// test(t, "(((fn* [a b] b)) 0 43)", "43")
+	//test(t, "(fn () 42)", "#<fn>")
+	test(t, "((fn () 40))", "40")
+	test(t, "((fn (a) a) 41)", "41")
+	test(t, "((fn (a b) b) 0 42)", "42")
+	test(t, "((fn (a b c) (+ a b c)) 1 2 3)", "6")
+	test(t, "((fn (f x) (f x)) (fn (a) (+ 1 a)) 7)", "8")
+	test(t, "(((fn (a) (fn (b) (+ a b))) 5) 7)", "12")
+	test(t, "((fn [x] (if x false true)) true)", "false")
+	test(t, "((fn [x] (if x false true)) false)", "true")
+	test(t, "((fn [f x] (f x)) (fn [a] (+ 1 a)) 7)", "8")
+	// test(t, "(((fn [a b] b)) 0 43)", "43")
 }
 
 // func TestPartialFun(t *testing.T) {
-// 	test(t, "(((fn* [a b] b) 0) 43)", "43")
+// 	test(t, "(((fn [a b] b) 0) 43)", "43")
 // }
 
 func TestFun2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! gen-plus5 (fn* () (fn* (b) (+ 5 b))))", "")
-	teste(t, env, "(def! plus5 (gen-plus5))", "")
+	teste(t, env, "(def gen-plus5 (fn () (fn (b) (+ 5 b))))", "")
+	teste(t, env, "(def plus5 (gen-plus5))", "")
 	teste(t, env, "(plus5 7)", "12")
 }
 
 func TestFun3(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! gen-plusX (fn* (x) (fn* (b) (+ x b))))", "")
-	teste(t, env, "(def! plus7 (gen-plusX 7))", "")
+	teste(t, env, "(def gen-plusX (fn (x) (fn (b) (+ x b))))", "")
+	teste(t, env, "(def plus7 (gen-plusX 7))", "")
 	teste(t, env, "(plus7 8)", "15")
 }
 
 func TestFun4(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! iffun (fn* (N) (if (> N 0) 33 22)))", "")
+	teste(t, env, "(def iffun (fn (N) (if (> N 0) 33 22)))", "")
 	teste(t, env, "(iffun 0)", "22")
 	teste(t, env, "(iffun 1)", "33")
 }
 
 func TestFun5(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! sumdown (fn* (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
+	teste(t, env, "(def sumdown (fn (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
 	teste(t, env, "(sumdown 1)", "1")
 	teste(t, env, "(sumdown 2)", "3")
 	teste(t, env, "(sumdown 6)", "21")
@@ -489,7 +501,7 @@ func TestFun5(t *testing.T) {
 func TestFib(t *testing.T) {
 	env := data.NewEnv(nil)
 	fib := `
-		(def! fib (fn* (N)
+		(def fib (fn (N)
 			(if (= N 0)
 				1
 				(if (= N 1)
@@ -507,7 +519,7 @@ func TestFib(t *testing.T) {
 func TestSum2(t *testing.T) {
 	env := data.NewEnv(nil)
 	sum2 := `
-		(def! sum2 (fn* (n acc)
+		(def sum2 (fn (n acc)
 			(if (= n 0)
 				acc
 				(sum2 (- n 1) (+ n acc)))))
@@ -515,14 +527,14 @@ func TestSum2(t *testing.T) {
 	teste(t, env, sum2, "")
 	teste(t, env, "(sum2 10 0)", "55")
 	// NOTE: Slow test.
-	// teste(t, env, "(def! res2 nil)", "nil")
-	// teste(t, env, "(def! res2 (sum2 10000 0))", "50005000")
+	// teste(t, env, "(def res2 nil)", "nil")
+	// teste(t, env, "(def res2 (sum2 10000 0))", "50005000")
 }
 
 func TestNotDef(t *testing.T) {
 	env := data.NewEnv(nil)
 	not := `
-    (def! not (fn* [x]
+    (def not (fn [x]
       (if x false true)))
 	`
 	teste(t, env, not, "")
@@ -534,9 +546,9 @@ func TestFunShorthand(t *testing.T) {
 	env := data.NewEnv(nil)
 	not := `
     (do
-      (defmacro! fun
-        (fn* [name args body]
-          (quasiquote (def! ~name (fn* ~args ~body)) )))
+      (defmacro fun
+        (fn [name args body]
+          (quasiquote (def ~name (fn ~args ~body)) )))
 
       (fun plus7 [x] (+ 7 x))
     )
@@ -550,8 +562,8 @@ func TestFunShorthand(t *testing.T) {
 // NOTE: Slow test.
 // func TestMutualRecursive(t *testing.T) {
 // 	env := data.NewEnv(nil)
-// 	teste(t, env, "(def! foo (fn* (n) (if (= n 0) 0 (bar (- n 1)))))", "")
-// 	teste(t, env, "(def! bar (fn* (n) (if (= n 0) 0 (foo (- n 1)))))", "")
+// 	teste(t, env, "(def foo (fn (n) (if (= n 0) 0 (bar (- n 1)))))", "")
+// 	teste(t, env, "(def bar (fn (n) (if (= n 0) 0 (foo (- n 1)))))", "")
 // 	teste(t, env, "(foo 10000)", "0")
 // }
 //
@@ -566,7 +578,7 @@ func TestRead2(t *testing.T) {
 	env := data.NewEnv(nil)
 	src := `
   ;; Returns the negation of x.
-  (def! not (fn* [x]
+  (def not (fn [x]
     (if x false true)))
 	`
 	teste(t, env, src, "")
@@ -582,7 +594,7 @@ func TestEval(t *testing.T) {
 
 func TestEval2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! mal-prog (list + 1 2))", "(+ 1 2)")
+	teste(t, env, "(def mal-prog (list + 1 2))", "(+ 1 2)")
 	teste(t, env, "(eval mal-prog)", "3")
 }
 
@@ -647,8 +659,8 @@ func TestConcat(t *testing.T) {
 
 func TestConcatEnv(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! a (list 1 2))", "(1 2)")
-	teste(t, env, "(def! b (list 3 4))", "(3 4)")
+	teste(t, env, "(def a (list 1 2))", "(1 2)")
+	teste(t, env, "(def b (list 3 4))", "(3 4)")
 	teste(t, env, "(::: a b (list 5 6))", "(1 2 3 4 5 6)")
 }
 
@@ -693,26 +705,26 @@ func TestQuasiquote(t *testing.T) {
 
 func TestQuasiquote2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! a 8)", "8")
+	teste(t, env, "(def a 8)", "8")
 	teste(t, env, "(quasiquote a)", "a")
 	teste(t, env, "(quasiquote (unquote a))", "8")
 	teste(t, env, "(quasiquote (1 a 3))", "(1 a 3)")
 	teste(t, env, "(quasiquote (1 (unquote a) 3))", "(1 8 3)")
 
-	teste(t, env, `(def! b (quote (1 "b" "d")))`, `(1 "b" "d")`)
+	teste(t, env, `(def b (quote (1 "b" "d")))`, `(1 "b" "d")`)
 	teste(t, env, "(quasiquote (1 b 3))", "(1 b 3)")
 	teste(t, env, `(quasiquote (1 (unquote b) 3))`, `(1 (1 "b" "d") 3)`)
 	teste(t, env, "(quasiquote ((unquote 1) (unquote 2)))", "(1 2)")
 
-	teste(t, env, `(def! c (quote (1 "b" "d")))`, `(1 "b" "d")`)
+	teste(t, env, `(def c (quote (1 "b" "d")))`, `(1 "b" "d")`)
 	teste(t, env, `(quasiquote (1 c 3))`, `(1 c 3)`)
 	teste(t, env, `(quasiquote (1 (splice-unquote c) 3))`, `(1 1 "b" "d" 3)`)
 }
 
 func TestQuasiquoteQuine(t *testing.T) {
 	test(t,
-		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))",
-		"((fn* [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* [q] (quasiquote ((unquote q) (quote (unquote q)))))))")
+		"((fn [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn [q] (quasiquote ((unquote q) (quote (unquote q)))))))",
+		"((fn [q] (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn [q] (quasiquote ((unquote q) (quote (unquote q)))))))")
 }
 
 func TestInvalidQuasiquote(t *testing.T) {
@@ -722,22 +734,22 @@ func TestInvalidQuasiquote(t *testing.T) {
 
 func TestTrivialMacros(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(defmacro! one (fn* () 1))", "")
+	teste(t, env, "(defmacro one (fn () 1))", "")
 	teste(t, env, "(one)", "1")
-	teste(t, env, "(defmacro! two (fn* () 2))", "")
+	teste(t, env, "(defmacro two (fn () 2))", "")
 	teste(t, env, "(two)", "2")
 }
 
 func TestUnlessMacros(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(defmacro! unless (fn* (pred a b) `(if ~pred ~b ~a)))", "")
+	teste(t, env, "(defmacro unless (fn (pred a b) `(if ~pred ~b ~a)))", "")
 	teste(t, env, "(unless false 7 8)", "7")
 	teste(t, env, "(unless true 7 8)", "8")
 }
 
 func TestUnlessMacros2(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(defmacro! unless2 (fn* (pred a b) (list 'if (list 'not pred) a b)))", "")
+	teste(t, env, "(defmacro unless2 (fn (pred a b) (list 'if (list 'not pred) a b)))", "")
 	teste(t, env, "(unless2 false 7 8)", "7")
 	teste(t, env, "(unless2 true 7 8)", "8")
 	// teste(t, env, "(macroexpand (unless2 2 3 4))", "(if (not 2) 3 4)")
@@ -745,17 +757,17 @@ func TestUnlessMacros2(t *testing.T) {
 
 func TestMacroResultEvaluation(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(defmacro! identity (fn* [x] x))", "")
+	teste(t, env, "(defmacro identity (fn [x] x))", "")
 	teste(t, env, "(identity 1)", "1")
-	teste(t, env, "(let* (a 123) (identity a))", "123")
+	teste(t, env, "(let (a 123) (identity a))", "123")
 }
 
 func TestMacroUsesClosures(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, "(def! x 2)", "2")
-	teste(t, env, "(defmacro! a (fn* [] x))", "")
+	teste(t, env, "(def x 2)", "2")
+	teste(t, env, "(defmacro a (fn [] x))", "")
 	teste(t, env, "(a)", "2")
-	teste(t, env, "(let* (x 3) (a))", "2")
+	teste(t, env, "(let (x 3) (a))", "2")
 }
 
 func TestHead(t *testing.T) {
@@ -803,36 +815,83 @@ func TestPreludeInc(t *testing.T) {
 	test(t, "(dec 6)", "5")
 }
 
+func TestPreludeIsPositive(t *testing.T) {
+	test(t, "(pos? (- 1))", "false")
+	test(t, "(pos? 0)", "false")
+	test(t, "(pos? 1)", "true")
+}
+
+func TestPreludeAbs(t *testing.T) {
+	test(t, "(abs (- 1))", "1")
+	test(t, "(abs 0)", "0")
+	test(t, "(abs 1)", "1")
+}
+
+func TestPreludeIsNil(t *testing.T) {
+	test(t, "(nil? nil)", "true")
+	test(t, "(nil? 0)", "false")
+	test(t, "(nil? ())", "false")
+	test(t, "(nil? []", "false")
+	test(t, "(nil? {}", "false")
+	test(t, "(nil? x)", "false")
+}
+
+func TestPreludeInvalidIsNil(t *testing.T) {
+	test(t, "(nil?)", "  [ERROR]  ")
+	test(t, "(nil? () [])", "  [ERROR]  ")
+}
+
+func TestPreludeIsTrue(t *testing.T) {
+	test(t, "(true? true)", "true")
+	test(t, "(true? false)", "false")
+	test(t, "(true? nil)", "false")
+	test(t, "(true? 0)", "false")
+	test(t, "(true? ())", "false")
+	test(t, "(true? []", "false")
+	test(t, "(true? {}", "false")
+	test(t, "(true? x)", "false")
+}
+
+func TestPreludeIsFalse(t *testing.T) {
+	test(t, "(false? true)", "false")
+	test(t, "(false? false)", "true")
+	test(t, "(false? nil)", "false")
+	test(t, "(false? 0)", "false")
+	test(t, "(false? ())", "false")
+	test(t, "(false? []", "false")
+	test(t, "(false? {}", "false")
+	test(t, "(false? x)", "false")
+}
+
+func TestPreludeRange(t *testing.T) {
+	test(t, "(range 0 5 1)", "(0 1 2 3 4)")
+	test(t, "(range 5 9 1)", "(5 6 7 8)")
+	test(t, "(range 0 0 1)", "()")
+	test(t, "(range 1 0 1)", "()")
+
+	test(t, "(range 0 3 (/ 2))", "(0 0.5 1 1.5 2 2.5)")
+}
+
 func TestPreludeMap(t *testing.T) {
 	test(t, "(map inc '())", "()")
 	test(t, "(map inc '(1 2 3))", "(2 3 4)")
 	test(t, "(map inc '(3 2 1))", "(4 3 2)")
 
-	test(t, "(map dec '[]", "[]")
-	test(t, "(map dec '[1 2 3])", "[0 1 2]")
-	test(t, "(map dec '[3 2 1])", "[2 1 0]")
+	test(t, "(map dec []", "[]")
+	test(t, "(map dec [1 2 3])", "[0 1 2]")
+	test(t, "(map dec [3 2 1])", "[2 1 0]")
 
-	test(t, "(map (fn* [x] (+ x 10)) [1 2 3])", "[11 12 13]")
+	test(t, "(map (fn [x] (+ x 10)) [1 2 3])", "[11 12 13]")
 }
 
-// TODO: Checkout Clojure syntax.
-// TODO: Relative File paths.
-// TODO: how to import/use modules.
-// TODO: Unit Test Framework.
-// (tests "Prelude [map]"
-//
-// 	(test "[map] empty list"
-// 		'()
-// 		(map inc '())
-// 	)
-//
-// 	(test "[map] inc (1 2 3)"
-// 		'(2 3 4)
-// 		(map int '(1 2 3))
-// 	)
-// )
-// TODO: Turn TODOs into github tickets.
-// TODO: Start structure and interpretation of computer programs.
+func TestPreludeAdd(t *testing.T) {
+	test(t, `(\+ 1 1)`, "2")
+}
+
+func TestPreludeReduce(t *testing.T) {
+	test(t, `(reduce + 0 '())`, "0")
+	test(t, `(reduce + 0 '(3 2 1))`, "6")
+}
 
 func test(t *testing.T, i string, e string) {
 	t.Helper()
