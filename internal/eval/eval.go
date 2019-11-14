@@ -57,6 +57,7 @@ type evaluator struct {
 // TODO: Start structure and interpretation of computer programs.
 // TODO: go-routines
 // TODO: web-server hosting splis docs.
+// TODO: https://www.braveclojure.com/introduction/
 
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
