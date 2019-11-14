@@ -1,7 +1,6 @@
 package eval_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/data"
@@ -603,6 +602,12 @@ func TestReadFile(t *testing.T) {
 	test(t, `(read-file "../../test/test.txt")`, exp)
 }
 
+func TestInvalidReadFile(t *testing.T) {
+	test(t, `(read-file)`, "  [ERROR]  ")
+	test(t, `(read-file true)`, "  [ERROR]  ")
+	test(t, `(read-file "foo.bar")`, "  [ERROR]  ")
+}
+
 func TestExecuteFile(t *testing.T) {
 	src := `
     (eval
@@ -770,6 +775,13 @@ func TestMacroUsesClosures(t *testing.T) {
 	teste(t, env, "(let (x 3) (a))", "2")
 }
 
+func TestInvalidDefMacro(t *testing.T) {
+	test(t, "(defmacro)", "  [ERROR]  ")
+	test(t, "(defmacro a)", "  [ERROR]  ")
+	test(t, "(defmacro 2 (fn [] 0))", "  [ERROR]  ")
+	test(t, "(defmacro a 2)", "  [ERROR]  ")
+}
+
 func TestHead(t *testing.T) {
 	test(t, "(head '(true)", "true")
 	test(t, "(head '(1 2 3))", "1")
@@ -884,17 +896,29 @@ func TestPreludeMap(t *testing.T) {
 	test(t, "(map (fn [x] (+ x 10)) [1 2 3])", "[11 12 13]")
 }
 
-func TestPreludeAdd(t *testing.T) {
-	test(t, `(\+ 1 1)`, "2")
-}
-
 func TestPreludeReduce(t *testing.T) {
 	test(t, `(reduce + 0 '())`, "0")
 	test(t, `(reduce + 0 '(3 2 1))`, "6")
+
+	test(t, `(reduce + 0 [])`, "0")
+	test(t, `(reduce + 0 [3 2 1])`, "6")
+}
+
+func TestPreludeSum(t *testing.T) {
+	test(t, `(sum [])`, "0")
+	test(t, `(sum [4 5 6])`, "15")
+	test(t, `(sum (irange 1 5))`, "10")
+}
+
+func TestPreludeProd(t *testing.T) {
+	test(t, `(prod [])`, "1")
+	test(t, `(prod [4 5 6])`, "120")
+	test(t, `(prod (irange 1 5))`, "24")
 }
 
 func test(t *testing.T, i string, e string) {
 	t.Helper()
+	// fmt.Printf("\n\nTesting %s ...\n", i)
 	teste(t, data.NewEnv(nil), i, e)
 }
 
@@ -905,7 +929,7 @@ func teste(t *testing.T, env data.Env, i string, e string) {
 	w := print.NewPrinter()
 	v := eval.NewEvaluator(env)
 	v.EvalFile("../../slib/prelude.splis")
-	fmt.Print(w.PrintErrors(v.Errors()...))
+	// fmt.Print(w.PrintErrors(v.Errors()...))
 	r.Load(i)
 	n := p.Parse(r)
 	m := v.Eval(n)

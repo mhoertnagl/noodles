@@ -29,6 +29,10 @@ type evaluator struct {
 }
 
 // TODO: PrintErrors
+// TODO: quot and mod
+// TODO: :keywords?
+// TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
+// TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
 // TODO: Doc strings?
 // TODO: Import prelude in REPL.
 // TODO: partial evaluation.
@@ -51,6 +55,8 @@ type evaluator struct {
 // )
 // TODO: Turn TODOs into github tickets.
 // TODO: Start structure and interpretation of computer programs.
+// TODO: go-routines
+// TODO: web-server hosting splis docs.
 
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
@@ -101,6 +107,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 	for {
 		switch x := n.(type) {
 		case *data.ListNode:
+			// e.debug("List: %s\n", env, x)
 			if len(x.Items) == 0 {
 				return n
 			}
@@ -129,8 +136,10 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				// TODO: TCO?
 				case "eval":
 					return e.evalEval(env, args)
+					// TODO: TCO?
 				case "read-file":
 					return e.evalReadFile(env, args)
+					// TODO: TCO?
 				case "quote":
 					return e.evalQuote(env, args)
 				case "quasiquote":
@@ -138,17 +147,17 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					continue
 				case "defmacro":
 					return e.evalDefMacro(env, args)
-				default:
-					if fun, ok := e.core[sym.Name]; ok {
-						args = e.evalSeq(env, args)
-						return fun(e, env, args)
-					}
 				}
 			}
 
 			hd = e.eval(env, hd)
 
-			if fn, ok := hd.(*data.FuncNode); ok {
+			if sym, ok1 := hd.(*data.SymbolNode); ok1 {
+				if fun, ok2 := e.core[sym.Name]; ok2 {
+					args = e.evalSeq(env, args)
+					return fun(e, env, args)
+				}
+			} else if fn, ok := hd.(*data.FuncNode); ok {
 
 				if len(fn.Pars) != len(args) {
 					return e.Error("Number of arguments not the same as number of parameters.")
@@ -181,7 +190,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					continue
 				}
 			}
-			return e.Error("List cannot be evaluated.")
+			return e.Error("List [%s] cannot be evaluated.", e.printer.Print(x))
 		case *data.SymbolNode:
 			return e.evalSymbol(env, x)
 		case *data.VectorNode:
@@ -393,15 +402,6 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) data.Node {
 	return nil
 }
 
-// These could be in core:
-// TODO: (true? x)
-// TODO: (false? x)
-
-// TODO: (not x)
-// TODO: (and x1 x2 ...)
-// TODO: (or x1 x2 ...)
-
-// TODO: Create a core function. We need it for (true? ...) and (false? ...)
 // isTrue returns false when the node is nil, false, 0, "", (), [] and {}.
 // It returns true in all remaining cases.
 func (e *evaluator) isTrue(env data.Env, n data.Node) bool {

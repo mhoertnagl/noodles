@@ -83,11 +83,20 @@
   ;; @num start  The start number (included).
   ;; @num end    The end number (excluded).
   ;; @num step   The increment step size.
-  ;; @return [(num)] The sequence of integers from `a` up to `b`.
+  ;; @return [(num)] The sequence of numbers from `a` up to `b`.
   (defn range [start end step]
     (if (>= start end)
       ()
       (:: start (range (+ start step) end step))))
+
+  ;; `irange` returns the list of integers from `start` (inclusive) to `end`
+  ;; (exclusive). If `start >= end` it will return the empty list.
+  ;; This is the same as `(range start end 1)`.
+  ;;
+  ;; @num start  The start number (included).
+  ;; @num end    The end number (excluded).
+  ;; @return [(num)] The sequence of integers from `a` up to `b`.
+  (defn irange [start end] (range start end 1))
 
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
@@ -102,17 +111,35 @@
          ; TODO: clojure uses mapv for vectors.
       (:: (f (head xs)) (map f (tail xs)))))
 
-  ;; Left-reduce a list.
   ;; TODO: Document.
-  ;; TODO: Not working.
   (defn reduce [f b xs]
     (if (empty? xs)
       b
       (reduce f (f b (head xs)) (tail xs))))
+
+  ; (defn reduce-right [f b xs]
+  ;   (if (empty? xs)
+  ;     b
+  ;     (f b (reduce f (head xs) (tail xs)))))
 
   ;; TODO: Doc.
   (defn sum [xs] (reduce + 0 xs))
 
   ;; TODO: Doc.
   (defn prod [xs] (reduce * 1 xs))
+
+  ;; (defn filter [p xs])
+  ;; (defn all [p xs])
+  ;; (defn any [p xs])
+  ;; (defn flat-map [p xs])
+  ;; (defn reverse [xs])
+  ;; (defn drop [n xs])
+  ;; (defn take [n xs])
+  ;; (defn drop-while [p xs])
+  ;; (defn take-while [p xs])
+  ;; (defn zip-with [f xs ys])
+  ;; (defn zip [xs ys])
+  ;; (defn repeat [n v])
+  ;; (defn even? [n])
+  ;; (defn odd? [n])
 )
