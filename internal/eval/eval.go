@@ -9,8 +9,10 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
+// CoreFun defines a type alias for core functions of the evaluator.
 type CoreFun func(Evaluator, data.Env, []data.Node) data.Node
 
+// Evaluator is the tree-walking interpreter for Splis2.
 type Evaluator interface {
 	Eval(node data.Node) data.Node
 	EvalFile(path string) data.Node
@@ -28,36 +30,53 @@ type evaluator struct {
 	printer print.Printer
 }
 
-// TODO: PrintErrors
-// TODO: quot and mod
+// TODO: Turn TODOs into github tickets.
+// TODO: Better error reporting.
 // TODO: :keywords?
+// TODO: quot and mod
 // TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
 // TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
+//       Would require varargs support.
+// TODO: rest delimiter | e.g. (fun foobar x | xs)
+//       This would be a variant of varargs support.
 // TODO: Doc strings?
-// TODO: Import prelude in REPL.
+//       Would require multiline strings. Then we could define a special macro
+//       to add the documentation to a special global dictionary *splis-docs*
+//       where the entries are the names of the definition and the value is the
+//       docstring.
 // TODO: partial evaluation.
-// TODO: rest delimiter | e.g. (fun foobar [x | xs] )
 // TODO: https://clojuredocs.org/clojure.core
 // TODO: Relative File paths.
+//       Provide and prepopulate variable *lib-root*. We can then append to this
+//       the relative path of the prelude.splis file. Other library files can
+//       be referenced from this relative root as well.
+//       Go will set this relative path to the directory where the exe resides
+//       unless specified explicitly by the user as a command argument.
 // TODO: how to import/use modules.
-// TODO: Unit Test Framework.
-// (tests "Prelude [map]"
-//
-// 	(test "[map] empty list"
-// 		'()
-// 		(map inc '())
-// 	)
-//
-// 	(test "[map] inc (1 2 3)"
-// 		'(2 3 4)
-// 		(map int '(1 2 3))
-// 	)
-// )
-// TODO: Turn TODOs into github tickets.
+//       Use can preprend the contents of *lib-root* to the relative path.
 // TODO: Start structure and interpretation of computer programs.
+//       It's about time.
+// TODO: Unit Test Framework.
+//       (tests "Prelude [map]"
+//
+// 	       (test "[map] empty list"
+// 	      	 '()
+// 	      	 (map inc '())
+// 	       )
+//
+// 	       (test "[map] inc (1 2 3)"
+// 	         '(2 3 4)
+// 	         (map int '(1 2 3))
+// 	       )
+//       )
 // TODO: go-routines
+//       Something like (go f arg1 arg2 ...) where f is the function to run in
+//       parallel and arg1 arg2 ... are the arguments to this function.
 // TODO: web-server hosting splis docs.
+//       This would require support for network-io, various string functions
+//       and go-routines.
 
+// NewEvaluator creates a new evaluator.
 func NewEvaluator(env data.Env) Evaluator {
 	e := &evaluator{
 		env:     env,
@@ -94,6 +113,8 @@ func (e *evaluator) AddCoreFun(name string, fun CoreFun) {
 }
 
 func (e *evaluator) Eval(node data.Node) data.Node {
+	// TODO: Needs to be removed if we ever get to call Eval from any subroutine.
+	e.err = []*data.ErrorNode{}
 	return e.eval(e.env, node)
 }
 
@@ -130,16 +151,14 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "if":
 					n = e.evalIf(env, args)
 					continue
-				// TODO: TCO?
 				case "parse":
 					return e.evalParse(env, args)
-				// TODO: TCO?
 				case "eval":
-					return e.evalEval(env, args)
-					// TODO: TCO?
+					n = e.evalEval(env, args)
+					continue
 				case "read-file":
-					return e.evalReadFile(env, args)
-					// TODO: TCO?
+					n = e.evalReadFile(env, args)
+					continue
 				case "quote":
 					return e.evalQuote(env, args)
 				case "quasiquote":
