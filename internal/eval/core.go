@@ -1,12 +1,14 @@
 package eval
 
 import (
+	"os"
 	"reflect"
 
 	"github.com/mhoertnagl/splis2/internal/data"
 )
 
 func InitCore(e Evaluator) {
+	addSplisRoot(e)
 	e.AddCoreFun("list?", eval1n("list?", isList))
 	// TODO: (vector? )
 	// TODO: (dict? )
@@ -32,6 +34,18 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun(">", eval2f(">", gt))
 	e.AddCoreFun("<=", eval2f("<=", le))
 	e.AddCoreFun(">=", eval2f(">=", ge))
+	e.EvalModule("lib/core/prelude")
+}
+
+// addSplisRoot reads the environment variable SPLIS_HOME and makes it available
+// to the programming environment as *SPLIS_HOME*.
+func addSplisRoot(e Evaluator) {
+	path := os.Getenv("SPLIS_HOME")
+	if path == "" {
+		e.Error("Unable to read environment variable [SPLIS_HOME].")
+	} else {
+		e.AddConstant("*SPLIS_HOME*", path)
+	}
 }
 
 func sum(acc, v float64) float64 { return acc + v }

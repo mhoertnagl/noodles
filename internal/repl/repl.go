@@ -19,7 +19,6 @@ func Start(in io.Reader, out io.Writer, args Args) {
 	parser := read.NewParser()
 	env := data.NewEnv(nil)
 	eval := eval.NewEvaluator(env)
-	eval.EvalFile("../../slib/prelude.splis")
 	printer := print.NewPrinter()
 
 	for {

@@ -127,6 +127,12 @@ func TestInvalidDef(t *testing.T) {
 	test(t, "(def 5 2)", "  [ERROR]  ")
 }
 
+func TestDefPI(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, "(def *PI* 3.141592653589793)", "3.141592653589793")
+	testenv(t, env, "*PI*", "3.141592653589793")
+}
+
 func TestLet(t *testing.T) {
 	test(t, "(let (:a 1) :a)", "1")
 	test(t, "(let (:a (+ 1 1)) :a)", "2")
@@ -619,6 +625,13 @@ func TestExecuteFile(t *testing.T) {
 	teste(t, env, "(plus5 9)", "14")
 }
 
+func TestUseModule(t *testing.T) {
+	env := data.NewEnv(nil)
+	teste(t, env, `(use "../../lib/core/math.splis")`, "")
+	teste(t, env, "*PI*", "3.141592653589793")
+	teste(t, env, "(inc (dec 0))", "0")
+}
+
 func TestCons(t *testing.T) {
 	test(t, "(:: 42 (list))", "(42)")
 	test(t, "(:: 1 (list 2 3 4))", "(1 2 3 4)")
@@ -928,7 +941,6 @@ func teste(t *testing.T, env data.Env, i string, e string) {
 	p := read.NewParser()
 	w := print.NewPrinter()
 	v := eval.NewEvaluator(env)
-	v.EvalFile("../../slib/prelude.splis")
 	// fmt.Print(w.PrintErrors(v.Errors()...))
 	r.Load(i)
 	n := p.Parse(r)

@@ -47,34 +47,6 @@
   ;; @return [bool] `false` if `x` is truthy; `true` otherwise.
   (defn not [x] (if x false true))
 
-  ;; `inc` increments the number `n` by one.
-  ;;
-  ;; @num n  A number.
-  ;; @return [num] `n + 1`.
-  (defn inc [n] (+ n 1))
-
-  ;; `dec` decrements the number `n` by one.
-  ;;
-  ;; @num n  A number.
-  ;; @return [num] `n - 1`.
-  (defn dec [n] (- n 1))
-
-  ;; `pos?` returns `true` if the value `n` is greater than `0`; `false`
-  ;; otherwise.
-  ;;
-  ;; @num n  A number.
-  ;; @return [bool] `true` if `n` is positive; `true` otherwise.
-  (defn pos? [n] (> n 0))
-
-  ;; `abs` computes the absolute value of `n`.
-  ;;
-  ;; @num n  A number.
-  ;; @return [num] The absolute value `|n|`.
-  (defn abs [n]
-    (if (pos? n)
-      n
-      (- n)))
-
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
   ;; `step` denotes the increment added to `start` until it is greater or equal
@@ -122,12 +94,6 @@
   ;     b
   ;     (f b (reduce f (head xs) (tail xs)))))
 
-  ;; TODO: Doc.
-  (defn sum [xs] (reduce + 0 xs))
-
-  ;; TODO: Doc.
-  (defn prod [xs] (reduce * 1 xs))
-
   ;; (defn even? [n])
   ;; (defn odd? [n])
   ;; (defn filter [p xs])
@@ -142,4 +108,5 @@
   ;; (defn zip-with [f xs ys])
   ;; (defn zip [xs ys])
   ;; (defn repeat [n v])
+  (use "../../lib/core/math.splis")
 )
