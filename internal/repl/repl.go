@@ -11,9 +11,6 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
-// TODO: Repl struct with parameters for the header text, input prefix, ...
-// TODO: Unit tests.
-
 // Start initiates a new REPL session taking input form in and outputting
 // it to out. The parameter args modifies the behavior of the REPL.
 func Start(in io.Reader, out io.Writer, args Args) {
@@ -22,6 +19,7 @@ func Start(in io.Reader, out io.Writer, args Args) {
 	parser := read.NewParser()
 	env := data.NewEnv(nil)
 	eval := eval.NewEvaluator(env)
+	eval.EvalFile("../../slib/prelude.splis")
 	printer := print.NewPrinter()
 
 	for {
@@ -32,10 +30,21 @@ func Start(in io.Reader, out io.Writer, args Args) {
 		// TODO: Print environment.
 		input := scanner.Text()
 		reader.Load(input)
+
 		src := parser.Parse(reader)
-		errors := printer.PrintErrors(parser.Errors()...)
-		fmt.Fprintf(out, "\n%s", errors)
+		pErrs := parser.Errors()
+		if len(pErrs) > 0 {
+			errors := printer.PrintErrors(pErrs...)
+			fmt.Fprintf(out, "\n%s", errors)
+		}
+
 		res := eval.Eval(src)
+		eErrs := eval.Errors()
+		if len(eErrs) > 0 {
+			errors := printer.PrintErrors(eErrs...)
+			fmt.Fprintf(out, "\n%s", errors)
+		}
+
 		output := printer.Print(res)
 		fmt.Fprintf(out, "%s\n", output)
 	}

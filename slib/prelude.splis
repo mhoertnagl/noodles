@@ -128,6 +128,8 @@
   ;; TODO: Doc.
   (defn prod [xs] (reduce * 1 xs))
 
+  ;; (defn even? [n])
+  ;; (defn odd? [n])
   ;; (defn filter [p xs])
   ;; (defn all [p xs])
   ;; (defn any [p xs])
@@ -140,6 +142,4 @@
   ;; (defn zip-with [f xs ys])
   ;; (defn zip [xs ys])
   ;; (defn repeat [n v])
-  ;; (defn even? [n])
-  ;; (defn odd? [n])
 )
