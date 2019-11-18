@@ -73,12 +73,9 @@ type evaluator struct {
 //       Something like (go f arg1 arg2 ...) where f is the function to run in
 //       parallel and arg1 arg2 ... are the arguments to this function.
 // TODO: web-server hosting splis docs.
-<<<<<<< HEAD
-// TODO: https://www.braveclojure.com/introduction/
-=======
 //       This would require support for network-io, various string functions
 //       and go-routines.
->>>>>>> ccd2ce2e8685b5e84223c0f3aeeb20a436533161
+// TODO: https://www.braveclojure.com/introduction/
 
 // NewEvaluator creates a new evaluator.
 func NewEvaluator(env data.Env) Evaluator {
