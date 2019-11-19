@@ -3,6 +3,7 @@ package eval
 import (
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/mhoertnagl/splis2/internal/data"
 )
@@ -21,7 +22,6 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun(":::", concat)
 	e.AddCoreFun("head", eval1n("head", head))
 	e.AddCoreFun("tail", eval1n("tail", tail))
-	// TODO: (join <string> <string>)
 	// TODO: (join <dict> <dict>)
 	// TODO: (print ...)
 	// e.AddCoreFun("str", printArgs(false))
@@ -34,6 +34,7 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun(">", eval2f(">", gt))
 	e.AddCoreFun("<=", eval2f("<=", le))
 	e.AddCoreFun(">=", eval2f(">=", ge))
+	e.AddCoreFun("join", join)
 	e.EvalModule("lib/core/prelude")
 }
 
@@ -301,6 +302,16 @@ func eqHashMap(e Evaluator, env data.Env, as, bs data.Map) data.Node {
 		}
 	}
 	return true
+}
+
+func join(e Evaluator, env data.Env, args []data.Node) data.Node {
+	var sb strings.Builder
+	for _, arg := range args {
+		if s, ok := arg.(string); ok {
+			sb.WriteString(s)
+		}
+	}
+	return sb.String()
 }
 
 func eval1n(name string, f func(Evaluator, data.Env, data.Node) data.Node) CoreFun {

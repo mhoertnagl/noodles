@@ -17,11 +17,20 @@
     (fn [name args body]
       `(def ~name (fn ~args ~body)) ))
 
-  ;; `use` reads, parses and evaluates a splis source file.
+  ;; `use` reads, parses and evaluates a splis module.
   ;;
-  ;; @str path  The path to a splis source file.
-  (defn use [path]
-    (eval (parse (read-file path))))
+  ;; To use the module in the file `<SPLIS_HOME>/lib/core/math.splis` add the
+  ;; following command before the usage of any method in `math.splis`:
+  ;;
+  ;; ```(use "lib/core/math")```
+  ;;
+  ;; All imported modules need to be located in the derectory the environment
+  ;; variable <SPLIS_HOME> points to and the file extension `.splis` must be
+  ;; omitted.
+  ;;
+  ;; @str module  The module.
+  (defn use [module]
+    (eval (parse (read-file (join *SPLIS_HOME* module ".splis")))))
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
@@ -70,6 +79,8 @@
   ;; @return [(num)] The sequence of integers from `a` up to `b`.
   (defn irange [start end] (range start end 1))
 
+  ;; TODO: clojure uses mapv for vectors.
+  
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
   ;; elements.
@@ -80,10 +91,17 @@
   (defn map [f xs]
     (if (empty? xs)
       xs ; Will preserve the type of the sequence.
-         ; TODO: clojure uses mapv for vectors.
       (:: (f (head xs)) (map f (tail xs)))))
 
-  ;; TODO: Document.
+  ;; `reduce` reduces a sequence of elements into a single element by successive
+  ;; application of the binary function `f` in a left-associative fashion where
+  ;; `b` is the initial value.
+  ;; If the list is empty, `reduce` will return `b`.
+  ;;
+  ;; @fun(T S)T f   A binary function.
+  ;; @T         b   The initial value.
+  ;; @(S)       xs  A list of elements.
+  ;; @return  The left-associative reduction of `xs` into a single element.
   (defn reduce [f b xs]
     (if (empty? xs)
       b
@@ -97,6 +115,7 @@
   ;; (defn even? [n])
   ;; (defn odd? [n])
   ;; (defn filter [p xs])
+  ;; (defn remove [p xs])
   ;; (defn all [p xs])
   ;; (defn any [p xs])
   ;; (defn flat-map [p xs])
@@ -108,5 +127,5 @@
   ;; (defn zip-with [f xs ys])
   ;; (defn zip [xs ys])
   ;; (defn repeat [n v])
-  (use "../../lib/core/math.splis")
+  (use "lib/core/math")
 )

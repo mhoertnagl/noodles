@@ -627,9 +627,8 @@ func TestExecuteFile(t *testing.T) {
 
 func TestUseModule(t *testing.T) {
 	env := data.NewEnv(nil)
-	teste(t, env, `(use "../../lib/core/math.splis")`, "")
-	teste(t, env, "*PI*", "3.141592653589793")
-	teste(t, env, "(inc (dec 0))", "0")
+	teste(t, env, `(use "test/test")`, "")
+	teste(t, env, "(plus5 (plus5 0))", "10")
 }
 
 func TestCons(t *testing.T) {
@@ -927,6 +926,13 @@ func TestPreludeProd(t *testing.T) {
 	test(t, `(prod [])`, "1")
 	test(t, `(prod [4 5 6])`, "120")
 	test(t, `(prod (irange 1 5))`, "24")
+}
+
+func TestJoin(t *testing.T) {
+	test(t, `(join)`, `""`)
+	test(t, `(join "a")`, `"a"`)
+	test(t, `(join "a" "b" "c")`, `"abc"`)
+	test(t, `(join *SPLIS_HOME* "lib/core/math" ".splis")`, `"/home/mathias/go/src/github.com/mhoertnagl/splis2/lib/core/math.splis"`)
 }
 
 func test(t *testing.T, i string, e string) {

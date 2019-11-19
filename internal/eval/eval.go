@@ -43,6 +43,7 @@ type evaluator struct {
 //       Would require varargs support.
 // TODO: rest delimiter | e.g. (fun foobar [x | xs] ...)
 //       This would be a variant of varargs support.
+// TODO: Spread operator: (join ...["a" "b" "c"]) ~> (join "a" "b" "c")
 // TODO: Doc strings?
 //       Would require multiline strings. Then we could define a special macro
 //       to add the documentation to a special global dictionary *splis-docs*
