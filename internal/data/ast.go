@@ -1,7 +1,5 @@
 package data
 
-// TODO: Move to separate namespace?
-
 type Node interface {
 }
 

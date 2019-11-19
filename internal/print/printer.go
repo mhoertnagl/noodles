@@ -3,13 +3,16 @@ package print
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strconv"
 
 	"github.com/mhoertnagl/splis2/internal/data"
 )
 
 type Printer interface {
+	Fprint(out io.Writer, node data.Node)
 	Print(node data.Node) string
+	FprintErrors(err io.Writer, errs []*data.ErrorNode)
 	PrintErrors(errs ...*data.ErrorNode) string
 }
 
@@ -21,10 +24,23 @@ func NewPrinter() Printer {
 	return &printer{}
 }
 
+func (p *printer) Fprint(out io.Writer, node data.Node) {
+	res := p.Print(node)
+	if len(res) > 0 {
+		fmt.Fprintln(out, res)
+	}
+}
+
 func (p *printer) Print(node data.Node) string {
 	p.buf.Reset()
 	p.print(node)
 	return p.buf.String()
+}
+
+func (p *printer) FprintErrors(err io.Writer, errs []*data.ErrorNode) {
+	if len(errs) > 0 {
+		fmt.Fprintln(err, p.PrintErrors(errs...))
+	}
 }
 
 func (p *printer) PrintErrors(errs ...*data.ErrorNode) string {
@@ -37,25 +53,25 @@ func (p *printer) PrintErrors(errs ...*data.ErrorNode) string {
 }
 
 func (p *printer) print(n data.Node) {
-	switch {
-	case data.IsError(n):
+	switch x := n.(type) {
+	case *data.ErrorNode:
 		p.buf.WriteString("  [ERROR]  ")
-	case data.IsNil(n):
+	case nil:
 		p.buf.WriteString("nil")
-	case data.IsBool(n):
-		p.buf.WriteString(strconv.FormatBool(n.(bool)))
-	case data.IsNumber(n):
-		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'f', -1, 64))
-	case data.IsString(n):
-		p.printString(n.(string))
-	case data.IsSymbol(n):
-		p.buf.WriteString(n.(*data.SymbolNode).Name)
-	case data.IsList(n):
-		p.printSeq(n.(*data.ListNode).Items, "(", ")")
-	case data.IsVector(n):
-		p.printSeq(n.(*data.VectorNode).Items, "[", "]")
-	case data.IsHashMap(n):
-		p.printHashMap(n.(*data.HashMapNode).Items)
+	case bool:
+		p.buf.WriteString(strconv.FormatBool(x))
+	case float64:
+		p.buf.WriteString(strconv.FormatFloat(x, 'f', -1, 64))
+	case string:
+		p.printString(x)
+	case *data.SymbolNode:
+		p.buf.WriteString(x.Name)
+	case *data.ListNode:
+		p.printSeq(x.Items, "(", ")")
+	case *data.VectorNode:
+		p.printSeq(x.Items, "[", "]")
+	case *data.HashMapNode:
+		p.printHashMap(x.Items)
 		// case data.IsFuncNode(n):
 		// 	p.buf.WriteString(n.(*data.FuncNode).Name)
 	}
@@ -78,11 +94,11 @@ func (p *printer) printSeq(items []data.Node, start string, end string) {
 	p.buf.WriteString(end)
 }
 
-func (p *printer) printHashMap(items data.Map) {
+func (p *printer) printHashMap(m data.Map) {
 	p.buf.WriteString("{")
 	// TODO: Unfortunate.
 	init := false
-	for key, val := range items {
+	for key, val := range m {
 		if init {
 			p.buf.WriteString(" ")
 		}

@@ -2,25 +2,21 @@ package main
 
 import (
 	"flag"
-	"github.com/mhoertnagl/splis2/internal/repl"
 	"os"
+
+	"github.com/mhoertnagl/splis2/internal/repl"
 )
 
 func main() {
 
-	lexOnly := flag.Bool("l", false, "a bool")
-	parseOnly := flag.Bool("p", false, "a bool")
+	interactive := flag.Bool("i", false, "interactive mode")
 
 	flag.Parse()
 
 	args := repl.Args{
-		LexOnly:   *lexOnly,
-		ParseOnly: *parseOnly,
+		Interactive: *interactive,
+		Files:       flag.Args(),
 	}
 
-	if len(flag.Args()) == 0 {
-		repl.Start(os.Stdin, os.Stdout, args)
-	} else {
-
-	}
+	repl.Start(os.Stdin, os.Stdout, os.Stderr, args)
 }

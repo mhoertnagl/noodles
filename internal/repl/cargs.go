@@ -1,6 +1,6 @@
 package repl
 
 type Args struct {
-	LexOnly   bool
-	ParseOnly bool
+	Interactive bool
+	Files       []string
 }

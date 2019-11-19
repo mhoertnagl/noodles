@@ -18,7 +18,7 @@ type CoreFun func(Evaluator, data.Env, []data.Node) data.Node
 type Evaluator interface {
 	Eval(node data.Node) data.Node
 	EvalModule(module string) data.Node
-	EvalFile(path string) data.Node
+	EvalFile(file string) data.Node
 	Error(format string, args ...interface{}) data.Node
 	Errors() []*data.ErrorNode
 	AddCoreFun(name string, fun CoreFun)
@@ -51,16 +51,6 @@ type evaluator struct {
 //       docstring.
 // TODO: partial evaluation.
 // TODO: https://clojuredocs.org/clojure.core
-// TODO: Relative File paths.
-//       Provide and prepopulate variable *SPLIS_HOME*. We can then append to this
-//       the relative path of the prelude.splis file. Other library files can
-//       be referenced from this relative root as well.
-//       Go will set this relative path to the directory where the exe resides
-//       unless specified explicitly by the user as a command argument.
-// TODO: how to import/use modules.
-//       Use can preprend the contents of *SPLIS_HOME** to the relative path.
-//       We need support to join paths. Or a global constant that gives the
-//       OS default delimiter plus string joining and startswith endswith.
 // TODO: Start structure and interpretation of computer programs.
 //       It's about time.
 // TODO: Unit Test Framework.
@@ -73,7 +63,7 @@ type evaluator struct {
 //
 // 	       (test "[map] inc (1 2 3)"
 // 	         '(2 3 4)
-// 	         (map int '(1 2 3))
+// 	         (map inc '(1 2 3))
 // 	       )
 //       )
 // TODO: go-routines
@@ -134,13 +124,13 @@ func (e *evaluator) EvalModule(module string) data.Node {
 	home := os.Getenv("SPLIS_HOME")
 	file := fmt.Sprintf("%s.splis", module)
 	fullPath := path.Join(home, file)
-	// fmt.Println(fullPath)
 	return e.EvalFile(fullPath)
 }
 
 // TODO: Does this have to be a public method?
-func (e *evaluator) EvalFile(path string) data.Node {
-	s := e.evalReadFile(e.env, []data.Node{path})
+func (e *evaluator) EvalFile(file string) data.Node {
+	e.err = []*data.ErrorNode{}
+	s := e.evalReadFile(e.env, []data.Node{file})
 	t := e.evalParse(e.env, []data.Node{s})
 	return e.evalEval(e.env, []data.Node{t})
 }

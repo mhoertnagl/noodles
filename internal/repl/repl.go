@@ -11,9 +11,9 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
-// Start initiates a new REPL session taking input form in and outputting
-// it to out. The parameter args modifies the behavior of the REPL.
-func Start(in io.Reader, out io.Writer, args Args) {
+// Start preprocesses all input files and may initiate a new REPL session taking
+// input form in and outputting it to out if.
+func Start(in io.Reader, out io.Writer, err io.Writer, args Args) {
 	scanner := bufio.NewScanner(in)
 	reader := read.NewReader()
 	parser := read.NewParser()
@@ -21,30 +21,25 @@ func Start(in io.Reader, out io.Writer, args Args) {
 	eval := eval.NewEvaluator(env)
 	printer := print.NewPrinter()
 
-	for {
-		fmt.Fprintf(out, ">> ")
-		if ok := scanner.Scan(); !ok {
-			return
-		}
-		// TODO: Print environment.
-		input := scanner.Text()
-		reader.Load(input)
+	for _, file := range args.Files {
+		res := eval.EvalFile(file)
+		printer.FprintErrors(err, eval.Errors())
+		printer.Fprint(out, res)
+	}
 
-		src := parser.Parse(reader)
-		pErrs := parser.Errors()
-		if len(pErrs) > 0 {
-			errors := printer.PrintErrors(pErrs...)
-			fmt.Fprintf(out, "\n%s", errors)
+	if args.Interactive {
+		for {
+			fmt.Fprintf(out, ">> ")
+			if ok := scanner.Scan(); !ok {
+				return
+			}
+			input := scanner.Text()
+			reader.Load(input)
+			src := parser.Parse(reader)
+			printer.FprintErrors(err, parser.Errors())
+			res := eval.Eval(src)
+			printer.FprintErrors(err, eval.Errors())
+			printer.Fprint(out, res)
 		}
-
-		res := eval.Eval(src)
-		eErrs := eval.Errors()
-		if len(eErrs) > 0 {
-			errors := printer.PrintErrors(eErrs...)
-			fmt.Fprintf(out, "\n%s", errors)
-		}
-
-		output := printer.Print(res)
-		fmt.Fprintf(out, "%s\n", output)
 	}
 }
