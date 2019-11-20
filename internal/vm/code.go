@@ -80,7 +80,7 @@ var meta = map[Op]*OpMeta{
 	OpJumpIfFalse: {"jumpFalse", []int{8}},
 	OpJumpIfTrue:  {"jumpTrue", []int{8}},
 	OpNewEnv:      {"newEnv", []int{}},
-	OpPopEnv:      {"popEnv", []int{8}},
+	OpPopEnv:      {"popEnv", []int{}},
 	OpSetLocal:    {"setLocal", []int{8}},
 	OpGetLocal:    {"getLocal", []int{8}},
 }

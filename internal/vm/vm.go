@@ -2,37 +2,46 @@ package vm
 
 import (
 	"encoding/binary"
+	"fmt"
 	//"fmt"
 )
+
+// TODO: Turn an identifier into a 64bit hash (https://golang.org/pkg/hash/fnv/)
+//       Maintain a stack of environments (type Env map[int64]Val)
+//       Lookup can then be implemented the usual way.
 
 type VM interface {
 	Run(code Ins)
 	InspectStack(offset int64) Val
-	InspectLocals(offset int64) Val
+	// InspectLocals(offset int64) Val
+	InspectEnvs(offset int64) Env
 	StackSize() int64
 }
 
 type vm struct {
 	ip int64
 	sp int64
-	lp int64
-	//	ep    int64
+	// lp    int64
+	ep    int64
 	stack []Val
-	//	envs  []Env
-	locals []Val
-	code   Ins
+	// locals []Val
+	envs []Env
+	code Ins
 }
 
-func New(stackSize int64, localsSize int64) VM {
-	return &vm{
+func New(stackSize int64, localsSize int64, envStackSize int64) VM {
+	m := &vm{
 		ip: 0,
 		sp: 0,
-		lp: 0,
-		//		ep:    0,
-		stack:  make([]Val, stackSize),
-		locals: make([]Val, localsSize),
-		//		envs:  make([]Env, 1),
+		// lp:    0,
+		ep:    0,
+		stack: make([]Val, stackSize),
+		// locals: make([]Val, localsSize),
+		envs: make([]Env, envStackSize),
 	}
+	// Create the outermost environment.
+	m.newEnv()
+	return m
 }
 
 func (m *vm) InspectStack(offset int64) Val {
@@ -43,8 +52,12 @@ func (m *vm) InspectStack(offset int64) Val {
 	return nil
 }
 
-func (m *vm) InspectLocals(offset int64) Val {
-	return m.locals[offset]
+// func (m *vm) InspectLocals(offset int64) Val {
+// 	return m.locals[offset]
+// }
+
+func (m *vm) InspectEnvs(offset int64) Env {
+	return m.envs[offset]
 }
 
 func (m *vm) StackSize() int64 {
@@ -94,16 +107,14 @@ func (m *vm) Run(code Ins) {
 				m.ip += d
 			}
 		case OpNewEnv:
-			// m.readInt64()
+			m.newEnv()
 		case OpPopEnv:
-			m.readInt64()
+			m.ep--
 		case OpSetLocal:
-			a := m.readInt64()
-			v := m.pop()
-			m.locals[a] = v
+			m.bind(m.readInt64(), m.pop())
 		case OpGetLocal:
-			a := m.readInt64()
-			m.push(m.locals[a])
+			v := m.lookup(m.readInt64())
+			m.push(v)
 		default:
 			panic("Unsupported operation.")
 		}
@@ -123,9 +134,8 @@ func (m *vm) push(v Val) {
 // }
 
 func (m *vm) pop() Val {
-	v := m.stack[m.sp-1]
 	m.sp--
-	return v
+	return m.stack[m.sp]
 }
 
 func (m *vm) popBool() bool {
@@ -152,4 +162,22 @@ func (m *vm) readInt64() int64 {
 	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
 	m.ip += 8
 	return int64(v)
+}
+
+func (m *vm) newEnv() {
+	m.envs[m.ep] = make(Env)
+	m.ep++
+}
+
+func (m *vm) bind(a int64, v Val) {
+	m.envs[m.ep-1][a] = v
+}
+
+func (m *vm) lookup(a int64) Val {
+	for i := m.ep - 1; i >= 0; i-- {
+		if v, ok := m.envs[i][a]; ok {
+			return v
+		}
+	}
+	panic(fmt.Sprintf("Unbound symbol [%d]", a))
 }

@@ -1,6 +1,5 @@
 package vm
 
-type Val interface {
-}
+type Val interface{}
 
-// type Env = map[uint64]Val
+type Env map[int64]Val

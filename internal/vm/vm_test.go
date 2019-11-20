@@ -143,9 +143,8 @@ func TestLocals1(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, 0),
 		vm.Instr(vm.OpGetLocal, 0),
 		vm.Instr(vm.OpMul),
-		vm.Instr(vm.OpPopEnv, 1),
+		vm.Instr(vm.OpPopEnv),
 	)
-	testVal(t, int64(2), m.InspectLocals(0))
 	testVal(t, int64(4), m.InspectStack(0))
 }
 
@@ -163,12 +162,9 @@ func TestLocals2(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, 1),
 		vm.Instr(vm.OpGetLocal, 2),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv, 2),
-		vm.Instr(vm.OpPopEnv, 1),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpPopEnv),
 	)
-	testVal(t, int64(1), m.InspectLocals(0))
-	testVal(t, int64(2), m.InspectLocals(1))
-	testVal(t, int64(3), m.InspectLocals(2))
 	testVal(t, int64(5), m.InspectStack(0))
 }
 
@@ -189,7 +185,7 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 // VM thereafter.
 func testRun(t *testing.T, c ...vm.Ins) vm.VM {
 	t.Helper()
-	m := vm.New(1024, 512)
+	m := vm.New(1024, 512, 256)
 	m.Run(vm.Concat(c))
 	return m
 }
