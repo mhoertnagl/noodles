@@ -15,14 +15,14 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
-	OpPop
-	// OpDup
 
 	OpTrue
 	OpFalse
 
+	OpPop
+	// OpDup
+
 	OpAdd
-	// OpNeg			0 - x == -x
 	OpSub
 	OpMul
 	OpDiv
@@ -37,14 +37,14 @@ const (
 	OpSrl
 	OpSra
 
-	OpEq
-	OpNe
+	OpEQ
+	OpNE
 	OpLT
 	OpLE
 
 	OpJump
-	OpJumpIfTrue
-	OpJumpIfFalse
+	OpJumpIf
+	OpJumpIfNot
 
 	OpNewEnv
 	OpPopEnv
@@ -53,9 +53,9 @@ const (
 	OpSetGlobal
 	OpGetGlobal
 
-	// OpCall
-	// OpCallRec
-	// OpReturn
+	OpCall
+	// OpTailCall
+	OpReturn
 
 	// OpHalt
 )
@@ -68,21 +68,37 @@ type OpMeta struct {
 }
 
 var meta = map[Op]*OpMeta{
-	OpConst:       {"const", []int{8}},
-	OpPop:         {"pop", []int{}},
-	OpAdd:         {"add", []int{}},
-	OpSub:         {"sub", []int{}},
-	OpMul:         {"mul", []int{}},
-	OpDiv:         {"div", []int{}},
-	OpTrue:        {"true", []int{}},
-	OpFalse:       {"false", []int{}},
-	OpJump:        {"jump", []int{8}},
-	OpJumpIfFalse: {"jumpFalse", []int{8}},
-	OpJumpIfTrue:  {"jumpTrue", []int{8}},
-	OpNewEnv:      {"newEnv", []int{}},
-	OpPopEnv:      {"popEnv", []int{}},
-	OpSetLocal:    {"setLocal", []int{8}},
-	OpGetLocal:    {"getLocal", []int{8}},
+	OpConst: {"Const", []int{8}},
+	OpTrue:  {"True", []int{}},
+	OpFalse: {"False", []int{}},
+	OpPop:   {"Pop", []int{}},
+	OpAdd:   {"Add", []int{}},
+	OpSub:   {"Sub", []int{}},
+	OpMul:   {"Mul", []int{}},
+	OpDiv:   {"Div", []int{}},
+	// OpAnd
+	// OpOr
+	// OpInv
+	// OpNor			x nor x == !x
+	// OpXor
+	OpSll:       {"Sll", []int{}},
+	OpSrl:       {"Srl", []int{}},
+	OpSra:       {"Sra", []int{}},
+	OpEQ:        {"EQ", []int{}},
+	OpNE:        {"NE", []int{}},
+	OpLT:        {"LT", []int{}},
+	OpLE:        {"LE", []int{}},
+	OpJump:      {"Jump", []int{8}},
+	OpJumpIf:    {"JumpIf", []int{8}},
+	OpJumpIfNot: {"JumpIfNot", []int{8}},
+	OpNewEnv:    {"NewEnv", []int{}},
+	OpPopEnv:    {"PopEnv", []int{}},
+	OpSetLocal:  {"SetLocal", []int{8}},
+	OpGetLocal:  {"GetLocal", []int{8}},
+	OpSetGlobal: {"SetGlobal", []int{8}},
+	OpGetGlobal: {"GetGlobal", []int{8}},
+	OpCall:      {"Call", []int{8}},
+	OpReturn:    {"Return", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
@@ -118,7 +134,7 @@ func Instr(op Op, args ...uint64) Ins {
 		case 1:
 			ins[pos] = uint8(args[i])
 		case 2:
-			binary.BigEndian.PutUint16(ins[pos:pos+4], uint16(args[i]))
+			binary.BigEndian.PutUint16(ins[pos:pos+2], uint16(args[i]))
 		case 4:
 			binary.BigEndian.PutUint32(ins[pos:pos+4], uint32(args[i]))
 		case 8:

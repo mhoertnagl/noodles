@@ -9,6 +9,7 @@ import (
 // TODO: Turn an identifier into a 64bit hash (https://golang.org/pkg/hash/fnv/)
 //       Maintain a stack of environments (type Env map[int64]Val)
 //       Lookup can then be implemented the usual way.
+// TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
 
 type VM interface {
 	Run(code Ins)
@@ -19,25 +20,29 @@ type VM interface {
 }
 
 type vm struct {
-	ip int64
-	sp int64
-	// lp    int64
-	ep    int64
-	stack []Val
-	// locals []Val
-	envs []Env
-	code Ins
+	ip     int64
+	sp     int64
+	ep     int64
+	fp     int64
+	stack  []Val
+	envs   []Env
+	frames []int64
+	code   Ins
 }
 
-func New(stackSize int64, localsSize int64, envStackSize int64) VM {
+func New(
+	stackSize int64,
+	localsSize int64,
+	envStackSize int64,
+	frameStackSize int64) VM {
 	m := &vm{
-		ip: 0,
-		sp: 0,
-		// lp:    0,
-		ep:    0,
-		stack: make([]Val, stackSize),
-		// locals: make([]Val, localsSize),
-		envs: make([]Env, envStackSize),
+		ip:     0,
+		sp:     0,
+		ep:     0,
+		fp:     0,
+		stack:  make([]Val, stackSize),
+		envs:   make([]Env, envStackSize),
+		frames: make([]int64, frameStackSize),
 	}
 	// Create the outermost environment.
 	m.newEnv()
@@ -52,16 +57,16 @@ func (m *vm) InspectStack(offset int64) Val {
 	return nil
 }
 
-// func (m *vm) InspectLocals(offset int64) Val {
-// 	return m.locals[offset]
-// }
+func (m *vm) StackSize() int64 {
+	return m.sp
+}
 
 func (m *vm) InspectEnvs(offset int64) Env {
 	return m.envs[offset]
 }
 
-func (m *vm) StackSize() int64 {
-	return m.sp
+func (m *vm) InspectFrames(offset int64) int64 {
+	return m.frames[offset]
 }
 
 func (m *vm) Run(code Ins) {
@@ -72,6 +77,10 @@ func (m *vm) Run(code Ins) {
 		switch m.readOp() {
 		case OpConst:
 			m.push(m.readInt64())
+		case OpFalse:
+			m.push(false)
+		case OpTrue:
+			m.push(true)
 		case OpPop:
 			m.pop()
 		case OpAdd:
@@ -90,20 +99,28 @@ func (m *vm) Run(code Ins) {
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l / r)
-		case OpFalse:
-			m.push(false)
-		case OpTrue:
-			m.push(true)
+		case OpSll:
+			r := m.popUInt64()
+			l := m.popUInt64()
+			m.push(l << r)
+		case OpSrl:
+			r := m.popUInt64()
+			l := m.popUInt64()
+			m.push(l >> r)
+		case OpSra:
+			r := m.popUInt64()
+			l := m.popInt64()
+			m.push(l >> r)
 		case OpJump:
 			m.ip += m.readInt64()
-		case OpJumpIfFalse:
-			d := m.readInt64()
-			if m.popBool() == false {
-				m.ip += d
-			}
-		case OpJumpIfTrue:
+		case OpJumpIf:
 			d := m.readInt64()
 			if m.popBool() {
+				m.ip += d
+			}
+		case OpJumpIfNot:
+			d := m.readInt64()
+			if m.popBool() == false {
 				m.ip += d
 			}
 		case OpNewEnv:
@@ -111,10 +128,20 @@ func (m *vm) Run(code Ins) {
 		case OpPopEnv:
 			m.ep--
 		case OpSetLocal:
-			m.bind(m.readInt64(), m.pop())
+			m.bindLocal(m.readInt64(), m.pop())
 		case OpGetLocal:
-			v := m.lookup(m.readInt64())
-			m.push(v)
+			m.push(m.lookupLocal(m.readInt64()))
+		case OpSetGlobal:
+			m.bindGlobal(m.readInt64(), m.pop())
+		case OpGetGlobal:
+			m.push(m.lookupGlobal(m.readInt64()))
+		case OpCall:
+			m.frames[m.fp] = m.ip + 1
+			m.fp++
+			m.ip += m.readInt64()
+		case OpReturn:
+			m.fp--
+			m.ip = m.frames[m.fp]
 		default:
 			panic("Unsupported operation.")
 		}
@@ -146,6 +173,10 @@ func (m *vm) popInt64() int64 {
 	return m.pop().(int64)
 }
 
+func (m *vm) popUInt64() uint64 {
+	return m.pop().(uint64)
+}
+
 func (m *vm) readOp() Op {
 	op := Op(m.code[m.ip])
 	m.ip++
@@ -169,15 +200,34 @@ func (m *vm) newEnv() {
 	m.ep++
 }
 
-func (m *vm) bind(a int64, v Val) {
-	m.envs[m.ep-1][a] = v
+func (m *vm) bindLocal(a int64, v Val) {
+	env := m.envs[m.ep-1]
+	if x, ok := env[a]; ok {
+		panic(fmt.Sprintf("Local symbol [%d] already bound to [%v]", a, x))
+	}
+	env[a] = v
 }
 
-func (m *vm) lookup(a int64) Val {
+func (m *vm) lookupLocal(a int64) Val {
 	for i := m.ep - 1; i >= 0; i-- {
 		if v, ok := m.envs[i][a]; ok {
 			return v
 		}
 	}
-	panic(fmt.Sprintf("Unbound symbol [%d]", a))
+	panic(fmt.Sprintf("Unbound local symbol [%d]", a))
+}
+
+func (m *vm) bindGlobal(a int64, v Val) {
+	env := m.envs[0]
+	if x, ok := env[a]; ok {
+		panic(fmt.Sprintf("Global symbol [%d] already bound to [%v]", a, x))
+	}
+	env[a] = v
+}
+
+func (m *vm) lookupGlobal(a int64) Val {
+	if v, ok := m.envs[0][a]; ok {
+		return v
+	}
+	panic(fmt.Sprintf("Unbound global symbol [%d]", a))
 }

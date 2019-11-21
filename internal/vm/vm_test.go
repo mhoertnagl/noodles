@@ -93,7 +93,7 @@ func TestIfFalse1(t *testing.T) {
 	testToS(t, int64(0),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfFalse, 10),
+		vm.Instr(vm.OpJumpIfNot, 10),
 		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpConst, 1),
 	)
@@ -103,7 +103,7 @@ func TestIfTrue1(t *testing.T) {
 	testToS(t, int64(1),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfFalse, 10),
+		vm.Instr(vm.OpJumpIfNot, 10),
 		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpConst, 1),
 	)
@@ -112,7 +112,7 @@ func TestIfTrue1(t *testing.T) {
 func TestIfElseFalse1(t *testing.T) {
 	testToS(t, int64(0),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfFalse, 18),
+		vm.Instr(vm.OpJumpIfNot, 18),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpJump, 9),
 		vm.Instr(vm.OpConst, 0),
@@ -122,7 +122,7 @@ func TestIfElseFalse1(t *testing.T) {
 func TestIfElseTrue1(t *testing.T) {
 	testToS(t, int64(1),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfFalse, 18),
+		vm.Instr(vm.OpJumpIfNot, 18),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpJump, 9),
 		vm.Instr(vm.OpConst, 0),
@@ -168,6 +168,8 @@ func TestLocals2(t *testing.T) {
 	testVal(t, int64(5), m.InspectStack(0))
 }
 
+// TODO: Locals with shadowing.
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of
@@ -185,7 +187,7 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 // VM thereafter.
 func testRun(t *testing.T, c ...vm.Ins) vm.VM {
 	t.Helper()
-	m := vm.New(1024, 512, 256)
+	m := vm.New(1024, 512, 256, 128)
 	m.Run(vm.Concat(c))
 	return m
 }
