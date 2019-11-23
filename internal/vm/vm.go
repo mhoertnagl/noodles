@@ -3,10 +3,12 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
-	//"fmt"
 )
 
 // TODO: Turn an identifier into a 64bit hash (https://golang.org/pkg/hash/fnv/)
+//       Or compiler maintains a dictionary of names to unique numbers
+//       (increasing sequence). But this will require a loading stage or
+//       re-compilation of all refernced files.
 //       Maintain a stack of environments (type Env map[int64]Val)
 //       Lookup can then be implemented the usual way.
 // TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
