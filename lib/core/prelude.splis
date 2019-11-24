@@ -50,11 +50,16 @@
   ;; @return [bool] `true` iff `x` is the boolean `false`.
   (defn false? [x] (= x false))
 
-  ;; `not` returns `false` if `x` is truthy; `true` otherwise.
+  ;; `not` returns `false` if `x` is truthy; `true` otherwise. `not` is an
+  ;; alias for `false?`.
   ;;
   ;; @any x  A value.
   ;; @return [bool] `false` if `x` is truthy; `true` otherwise.
-  (defn not [x] (if x false true))
+  (def not false?)
+
+  ;; `else` is an alias for the boolean atom `true`. Used in `cond` expressions
+  ;; to denote the default branch.
+  (def else true)
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -80,7 +85,7 @@
   (defn irange [start end] (range start end 1))
 
   ;; TODO: clojure uses mapv for vectors.
-  
+
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
   ;; elements.
@@ -92,6 +97,11 @@
     (if (empty? xs)
       xs ; Will preserve the type of the sequence.
       (:: (f (head xs)) (map f (tail xs)))))
+
+  ; (defn flat-map [p xs]
+  ;   (if (empty? xs)
+  ;     ()
+  ;     (::: (f (head xs)) (map f (tail xs)))))
 
   ;; `reduce` reduces a sequence of elements into a single element by successive
   ;; application of the binary function `f` in a left-associative fashion where
@@ -112,20 +122,50 @@
   ;     b
   ;     (f b (reduce f (head xs) (tail xs)))))
 
-  ;; (defn even? [n])
-  ;; (defn odd? [n])
-  ;; (defn filter [p xs])
-  ;; (defn remove [p xs])
+  (defn filter [p xs]
+    (cond
+      (empty? xs) xs
+      (p (head xs)) (:: (head xs) (filter p (tail xs)))
+      else (filter p (tail xs)) ))
+
+  (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
+
   ;; (defn all [p xs])
   ;; (defn any [p xs])
-  ;; (defn flat-map [p xs])
   ;; (defn reverse [xs])
-  ;; (defn drop [n xs])
-  ;; (defn take [n xs])
-  ;; (defn drop-while [p xs])
-  ;; (defn take-while [p xs])
+
+  ; (defn drop [n xs]
+  ;   (cond
+  ;     (empty? xs) xs
+  ;     (<= n 0) xs
+  ;     else (drop (- n 1) (tail xs)) ))
+
+  ; (defn take [n xs]
+  ;   (cond
+  ;     (empty? xs) xs
+  ;     (<= n 0) ()
+  ;     else (:: (head xs) (take (- n 1) (tail xs))) ))
+
+  ; (defn drop-while [p xs]
+  ;   (cond
+  ;     (empty? xs) xs
+  ;     (p (head xs)) (drop-while p (tail xs))
+  ;     else xs ))
+
+  ; (defn take-while [p xs]
+  ;   (cond
+  ;     (empty? xs) xs
+  ;     (p (head xs)) (:: (head xs) (take-while p (tail xs)))
+  ;     else () ))
+
   ;; (defn zip-with [f xs ys])
   ;; (defn zip [xs ys])
-  ;; (defn repeat [n v])
+
+  ; (defn repeat [n v]
+  ;   (if (<= n 0)
+  ;     ()
+  ;     (:: v (repeat (- n 1) v)) ))
+
+  ;; (defn flatten [xs])
   (use "lib/core/math")
 )

@@ -22,6 +22,9 @@
   ;; @return [bool] `true` if `n` is positive; `true` otherwise.
   (defn pos? [n] (> n 0))
 
+  ;; (defn even? [n])
+  ;; (defn odd? [n])
+
   ;; `abs` computes the absolute value of `n`.
   ;;
   ;; @num n  A number.

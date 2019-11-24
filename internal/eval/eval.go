@@ -35,6 +35,7 @@ type evaluator struct {
 }
 
 // TODO: Turn TODOs into github tickets.
+// TODO: (seq ...), (sequence ...)
 // TODO: Better error reporting.
 // TODO: :keywords?
 // TODO: quot and mod
@@ -161,6 +162,9 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					continue
 				case "if":
 					n = e.evalIf(env, args)
+					continue
+				case "cond":
+					n = e.evalCond(env, args)
 					continue
 				case "parse":
 					return e.evalParse(env, args)
@@ -430,6 +434,33 @@ func (e *evaluator) evalIf(env data.Env, ns []data.Node) data.Node {
 		return ns[2]
 	}
 	return nil
+}
+
+// evalCond considers each argument pair in sequence until the first condition
+// evaluates to true and returns the consequence. If the number of arguments is
+// 0 or odd it yields an error. Likewise if no condition evaluated to true it
+// will yield an error.
+func (e *evaluator) evalCond(env data.Env, ns []data.Node) data.Node {
+	len := len(ns)
+	if len == 0 {
+		return e.Error("[cond] requires at least 2 arguments.")
+	}
+	if len%2 == 1 {
+		return e.Error("[cond] requires an even number of arguments.")
+	}
+	for i := 0; i < len; i += 2 {
+		// Evaluate the condition.
+		cond := e.eval(env, ns[i])
+		// Return immediatly if the condition evaluated to an error.
+		if data.IsError(cond) {
+			return cond
+		}
+		if e.isTrue(env, cond) {
+			// Return unevaluated branch for TCO.
+			return ns[i+1]
+		}
+	}
+	return e.Error("[cond] no case matched.")
 }
 
 // isTrue returns false when the node is nil, false, 0, "", (), [] and {}.

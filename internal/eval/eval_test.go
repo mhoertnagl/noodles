@@ -1,6 +1,7 @@
 package eval_test
 
 import (
+	// "fmt"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/data"
@@ -165,6 +166,14 @@ func TestDo(t *testing.T) {
 	test(t, "(do (+ 1 1))", "2")
 	test(t, "(do (+ 1 1) (+ 2 2))", "4")
 	test(t, "(do (def a 3) (def b 7) (+ a b))", "10")
+}
+
+func TestCond(t *testing.T) {
+	test(t, "(cond true 1 false 0)", "1")
+	test(t, "(cond false 1 true 0)", "0")
+	test(t, "(cond (> 2 1) 2 (> 2 1) 1 (> 2 1) 0)", "2")
+	test(t, "(cond (> 2 2) 2 (> 2 1) 1 (> 2 1) 0)", "1")
+	test(t, "(cond (> 2 2) 2 (> 2 2) 1 (> 2 1) 0)", "0")
 }
 
 func TestIf(t *testing.T) {
@@ -932,7 +941,21 @@ func TestJoin(t *testing.T) {
 	test(t, `(join)`, `""`)
 	test(t, `(join "a")`, `"a"`)
 	test(t, `(join "a" "b" "c")`, `"abc"`)
-	test(t, `(join *SPLIS_HOME* "lib/core/math" ".splis")`, `"/home/mathias/go/src/github.com/mhoertnagl/splis2/lib/core/math.splis"`)
+	// test(t, `(join *SPLIS_HOME* "lib/core/math" ".splis")`, `"/home/mathias/go/src/github.com/mhoertnagl/splis2/lib/core/math.splis"`)
+}
+
+func TestPreludeFilter(t *testing.T) {
+	test(t, `(filter (fn [x] (> x 0)) [])`, "[]")
+	test(t, `(filter (fn [x] (> x 0)) [1 2 3])`, "[1 2 3]")
+	test(t, `(filter (fn [x] (> x 0)) [0 0 0])`, "[]")
+	test(t, `(filter (fn [x] (> x 0)) [(- 5) 3 (- 2) 4 0 7])`, "[3 4 7]")
+}
+
+func TestPreludeRemove(t *testing.T) {
+	test(t, `(remove (fn [x] (> x 0)) [])`, "[]")
+	test(t, `(remove (fn [x] (> x 0)) [1 2 3])`, "[]")
+	test(t, `(remove (fn [x] (> x 0)) [(- 1) (- 4) 0])`, "[-1 -4 0]")
+	test(t, `(remove (fn [x] (> x 0)) [(- 5) 3 (- 2) 4 0 7])`, "[-5 -2 0]")
 }
 
 func test(t *testing.T, i string, e string) {
