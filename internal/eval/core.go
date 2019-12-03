@@ -24,7 +24,6 @@ func InitCore(e Evaluator) {
 	e.AddCoreFun("tail", eval1n("tail", tail))
 	// TODO: (join <dict> <dict>)
 	// TODO: (print ...)
-	// e.AddCoreFun("str", printArgs(false))
 	e.AddCoreFun("+", evalxf("+", 0, sum))
 	e.AddCoreFun("-", eval12f("-", neg, diff))
 	e.AddCoreFun("*", evalxf("*", 1, prod))

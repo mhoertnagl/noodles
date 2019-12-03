@@ -1,5 +1,7 @@
 package data
 
+import "os"
+
 type Env interface {
 	Set(name string, val Node) Node
 	Lookup(name string) (Node, bool)
@@ -8,6 +10,14 @@ type Env interface {
 type env struct {
 	outer Env
 	defs  map[string]Node
+}
+
+func NewRootEnv() Env {
+	e := NewEnv(nil)
+	e.Set("*STDIN*", os.Stdin)
+	e.Set("*STDOUT*", os.Stdout)
+	e.Set("*STDERR*", os.Stderr)
+	return e
 }
 
 func NewEnv(outer Env) Env {

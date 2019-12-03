@@ -17,20 +17,20 @@ func Start(in io.Reader, out io.Writer, err io.Writer, args Args) {
 	scanner := bufio.NewScanner(in)
 	reader := read.NewReader()
 	parser := read.NewParser()
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	eval := eval.NewEvaluator(env)
 	printer := print.NewPrinter()
 
 	for _, file := range args.Files {
 		res := eval.EvalFile(file)
 		printer.FprintErrors(err, eval.Errors())
-		printer.Fprint(out, res)
+		printer.Fprintln(out, res)
 	}
 
 	if args.Interactive {
 		for {
 			fmt.Fprintf(out, ">> ")
-			if ok := scanner.Scan(); !ok {
+			if scanner.Scan() == false {
 				return
 			}
 			input := scanner.Text()
@@ -39,7 +39,7 @@ func Start(in io.Reader, out io.Writer, err io.Writer, args Args) {
 			printer.FprintErrors(err, parser.Errors())
 			res := eval.Eval(src)
 			printer.FprintErrors(err, eval.Errors())
-			printer.Fprint(out, res)
+			printer.Fprintln(out, res)
 		}
 	}
 }

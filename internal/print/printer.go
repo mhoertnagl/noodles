@@ -11,6 +11,7 @@ import (
 
 type Printer interface {
 	Fprint(out io.Writer, node data.Node)
+	Fprintln(out io.Writer, node data.Node)
 	Print(node data.Node) string
 	FprintErrors(err io.Writer, errs []*data.ErrorNode)
 	PrintErrors(errs ...*data.ErrorNode) string
@@ -25,6 +26,13 @@ func NewPrinter() Printer {
 }
 
 func (p *printer) Fprint(out io.Writer, node data.Node) {
+	res := p.Print(node)
+	if len(res) > 0 {
+		fmt.Fprint(out, res)
+	}
+}
+
+func (p *printer) Fprintln(out io.Writer, node data.Node) {
 	res := p.Print(node)
 	if len(res) > 0 {
 		fmt.Fprintln(out, res)
@@ -64,6 +72,7 @@ func (p *printer) print(n data.Node) {
 		p.buf.WriteString(strconv.FormatFloat(x, 'f', -1, 64))
 	case string:
 		p.printString(x)
+		//p.buf.WriteString(x)
 	case *data.SymbolNode:
 		p.buf.WriteString(x.Name)
 	case *data.ListNode:

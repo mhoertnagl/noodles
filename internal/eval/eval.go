@@ -1,7 +1,9 @@
 package eval
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -34,6 +36,9 @@ type evaluator struct {
 	printer print.Printer
 }
 
+// TODO: provide another function (str node) that uses the printer to turn the
+//       expression into a string.
+// TODO: Move SPLIS_HOME registration to environment.
 // TODO: Turn TODOs into github tickets.
 // TODO: (seq ...), (sequence ...)
 // TODO: Better error reporting.
@@ -181,6 +186,11 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					continue
 				case "defmacro":
 					return e.evalDefMacro(env, args)
+				case "write":
+					return e.evalWrite(env, args)
+				case "read":
+					n = e.evalRead(env, args)
+					continue
 				}
 			}
 
@@ -608,4 +618,38 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 		return e.Error("[defmacro] requires second argument to be a function.")
 	}
 	return e.Error("[defmacro] Cannot bind to [%s].", ns[0])
+}
+
+func (e *evaluator) evalWrite(env data.Env, ns []data.Node) data.Node {
+	if len(ns) < 2 {
+		return e.Error("[write] requires at least 2 arguments.")
+	}
+	wrt := e.eval(env, ns[0])
+	if out, ok := wrt.(io.Writer); ok {
+		for i, n := range ns[1:] {
+			v := e.eval(env, n)
+			if s, ok := v.(string); ok {
+				fmt.Fprint(out, s)
+			} else {
+				e.Error("[write] requires argument %d to be a string.", i+1)
+			}
+		}
+		return nil
+	}
+	return e.Error("[write] requires first argument to be a writer.")
+}
+
+func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
+	if len(ns) != 1 {
+		return e.Error("[read] requires exactly one arguments.")
+	}
+	rdr := e.eval(env, ns[0])
+	if in, ok := rdr.(io.Reader); ok {
+		scn := bufio.NewScanner(in)
+		if scn.Scan() {
+			return scn.Text()
+		}
+		return e.Error("[read] Could not read input.")
+	}
+	return e.Error("[read] requires only argument to be a reader.")
 }

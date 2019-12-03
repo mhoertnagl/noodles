@@ -40,13 +40,13 @@ func TestDiff(t *testing.T) {
 }
 
 func TestDiff2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def :a (+ 1 1))", "2")
 	teste(t, env, "(- :a)", "-2")
 }
 
 func TestDiff3(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def :a (+ 1 1))", "2")
 	teste(t, env, "(- :a 1)", "1")
 	teste(t, env, "(- 1 :a)", "-1")
@@ -96,21 +96,21 @@ func TestHashMap(t *testing.T) {
 }
 
 func TestDef1(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def :a 1)", "1")
 	testenv(t, env, ":a", "1")
 	teste(t, env, ":a", "1")
 }
 
 func TestDef2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def :a (+ 1 1))", "2")
 	testenv(t, env, ":a", "2")
 	teste(t, env, ":a", "2")
 }
 
 func TestDef3(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	// Define
 	teste(t, env, "(def :a 1)", "1")
 	testenv(t, env, ":a", "1")
@@ -129,7 +129,7 @@ func TestInvalidDef(t *testing.T) {
 }
 
 func TestDefPI(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def *PI* 3.141592653589793)", "3.141592653589793")
 	testenv(t, env, "*PI*", "3.141592653589793")
 }
@@ -313,14 +313,14 @@ func TestLT(t *testing.T) {
 }
 
 func TestLT2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def N 0)", "0")
 	teste(t, env, "(< N 1)", "true")
 	teste(t, env, "(< N 0)", "false")
 }
 
 func TestLT3(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def N 1)", "1")
 	teste(t, env, "(< N 1)", "false")
 	teste(t, env, "(< N 0)", "false")
@@ -405,7 +405,7 @@ func TestNumberEquivalence(t *testing.T) {
 }
 
 func TestEnvVarEquivalence(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def x 1", "1")
 	teste(t, env, "(= x 1)", "true")
 	teste(t, env, "(= 1 x)", "true")
@@ -484,28 +484,28 @@ func TestFun(t *testing.T) {
 // }
 
 func TestFun2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def gen-plus5 (fn () (fn (b) (+ 5 b))))", "")
 	teste(t, env, "(def plus5 (gen-plus5))", "")
 	teste(t, env, "(plus5 7)", "12")
 }
 
 func TestFun3(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def gen-plusX (fn (x) (fn (b) (+ x b))))", "")
 	teste(t, env, "(def plus7 (gen-plusX 7))", "")
 	teste(t, env, "(plus7 8)", "15")
 }
 
 func TestFun4(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def iffun (fn (N) (if (> N 0) 33 22)))", "")
 	teste(t, env, "(iffun 0)", "22")
 	teste(t, env, "(iffun 1)", "33")
 }
 
 func TestFun5(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def sumdown (fn (N) (if (> N 0) (+ N (sumdown (- N 1))) 0)))", "")
 	teste(t, env, "(sumdown 1)", "1")
 	teste(t, env, "(sumdown 2)", "3")
@@ -513,7 +513,7 @@ func TestFun5(t *testing.T) {
 }
 
 func TestFib(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	fib := `
 		(def fib (fn (N)
 			(if (= N 0)
@@ -531,7 +531,7 @@ func TestFib(t *testing.T) {
 }
 
 func TestSum2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	sum2 := `
 		(def sum2 (fn (n acc)
 			(if (= n 0)
@@ -546,7 +546,7 @@ func TestSum2(t *testing.T) {
 }
 
 func TestNotDef(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	not := `
     (def not (fn [x]
       (if x false true)))
@@ -557,7 +557,7 @@ func TestNotDef(t *testing.T) {
 }
 
 func TestFunShorthand(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	not := `
     (do
       (defmacro fun
@@ -575,7 +575,7 @@ func TestFunShorthand(t *testing.T) {
 //
 // NOTE: Slow test.
 // func TestMutualRecursive(t *testing.T) {
-// 	env := data.NewEnv(nil)
+// 	env := data.NewRootEnv()
 // 	teste(t, env, "(def foo (fn (n) (if (= n 0) 0 (bar (- n 1)))))", "")
 // 	teste(t, env, "(def bar (fn (n) (if (= n 0) 0 (foo (- n 1)))))", "")
 // 	teste(t, env, "(foo 10000)", "0")
@@ -589,7 +589,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestRead2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	src := `
   ;; Returns the negation of x.
   (def not (fn [x]
@@ -607,7 +607,7 @@ func TestEval(t *testing.T) {
 }
 
 func TestEval2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def mal-prog (list + 1 2))", "(+ 1 2)")
 	teste(t, env, "(eval mal-prog)", "3")
 }
@@ -628,14 +628,14 @@ func TestExecuteFile(t *testing.T) {
     (eval
       (parse
         (read-file "../../test/test.splis")))`
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, src, "")
 	teste(t, env, "(plus5 1)", "6")
 	teste(t, env, "(plus5 9)", "14")
 }
 
 func TestUseModule(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, `(use "test/test")`, "")
 	teste(t, env, "(plus5 (plus5 0))", "10")
 }
@@ -684,7 +684,7 @@ func TestConcat(t *testing.T) {
 // }
 
 func TestConcatEnv(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def a (list 1 2))", "(1 2)")
 	teste(t, env, "(def b (list 3 4))", "(3 4)")
 	teste(t, env, "(::: a b (list 5 6))", "(1 2 3 4 5 6)")
@@ -730,7 +730,7 @@ func TestQuasiquote(t *testing.T) {
 }
 
 func TestQuasiquote2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def a 8)", "8")
 	teste(t, env, "(quasiquote a)", "a")
 	teste(t, env, "(quasiquote (unquote a))", "8")
@@ -759,7 +759,7 @@ func TestInvalidQuasiquote(t *testing.T) {
 }
 
 func TestTrivialMacros(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(defmacro one (fn () 1))", "")
 	teste(t, env, "(one)", "1")
 	teste(t, env, "(defmacro two (fn () 2))", "")
@@ -767,14 +767,14 @@ func TestTrivialMacros(t *testing.T) {
 }
 
 func TestUnlessMacros(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(defmacro unless (fn (pred a b) `(if ~pred ~b ~a)))", "")
 	teste(t, env, "(unless false 7 8)", "7")
 	teste(t, env, "(unless true 7 8)", "8")
 }
 
 func TestUnlessMacros2(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(defmacro unless2 (fn (pred a b) (list 'if (list 'not pred) a b)))", "")
 	teste(t, env, "(unless2 false 7 8)", "7")
 	teste(t, env, "(unless2 true 7 8)", "8")
@@ -782,14 +782,14 @@ func TestUnlessMacros2(t *testing.T) {
 }
 
 func TestMacroResultEvaluation(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(defmacro identity (fn [x] x))", "")
 	teste(t, env, "(identity 1)", "1")
 	teste(t, env, "(let (a 123) (identity a))", "123")
 }
 
 func TestMacroUsesClosures(t *testing.T) {
-	env := data.NewEnv(nil)
+	env := data.NewRootEnv()
 	teste(t, env, "(def x 2)", "2")
 	teste(t, env, "(defmacro a (fn [] x))", "")
 	teste(t, env, "(a)", "2")
@@ -958,10 +958,16 @@ func TestPreludeRemove(t *testing.T) {
 	test(t, `(remove (fn [x] (> x 0)) [(- 5) 3 (- 2) 4 0 7])`, "[-5 -2 0]")
 }
 
+func TestWrite(t *testing.T) {
+	test(t, `(write *STDOUT* "Test\n")`, "nil")
+	test(t, `(write *STDOUT* "Test\\n")`, "nil")
+	test(t, `(write *STDOUT* [1 2 3] [4 5 6] "\n")`, "nil")
+}
+
 func test(t *testing.T, i string, e string) {
 	t.Helper()
 	// fmt.Printf("\n\nTesting %s ...\n", i)
-	teste(t, data.NewEnv(nil), i, e)
+	teste(t, data.NewRootEnv(), i, e)
 }
 
 func teste(t *testing.T, env data.Env, i string, e string) {
