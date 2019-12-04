@@ -1,0 +1,11 @@
+;; Input/Output routines.
+(do
+
+  (defmacro print
+    (fn [args]
+      `(write *STDOUT* ~@args) ))
+
+  (defmacro println
+    (fn [args]
+      `(write *STDOUT* ~@args "\n") ))
+)

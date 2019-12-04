@@ -61,6 +61,14 @@
   ;; to denote the default branch.
   (def else true)
 
+  ;; `identity` returns the argument unchanged.
+  ;;
+  ;; @any x  Any argument.
+  ;; @return [any] `x` unchanged.
+  (defn identity [x] x)
+  ; TODO: This does not work.
+  ; (defmacro identity (fn [x] x))
+
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
   ;; `step` denotes the increment added to `start` until it is greater or equal
@@ -168,4 +176,5 @@
 
   ;; (defn flatten [xs])
   (use "lib/core/math")
+  (use "lib/core/io")
 )

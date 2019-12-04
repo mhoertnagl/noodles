@@ -2,6 +2,7 @@ package eval
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,8 +37,7 @@ type evaluator struct {
 	printer print.Printer
 }
 
-// TODO: provide another function (str node) that uses the printer to turn the
-//       expression into a string.
+// TODO: Missing macroexpand
 // TODO: Move SPLIS_HOME registration to environment.
 // TODO: Turn TODOs into github tickets.
 // TODO: (seq ...), (sequence ...)
@@ -47,7 +47,7 @@ type evaluator struct {
 // TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
 // TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
 //       Would require varargs support.
-// TODO: rest delimiter | e.g. (fun foobar [x | xs] ...)
+// TODO: rest delimiter | e.g. (fun foobar [x & xs] ...)
 //       This would be a variant of varargs support.
 // TODO: Spread operator: (join ...["a" "b" "c"]) ~> (join "a" "b" "c")
 // TODO: Doc strings?
@@ -185,11 +185,16 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					n = e.evalQuasiquote(env, args)
 					continue
 				case "defmacro":
+					// e.debug("%s\n", env, x)
 					return e.evalDefMacro(env, args)
 				case "write":
-					return e.evalWrite(env, args)
+					n = e.evalWrite(env, args)
+					continue
 				case "read":
 					n = e.evalRead(env, args)
+					continue
+				case "str":
+					n = e.evalStr(env, args)
 					continue
 				}
 			}
@@ -208,6 +213,12 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				}
 				// Create a new environment for this function.
 				fn.Env = data.NewEnv(fn.Env)
+				// Evaluate the arguments if the function is not a macro.
+				// if fn.IsMacro == false {
+				// 	for i := range fn.Pars {
+				// 		args[i] = e.eval(env, args[i])
+				// 	}
+				// }
 
 				if fn.IsMacro {
 					// Do not evaluate the arguments. Just bind them to their names.
@@ -215,12 +226,12 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					// the unevaluated arguments.
 					// TODO: Breaks <<TestMacroResultEvaluation>>
 					for i, par := range fn.Pars {
+						// e.debug("%s: %s\n", env, par, args[i])
 						fn.Env.Set(par, args[i])
 					}
-
+					//e.debug("%s\n", env, fn.Fun)
 					env = fn.Env
 					n = e.eval(fn.Env, fn.Fun)
-					continue
 				} else {
 					// Evaluate and bind argurments to their parameters in the new
 					// function environment.
@@ -231,8 +242,8 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 
 					env = fn.Env
 					n = fn.Fun
-					continue
 				}
+				continue
 			}
 			return e.Error("List [%s] cannot be evaluated.", e.printer.Print(x))
 		case *data.SymbolNode:
@@ -312,7 +323,7 @@ func (e *evaluator) evalSeq(env data.Env, items []data.Node) []data.Node {
 // same name will overwrite the previous value.
 func (e *evaluator) evalDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
-		return e.Error("[def!] requires exactly 2 arguments.")
+		return e.Error("[def] requires exactly 2 arguments.")
 	}
 	// return e.evalSet(env, ns[0], ns[1])
 	return e.evalSet(e.env, ns[0], ns[1])
@@ -603,7 +614,8 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 
 // evalDefMacro binds the second argument to the first one and declares the
 // second argument a macro. The first argument has to be a symbol and the
-// second argument a function.
+// second argument a function. The macro will be registered in the root
+// environment.
 func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("[defmacro] requires exactly 2 arguments.")
@@ -613,7 +625,7 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 		if fun, ok2 := v.(*data.FuncNode); ok2 {
 			// Delcare this function a macro.
 			fun.IsMacro = true
-			return env.Set(sym.Name, fun)
+			return e.env.Set(sym.Name, fun)
 		}
 		return e.Error("[defmacro] requires second argument to be a function.")
 	}
@@ -621,6 +633,9 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 }
 
 func (e *evaluator) evalWrite(env data.Env, ns []data.Node) data.Node {
+	// for _, n := range ns {
+	// 	e.debug("%s\n", env, n)
+	// }
 	if len(ns) < 2 {
 		return e.Error("[write] requires at least 2 arguments.")
 	}
@@ -631,7 +646,7 @@ func (e *evaluator) evalWrite(env data.Env, ns []data.Node) data.Node {
 			if s, ok := v.(string); ok {
 				fmt.Fprint(out, s)
 			} else {
-				e.Error("[write] requires argument %d to be a string.", i+1)
+				e.Error("[write] requires argument %d to be a string.", i+2)
 			}
 		}
 		return nil
@@ -652,4 +667,13 @@ func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
 		return e.Error("[read] Could not read input.")
 	}
 	return e.Error("[read] requires only argument to be a reader.")
+}
+
+func (e *evaluator) evalStr(env data.Env, ns []data.Node) data.Node {
+	var buf bytes.Buffer
+	for _, n := range ns {
+		v := e.eval(env, n)
+		buf.WriteString(e.printer.Print(v))
+	}
+	return buf.String()
 }

@@ -2,6 +2,7 @@ package eval_test
 
 import (
 	// "fmt"
+	"fmt"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/data"
@@ -581,7 +582,7 @@ func TestFunShorthand(t *testing.T) {
 // 	teste(t, env, "(foo 10000)", "0")
 // }
 //
-func TestRead(t *testing.T) {
+func TestParse(t *testing.T) {
 	test(t, `(parse "(1 2 (3 4) nil)")`, "(1 2 (3 4) nil)")
 	test(t, `(parse "(+ 2 3)")`, "(+ 2 3)")
 	test(t, `(parse "7 ;; comment")`, "7")
@@ -760,30 +761,29 @@ func TestInvalidQuasiquote(t *testing.T) {
 
 func TestTrivialMacros(t *testing.T) {
 	env := data.NewRootEnv()
-	teste(t, env, "(defmacro one (fn () 1))", "")
+	teste(t, env, "(defmacro one (fn [] 1))", "")
 	teste(t, env, "(one)", "1")
-	teste(t, env, "(defmacro two (fn () 2))", "")
+	teste(t, env, "(defmacro two (fn [] 2))", "")
 	teste(t, env, "(two)", "2")
 }
 
 func TestUnlessMacros(t *testing.T) {
 	env := data.NewRootEnv()
-	teste(t, env, "(defmacro unless (fn (pred a b) `(if ~pred ~b ~a)))", "")
+	teste(t, env, "(defmacro unless (fn [pred a b] `(if ~pred ~b ~a)))", "")
 	teste(t, env, "(unless false 7 8)", "7")
 	teste(t, env, "(unless true 7 8)", "8")
 }
 
 func TestUnlessMacros2(t *testing.T) {
 	env := data.NewRootEnv()
-	teste(t, env, "(defmacro unless2 (fn (pred a b) (list 'if (list 'not pred) a b)))", "")
+	teste(t, env, "(defmacro unless2 (fn [pred a b] (list 'if (list 'not pred) a b)))", "")
 	teste(t, env, "(unless2 false 7 8)", "7")
 	teste(t, env, "(unless2 true 7 8)", "8")
-	// teste(t, env, "(macroexpand (unless2 2 3 4))", "(if (not 2) 3 4)")
+	teste(t, env, "(macroexpand (unless2 2 3 4))", "(if (not 2) 3 4)")
 }
 
 func TestMacroResultEvaluation(t *testing.T) {
 	env := data.NewRootEnv()
-	teste(t, env, "(defmacro identity (fn [x] x))", "")
 	teste(t, env, "(identity 1)", "1")
 	teste(t, env, "(let (a 123) (identity a))", "123")
 }
@@ -958,10 +958,22 @@ func TestPreludeRemove(t *testing.T) {
 	test(t, `(remove (fn [x] (> x 0)) [(- 5) 3 (- 2) 4 0 7])`, "[-5 -2 0]")
 }
 
+func TestStr(t *testing.T) {
+	test(t, `(str)`, `""`)
+	test(t, `(str 42)`, `"42"`)
+	test(t, `(str 4 2)`, `"42"`)
+	test(t, `(str (+ 4 (+ 5 6)) [1 2] "x")`, `"15[1 2]"x""`)
+}
+
 func TestWrite(t *testing.T) {
 	test(t, `(write *STDOUT* "Test\n")`, "nil")
 	test(t, `(write *STDOUT* "Test\\n")`, "nil")
-	test(t, `(write *STDOUT* [1 2 3] [4 5 6] "\n")`, "nil")
+	test(t, `(write *STDOUT* (str [1 2 3]) (str [4 5 6]) "\n")`, "nil")
+}
+
+func TestPreludePrint(t *testing.T) {
+	test(t, `(print ("xxx" "\n"))`, "nil")
+	test(t, `(println ("yyy"))`, "nil")
 }
 
 func test(t *testing.T, i string, e string) {
@@ -976,12 +988,12 @@ func teste(t *testing.T, env data.Env, i string, e string) {
 	p := read.NewParser()
 	w := print.NewPrinter()
 	v := eval.NewEvaluator(env)
-	// fmt.Print(w.PrintErrors(v.Errors()...))
+	fmt.Print(w.PrintErrors(v.Errors()...))
 	r.Load(i)
 	n := p.Parse(r)
 	m := v.Eval(n)
 	a := w.Print(m)
-	// fmt.Print(w.PrintErrors(v.Errors()...))
+	fmt.Print(w.PrintErrors(v.Errors()...))
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)
 	}
