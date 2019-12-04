@@ -76,6 +76,10 @@ func TestPlusOne(t *testing.T) {
 	testr(t, "  (+1    0 )   ", "(", "+1", "0", ")", "")
 }
 
+func TestMultilineString(t *testing.T) {
+	testr(t, `"`+"1\n"+"2\n"+"3"+`"`, `"`+"1\n"+"2\n"+"3"+`"`, "")
+}
+
 func testr(t *testing.T, i string, es ...string) {
 	r := read.NewReader()
 	r.Load(i)

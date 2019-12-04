@@ -2,10 +2,10 @@
 (do
 
   (defmacro print
-    (fn [args]
+    (fn [& args]
       `(write *STDOUT* ~@args) ))
 
   (defmacro println
-    (fn [args]
+    (fn [& args]
       `(write *STDOUT* ~@args "\n") ))
 )

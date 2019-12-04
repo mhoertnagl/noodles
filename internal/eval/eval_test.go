@@ -972,8 +972,11 @@ func TestWrite(t *testing.T) {
 }
 
 func TestPreludePrint(t *testing.T) {
-	test(t, `(print ("xxx" "\n"))`, "nil")
-	test(t, `(println ("yyy"))`, "nil")
+	test(t, `(print)`, "nil")
+	test(t, `(print "www")`, "nil")
+	test(t, `(print "xxx" "\n")`, "nil")
+	test(t, `(println "yyy")`, "nil")
+	test(t, `(println "zzz" "$$$")`, "nil")
 }
 
 func test(t *testing.T, i string, e string) {

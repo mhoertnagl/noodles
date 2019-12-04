@@ -37,24 +37,23 @@ type evaluator struct {
 	printer print.Printer
 }
 
+// TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
+// TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
+// TODO: Spread operator: (join ...["a" "b" "c"]) ~> (join "a" "b" "c")
+// TODO: quot and mod
+// TODO: :keywords?
 // TODO: Missing macroexpand
 // TODO: Move SPLIS_HOME registration to environment.
 // TODO: Turn TODOs into github tickets.
 // TODO: (seq ...), (sequence ...)
 // TODO: Better error reporting.
-// TODO: :keywords?
-// TODO: quot and mod
-// TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
-// TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
-//       Would require varargs support.
-// TODO: rest delimiter | e.g. (fun foobar [x & xs] ...)
-//       This would be a variant of varargs support.
-// TODO: Spread operator: (join ...["a" "b" "c"]) ~> (join "a" "b" "c")
+// TODO: Hash Operations.
 // TODO: Doc strings?
-//       Would require multiline strings. Then we could define a special macro
-//       to add the documentation to a special global dictionary *splis-docs*
+//       Add the documentation to a special global dictionary *splis-docs*
 //       where the entries are the names of the definition and the value is the
 //       docstring.
+//       (docs "...")
+//       (help "fun-name")
 // TODO: partial evaluation.
 // TODO: https://clojuredocs.org/clojure.core
 // TODO: Start structure and interpretation of computer programs.
@@ -207,42 +206,7 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 					return fun(e, env, args)
 				}
 			} else if fn, ok := hd.(*data.FuncNode); ok {
-
-				if len(fn.Pars) != len(args) {
-					return e.Error("Number of arguments not the same as number of parameters.")
-				}
-				// Create a new environment for this function.
-				fn.Env = data.NewEnv(fn.Env)
-				// Evaluate the arguments if the function is not a macro.
-				// if fn.IsMacro == false {
-				// 	for i := range fn.Pars {
-				// 		args[i] = e.eval(env, args[i])
-				// 	}
-				// }
-
-				if fn.IsMacro {
-					// Do not evaluate the arguments. Just bind them to their names.
-					// We will expand the macro and evaluate the final result including
-					// the unevaluated arguments.
-					// TODO: Breaks <<TestMacroResultEvaluation>>
-					for i, par := range fn.Pars {
-						// e.debug("%s: %s\n", env, par, args[i])
-						fn.Env.Set(par, args[i])
-					}
-					//e.debug("%s\n", env, fn.Fun)
-					env = fn.Env
-					n = e.eval(fn.Env, fn.Fun)
-				} else {
-					// Evaluate and bind argurments to their parameters in the new
-					// function environment.
-					for i, par := range fn.Pars {
-						arg := e.eval(env, args[i])
-						fn.Env.Set(par, arg)
-					}
-
-					env = fn.Env
-					n = fn.Fun
-				}
+				env, n = e.evalCall(env, fn, args)
 				continue
 			}
 			return e.Error("List [%s] cannot be evaluated.", e.printer.Print(x))
@@ -256,6 +220,56 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 			return n
 		}
 	}
+}
+
+func (e *evaluator) evalCall(env data.Env, fn *data.FuncNode, args []data.Node) (data.Env, data.Node) {
+
+	// Create a new environment for this function.
+	fn.Env = data.NewEnv(fn.Env)
+
+	if fn.IsMacro {
+		// Do not evaluate the arguments. Just bind them to their names.
+		// We will expand the macro and evaluate the final result including
+		// the unevaluated arguments.
+		if ok, err := e.bindArgs(fn, args); !ok {
+			return env, err
+		}
+		return fn.Env, e.eval(fn.Env, fn.Fun)
+	} else {
+		// Evaluate and bind argurments to their parameters in the new
+		// function environment.
+		vals := e.evalSeq(env, args)
+		if ok, err := e.bindArgs(fn, vals); !ok {
+			return env, err
+		}
+		return fn.Env, fn.Fun
+	}
+}
+
+func (e *evaluator) bindArgs(fn *data.FuncNode, args []data.Node) (bool, data.Node) {
+	lenPars := len(fn.Pars)
+	lenArgs := len(args)
+	// fmt.Printf("params %d : args %d\n", lenPars, lenArgs)
+	for i := 0; i < lenPars; i++ {
+		// e.debug("%s: %s\n", env, par, args[i])
+		if fn.Pars[i] == "&" {
+			if lenPars < i+2 {
+				return false, e.Error("& without rest parameter.")
+			} else if lenPars > i+2 {
+				return false, e.Error("Too many rest parameters.")
+			}
+			if len(args) < i {
+				return false, e.Error("Required arguments missing.")
+			}
+			fn.Env.Set(fn.Pars[i+1], data.NewList(args[i:]))
+			break
+		}
+		if lenArgs < i+1 {
+			return false, e.Error("Required arguments missing.")
+		}
+		fn.Env.Set(fn.Pars[i], args[i])
+	}
+	return true, nil
 }
 
 // evalSymbol returns the symbol if it is a core function. If not, serches the
@@ -352,7 +366,7 @@ func (e *evaluator) evalSet(env data.Env, name data.Node, val data.Node) data.No
 // respective names.
 func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) {
 	if len(ns) != 2 {
-		return env, e.Error("[let*] requires exactly 2 arguments.")
+		return env, e.Error("[let] requires exactly 2 arguments.")
 	}
 	sub := data.NewEnv(env)
 	switch b := ns[0].(type) {
@@ -361,10 +375,9 @@ func (e *evaluator) evalLet(env data.Env, ns []data.Node) (data.Env, data.Node) 
 	case *data.VectorNode:
 		e.evalSeqBindings(sub, b.Items)
 	case *data.HashMapNode:
-		fmt.Printf("%v\n", b.Items)
 		e.evalHashMapBindings(sub, b.Items)
 	default:
-		return env, e.Error("Cannot [let*]-bind non-sequence.")
+		return env, e.Error("[let] Cannot bind non-sequence.")
 	}
 	// Return the new environment and the unevaluated body of let* for TCO.
 	return sub, ns[1]
@@ -387,21 +400,21 @@ func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 // environment, the lsit of parameter names and the function body.
 func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
-		return e.Error("[fn*] requires exactly 2 arguments.")
+		return e.Error("[fn] requires exactly 2 arguments.")
 	}
 	switch ps := ns[0].(type) {
 	case *data.ListNode:
-		if params, ok2 := paramNames(ps.Items); ok2 {
+		if params, ok := paramNames(ps.Items); ok {
 			return data.NewFuncNode(env, params, ns[1])
 		}
-		return e.Error("Function parameter must be a symbol.")
+		return e.Error("[fn] parameters must be a symbols.")
 	case *data.VectorNode:
-		if params, ok2 := paramNames(ps.Items); ok2 {
+		if params, ok := paramNames(ps.Items); ok {
 			return data.NewFuncNode(env, params, ns[1])
 		}
-		return e.Error("Function parameter must be a symbol.")
+		return e.Error("[fn] parameters must be symbols.")
 	default:
-		return e.Error("First argument to [fn*] must be a list or vector.")
+		return e.Error("[fn] First argument to must be a list or vector.")
 	}
 }
 
@@ -632,12 +645,11 @@ func (e *evaluator) evalDefMacro(env data.Env, ns []data.Node) data.Node {
 	return e.Error("[defmacro] Cannot bind to [%s].", ns[0])
 }
 
+// evalWrite writes a sequence of strings to the specified io.Writer, which is
+// the first argument. If no strings are supplied, nothing will be written.
 func (e *evaluator) evalWrite(env data.Env, ns []data.Node) data.Node {
-	// for _, n := range ns {
-	// 	e.debug("%s\n", env, n)
-	// }
-	if len(ns) < 2 {
-		return e.Error("[write] requires at least 2 arguments.")
+	if len(ns) < 1 {
+		return e.Error("[write] requires at least 1 arguments.")
 	}
 	wrt := e.eval(env, ns[0])
 	if out, ok := wrt.(io.Writer); ok {
