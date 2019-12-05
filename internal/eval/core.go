@@ -135,8 +135,8 @@ func concat(e Evaluator, env data.Env, args []data.Node) data.Node {
 		case *data.ListNode:
 			ns = append(ns, x.Items...)
 			// TODO: Allow? Return list?
-		// case *data.VectorNode:
-		// 	ns = append(ns, x.Items...)
+		case *data.VectorNode:
+			ns = append(ns, x.Items...)
 		default:
 			return e.Error("Second argument to [cons] must be a list or vector.")
 		}

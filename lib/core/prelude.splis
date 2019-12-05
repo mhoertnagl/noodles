@@ -94,6 +94,8 @@
 
   ;; TODO: clojure uses mapv for vectors.
 
+  (defmacro apply (fn [f args] `(~f ~@args)) )
+
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
   ;; elements.

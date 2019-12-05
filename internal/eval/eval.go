@@ -39,7 +39,6 @@ type evaluator struct {
 
 // TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
 // TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
-// TODO: Spread operator: (join ...["a" "b" "c"]) ~> (join "a" "b" "c")
 // TODO: quot and mod
 // TODO: :keywords?
 // TODO: Missing macroexpand

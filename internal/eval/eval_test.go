@@ -979,6 +979,10 @@ func TestPreludePrint(t *testing.T) {
 	test(t, `(println "zzz" "$$$")`, "nil")
 }
 
+func TestPreludeApply(t *testing.T) {
+	test(t, `(apply print ["a" "b" "c"])`, "nil")
+}
+
 func test(t *testing.T, i string, e string) {
 	t.Helper()
 	// fmt.Printf("\n\nTesting %s ...\n", i)
