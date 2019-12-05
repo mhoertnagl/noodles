@@ -1,10 +1,11 @@
 ;; Input/Output routines.
 (do
-
+  ;; TODO: Doc.
   (defmacro print
     (fn [& args]
       `(write *STDOUT* ~@args) ))
 
+  ;; TODO: Doc.
   (defmacro println
     (fn [& args]
       `(write *STDOUT* ~@args "\n") ))
