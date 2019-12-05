@@ -8,31 +8,37 @@ import (
 	"github.com/mhoertnagl/splis2/internal/data"
 )
 
+type Float1n func(float64) data.Node
+type Float2n func(float64, float64) data.Node
+type Float2f func(float64, float64) float64
+type CoreFun1 func(Evaluator, data.Env, data.Node) data.Node
+
 func InitCore(e Evaluator) {
 	addSplisRoot(e)
-	e.AddCoreFun("list?", eval1n("list?", isList))
+	core1n(e, "list?", isList)
 	// TODO: (vector? )
 	// TODO: (dict? )
 	e.AddCoreFun("list", list)
 	// TODO: (vector )
 	// TODO: (dict )
 	e.AddCoreFun("count", count)
-	e.AddCoreFun("empty?", eval1n("empty?", isEmpty))
+	core1n(e, "empty?", isEmpty)
 	e.AddCoreFun("::", cons)
 	e.AddCoreFun(":::", concat)
-	e.AddCoreFun("head", eval1n("head", head))
-	e.AddCoreFun("tail", eval1n("tail", tail))
+	core1n(e, "head", head)
+	core1n(e, "tail", tail)
 	// TODO: (join <dict> <dict>)
-	// TODO: (print ...)
-	e.AddCoreFun("+", evalxf("+", 0, sum))
-	e.AddCoreFun("-", eval12f("-", neg, diff))
-	e.AddCoreFun("*", evalxf("*", 1, prod))
-	e.AddCoreFun("/", eval12f("/", reciproc, div))
+	corexf(e, "+", 0, sum)
+	core12f(e, "-", neg, diff)
+	corexf(e, "*", 1, prod)
+	core12f(e, "/", reciproc, div)
+	core2f(e, "quot", quot)
+	core2f(e, "mod", mod)
 	e.AddCoreFun("=", eq)
-	e.AddCoreFun("<", eval2f("<", lt))
-	e.AddCoreFun(">", eval2f(">", gt))
-	e.AddCoreFun("<=", eval2f("<=", le))
-	e.AddCoreFun(">=", eval2f(">=", ge))
+	core2f(e, "<", lt)
+	core2f(e, ">", gt)
+	core2f(e, "<=", le)
+	core2f(e, ">=", ge)
 	e.AddCoreFun("join", join)
 	e.EvalModule("lib/core/prelude")
 }
@@ -60,6 +66,8 @@ func diff(a, b float64) data.Node  { return a - b }
 func prod(acc, v float64) float64  { return acc * v }
 func reciproc(n float64) data.Node { return 1 / n }
 func div(a, b float64) data.Node   { return a / b }
+func quot(a, b float64) data.Node  { return float64(int64(a) / int64(b)) }
+func mod(a, b float64) data.Node   { return float64(int64(a) % int64(b)) }
 
 func lt(a, b float64) data.Node { return a < b }
 func gt(a, b float64) data.Node { return a > b }
@@ -180,72 +188,6 @@ func tail(e Evaluator, env data.Env, arg data.Node) data.Node {
 	}
 }
 
-// func printArgs(escape bool) CoreFun {
-// 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
-// 		var buf bytes.Buffer
-// 		for _, arg := range args {
-// 			printArg(&buf, arg, escape)
-// 		}
-// 		return buf.String()
-// 	}
-// }
-//
-// func printArg(buf *bytes.Buffer, n data.Node, escape bool) {
-// 	switch {
-// 	case data.IsError(n):
-// 		buf.WriteString("  [ERROR]  ")
-// 	case data.IsNil(n):
-// 		buf.WriteString("nil")
-// 	case data.IsBool(n):
-// 		buf.WriteString(strconv.FormatBool(n.(bool)))
-// 	case data.IsNumber(n):
-// 		buf.WriteString(strconv.FormatFloat(n.(float64), 'f', -1, 64))
-// 	case data.IsString(n):
-// 		if escape {
-// 			buf.WriteString(n.(string))
-// 		} else {
-// 			buf.WriteString(n.(string))
-// 		}
-// 	case data.IsSymbol(n):
-// 		buf.WriteString(n.(*data.SymbolNode).Name)
-// 	case data.IsList(n):
-// 		printSeq(buf, n.(*data.ListNode).Items, "(", ")", escape)
-// 	case data.IsVector(n):
-// 		printSeq(buf, n.(*data.VectorNode).Items, "[", "]", escape)
-// 	case data.IsHashMap(n):
-// 		printHashMap(buf, n.(*data.HashMapNode).Items, escape)
-// 		// case data.IsFuncNode(n):
-// 		// 	p.buf.WriteString(n.(*data.FuncNode).Name)
-// 	}
-// }
-//
-// func printSeq(buf *bytes.Buffer, items []data.Node, start string, end string, escape bool) {
-// 	buf.WriteString(start)
-// 	for i, item := range items {
-// 		if i > 0 {
-// 			buf.WriteString(" ")
-// 		}
-// 		printArg(buf, item, escape)
-// 	}
-// 	buf.WriteString(end)
-// }
-//
-// func printHashMap(buf *bytes.Buffer, items data.Map, escape bool) {
-// 	buf.WriteString("{")
-// 	// TODO: Unfortunate.
-// 	init := false
-// 	for key, val := range items {
-// 		if init {
-// 			buf.WriteString(" ")
-// 		}
-// 		init = true
-// 		printArg(buf, key, escape)
-// 		buf.WriteString(" ")
-// 		printArg(buf, val, escape)
-// 	}
-// 	buf.WriteString("}")
-// }
-
 func eq(e Evaluator, env data.Env, args []data.Node) data.Node {
 	if len(args) != 2 {
 		return e.Error("[=] expects 2 arguments.")
@@ -313,7 +255,11 @@ func join(e Evaluator, env data.Env, args []data.Node) data.Node {
 	return sb.String()
 }
 
-func eval1n(name string, f func(Evaluator, data.Env, data.Node) data.Node) CoreFun {
+func core1n(e Evaluator, name string, f CoreFun1) {
+	e.AddCoreFun(name, eval1n(name, f))
+}
+
+func eval1n(name string, f CoreFun1) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
 		switch len(args) {
 		case 1:
@@ -323,7 +269,11 @@ func eval1n(name string, f func(Evaluator, data.Env, data.Node) data.Node) CoreF
 	}
 }
 
-func evalxf(name string, b float64, f func(float64, float64) float64) CoreFun {
+func corexf(e Evaluator, name string, b float64, f Float2f) {
+	e.AddCoreFun(name, evalxf(name, b, f))
+}
+
+func evalxf(name string, b float64, f Float2f) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
 		acc := b
 		for i, arg := range args {
@@ -338,7 +288,11 @@ func evalxf(name string, b float64, f func(float64, float64) float64) CoreFun {
 	}
 }
 
-func eval12f(name string, f func(float64) data.Node, g func(float64, float64) data.Node) CoreFun {
+func core12f(e Evaluator, name string, f Float1n, g Float2n) {
+	e.AddCoreFun(name, eval12f(name, f, g))
+}
+
+func eval12f(name string, f Float1n, g Float2n) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
 		switch len(args) {
 		case 1:
@@ -364,7 +318,11 @@ func eval12f(name string, f func(float64) data.Node, g func(float64, float64) da
 	}
 }
 
-func eval2f(name string, f func(float64, float64) data.Node) CoreFun {
+func core2f(e Evaluator, name string, f Float2n) {
+	e.AddCoreFun(name, eval2f(name, f))
+}
+
+func eval2f(name string, f Float2n) CoreFun {
 	return func(e Evaluator, env data.Env, args []data.Node) data.Node {
 		switch len(args) {
 		case 2:

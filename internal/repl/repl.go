@@ -11,8 +11,8 @@ import (
 	"github.com/mhoertnagl/splis2/internal/read"
 )
 
-// Start preprocesses all input files and may initiate a new REPL session taking
-// input form in and outputting it to out if.
+// Start preprocesses all input files in order and may initiate a new REPL
+// session taking input form in and outputting it to out if.
 func Start(in io.Reader, out io.Writer, err io.Writer, args Args) {
 	scanner := bufio.NewScanner(in)
 	reader := read.NewReader()

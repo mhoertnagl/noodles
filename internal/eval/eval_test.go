@@ -983,6 +983,44 @@ func TestPreludeApply(t *testing.T) {
 	test(t, `(apply print ["a" "b" "c"])`, "nil")
 }
 
+func TestAnd(t *testing.T) {
+	test(t, `(and)`, "true")
+	test(t, `(and false)`, "false")
+	test(t, `(and true)`, "true")
+	test(t, `(and false false)`, "false")
+	test(t, `(and false true)`, "false")
+	test(t, `(and true false)`, "false")
+	test(t, `(and true true)`, "true")
+	test(t, `(and (< 0 1) (= 0 0))`, "true")
+}
+
+func TestOr(t *testing.T) {
+	test(t, `(or)`, "false")
+	test(t, `(or false)`, "false")
+	test(t, `(or true)`, "true")
+	test(t, `(or false false)`, "false")
+	test(t, `(or false true)`, "true")
+	test(t, `(or true false)`, "true")
+	test(t, `(or true true)`, "true")
+	test(t, `(or (< 0 1) (= 0 0))`, "true")
+}
+
+func TestQuot(t *testing.T) {
+	test(t, `(quot 9 3)`, "3")
+	test(t, `(quot 8 3)`, "2")
+	test(t, `(quot 7 3)`, "2")
+	test(t, `(quot 6 3)`, "2")
+	test(t, `(quot 5 3)`, "1")
+}
+
+func TestMod(t *testing.T) {
+	test(t, `(mod 9 3)`, "0")
+	test(t, `(mod 8 3)`, "2")
+	test(t, `(mod 7 3)`, "1")
+	test(t, `(mod 6 3)`, "0")
+	test(t, `(mod 5 3)`, "2")
+}
+
 func test(t *testing.T, i string, e string) {
 	t.Helper()
 	// fmt.Printf("\n\nTesting %s ...\n", i)

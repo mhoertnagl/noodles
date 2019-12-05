@@ -37,8 +37,6 @@ type evaluator struct {
 	printer print.Printer
 }
 
-// TODO: (and x1 x2 ...) ~> (all x1 x2 ...)
-// TODO: (or x1 x2 ...)  ~> (any x1 x2 ...)
 // TODO: quot and mod
 // TODO: :keywords?
 // TODO: Missing macroexpand
@@ -158,6 +156,8 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "let":
 					env, n = e.evalLet(env, args)
 					continue
+				case "defmacro":
+					return e.evalDefMacro(env, args)
 				case "fn":
 					return e.evalFunDef(env, args)
 				case "do":
@@ -169,28 +169,31 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				case "cond":
 					n = e.evalCond(env, args)
 					continue
-				case "parse":
-					return e.evalParse(env, args)
-				case "eval":
-					n = e.evalEval(env, args)
+				case "and":
+					n = e.evalAnd(env, args)
 					continue
-				case "read-file":
-					n = e.evalReadFile(env, args)
+				case "or":
+					n = e.evalOr(env, args)
 					continue
 				case "quote":
 					return e.evalQuote(env, args)
 				case "quasiquote":
 					n = e.evalQuasiquote(env, args)
 					continue
-				case "defmacro":
-					// e.debug("%s\n", env, x)
-					return e.evalDefMacro(env, args)
+				case "eval":
+					n = e.evalEval(env, args)
+					continue
 				case "write":
 					n = e.evalWrite(env, args)
 					continue
 				case "read":
 					n = e.evalRead(env, args)
 					continue
+				case "read-file":
+					n = e.evalReadFile(env, args)
+					continue
+				case "parse":
+					return e.evalParse(env, args)
 				case "str":
 					n = e.evalStr(env, args)
 					continue
@@ -665,6 +668,8 @@ func (e *evaluator) evalWrite(env data.Env, ns []data.Node) data.Node {
 	return e.Error("[write] requires first argument to be a writer.")
 }
 
+// evalRead reads input from the specified io.Reader, which is the first
+// argument.
 func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 1 {
 		return e.Error("[read] requires exactly one arguments.")
@@ -680,6 +685,8 @@ func (e *evaluator) evalRead(env data.Env, ns []data.Node) data.Node {
 	return e.Error("[read] requires only argument to be a reader.")
 }
 
+// evalStr turns a list of arbitrary Splis expressions into their string
+// representation and concatenates them without spaces.
 func (e *evaluator) evalStr(env data.Env, ns []data.Node) data.Node {
 	var buf bytes.Buffer
 	for _, n := range ns {
@@ -687,4 +694,24 @@ func (e *evaluator) evalStr(env data.Env, ns []data.Node) data.Node {
 		buf.WriteString(e.printer.Print(v))
 	}
 	return buf.String()
+}
+
+func (e *evaluator) evalAnd(env data.Env, ns []data.Node) data.Node {
+	for _, n := range ns {
+		v := e.eval(env, n)
+		if e.isTrue(env, v) == false {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *evaluator) evalOr(env data.Env, ns []data.Node) data.Node {
+	for _, n := range ns {
+		v := e.eval(env, n)
+		if e.isTrue(env, v) {
+			return true
+		}
+	}
+	return false
 }
