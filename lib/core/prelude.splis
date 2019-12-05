@@ -96,6 +96,20 @@
 
   (defmacro apply (fn [f args] `(~f ~@args)) )
 
+  ; TODO: Not working.
+  (defn all-true [xs] (apply and xs))
+  (defn any-true [xs] (apply or xs))
+
+  (defn all [p xs]
+    (cond (empty? xs) true
+          (not (p (head xs))) false
+          else (all p (tail xs)) ))
+
+  (defn any [p xs]
+    (cond (empty? xs) false
+          (p (head xs)) true
+          else (any p (tail xs)) ))
+
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
   ;; elements.
@@ -133,10 +147,9 @@
   ;     (f b (reduce f (head xs) (tail xs)))))
 
   (defn filter [p xs]
-    (cond
-      (empty? xs) xs
-      (p (head xs)) (:: (head xs) (filter p (tail xs)))
-      else (filter p (tail xs)) ))
+    (cond (empty? xs) xs
+          (p (head xs)) (:: (head xs) (filter p (tail xs)))
+          else (filter p (tail xs)) ))
 
   (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
 

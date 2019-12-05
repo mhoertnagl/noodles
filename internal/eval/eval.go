@@ -24,6 +24,7 @@ type Evaluator interface {
 	EvalFile(file string) data.Node
 	Error(format string, args ...interface{}) data.Node
 	Errors() []*data.ErrorNode
+	Print(node data.Node) string
 	AddCoreFun(name string, fun CoreFun)
 	AddConstant(name string, value data.Node)
 }
@@ -37,7 +38,6 @@ type evaluator struct {
 	printer print.Printer
 }
 
-// TODO: quot and mod
 // TODO: :keywords?
 // TODO: Missing macroexpand
 // TODO: Move SPLIS_HOME registration to environment.
@@ -106,6 +106,10 @@ func (e *evaluator) Error(format string, args ...interface{}) data.Node {
 
 func (e *evaluator) Errors() []*data.ErrorNode {
 	return e.err
+}
+
+func (e *evaluator) Print(node data.Node) string {
+	return e.printer.Print(node)
 }
 
 func (e *evaluator) AddCoreFun(name string, fun CoreFun) {

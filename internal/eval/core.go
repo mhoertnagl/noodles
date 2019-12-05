@@ -107,7 +107,7 @@ func isEmpty(e Evaluator, env data.Env, arg data.Node) data.Node {
 	case *data.HashMapNode:
 		return len(x.Items) == 0
 	default:
-		return e.Error("[%s] cannot be an argument to [empty?].", "")
+		return e.Error("[%s] cannot be an argument to [empty?].", e.Print(arg))
 	}
 }
 
@@ -123,7 +123,7 @@ func cons(e Evaluator, env data.Env, args []data.Node) data.Node {
 		ns := cons2(args[0], x.Items)
 		return data.NewVector(ns)
 	default:
-		return e.Error("Second argument to [::] must be a list or vector.")
+		return e.Error("[%s] cannot be a second argument to [::].", e.Print(args[1]))
 	}
 }
 
@@ -146,7 +146,7 @@ func concat(e Evaluator, env data.Env, args []data.Node) data.Node {
 		case *data.VectorNode:
 			ns = append(ns, x.Items...)
 		default:
-			return e.Error("Second argument to [cons] must be a list or vector.")
+			return e.Error("[%s] cannot be a argument to [:::].", e.Print(arg))
 		}
 	}
 	return data.NewList(ns)
@@ -165,7 +165,7 @@ func head(e Evaluator, env data.Env, arg data.Node) data.Node {
 		}
 		return x.Items[0]
 	default:
-		return e.Error("Argument to [head] must be a list or vector.")
+		return e.Error("[%s] cannot be a argument to [head].", e.Print(arg))
 	}
 }
 
@@ -184,7 +184,7 @@ func tail(e Evaluator, env data.Env, arg data.Node) data.Node {
 		}
 		return data.NewVector(x.Items[1:ln])
 	default:
-		return e.Error("Argument to [tail] must be a list or vector.")
+		return e.Error("[%s] cannot be a argument to [tail].", e.Print(arg))
 	}
 }
 

@@ -981,6 +981,9 @@ func TestPreludePrint(t *testing.T) {
 
 func TestPreludeApply(t *testing.T) {
 	test(t, `(apply print ["a" "b" "c"])`, "nil")
+	test(t, `(apply and [true false true])`, "false")
+	test(t, `(apply and [true true true])`, "true")
+	test(t, `(apply and [(< 0 1) (= 0 0)])`, "true")
 }
 
 func TestAnd(t *testing.T) {
@@ -1019,6 +1022,22 @@ func TestMod(t *testing.T) {
 	test(t, `(mod 7 3)`, "1")
 	test(t, `(mod 6 3)`, "0")
 	test(t, `(mod 5 3)`, "2")
+}
+
+func TestPreludeAll(t *testing.T) {
+	test(t, `(all true? [(< 0 1) (= 0 0)])`, "true")
+	test(t, `(all (fn [x] (< 0 x)) [1 2 3])`, "true")
+	test(t, `(all (fn [x] (> 0 x)) [1 2 3])`, "false")
+}
+
+func TestPreludeAny(t *testing.T) {
+	test(t, `(any true? [(< 0 1) (= 0 0)])`, "true")
+	test(t, `(any (fn [x] (< 2 x)) [1 2 3])`, "true")
+	test(t, `(any (fn [x] (> 1 x)) [1 2 3])`, "false")
+}
+
+func TestPreludeAllTrue(t *testing.T) {
+	test(t, `(all-true [(< 0 1) (= 0 0)])`, "true")
 }
 
 func test(t *testing.T, i string, e string) {
