@@ -1037,6 +1037,7 @@ func TestPreludeAny(t *testing.T) {
 }
 
 func TestPreludeAllTrue(t *testing.T) {
+	test(t, `(any-true [(< 0 1) (= 0 0)])`, "true")
 	test(t, `(all-true [(< 0 1) (= 0 0)])`, "true")
 }
 

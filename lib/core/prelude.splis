@@ -11,9 +11,8 @@
   ;; @param sym   name  The name of the function.
   ;; @param (sym) args  The list of arument symbols.
   ;; @param (any) body  The body of the function.
-  (defmacro defn
-    (fn [name args body]
-      `(def ~name (fn ~args ~body)) ))
+  (defmacro defn (fn [name args body]
+    `(def ~name (fn ~args ~body)) ))
 
   ;; `use` reads, parses and evaluates a splis module.
   ;;
@@ -92,7 +91,8 @@
 
   ;; TODO: clojure uses mapv for vectors.
 
-  (defmacro apply (fn [f args] `(~f ~@args)) )
+  (defmacro apply (fn [f args]
+    `(~f ~@args)) )
 
   ; TODO: Not working.
   (defn all-true [xs] (apply and xs))

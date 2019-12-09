@@ -133,7 +133,6 @@ func (e *evaluator) EvalModule(module string) data.Node {
 	return e.EvalFile(fullPath)
 }
 
-// TODO: Does this have to be a public method?
 func (e *evaluator) EvalFile(file string) data.Node {
 	e.err = []*data.ErrorNode{}
 	s := e.evalReadFile(e.env, []data.Node{file})
@@ -215,7 +214,8 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 				env, n = e.evalCall(env, fn, args)
 				continue
 			}
-			return e.Error("List [%s] cannot be evaluated.", e.printer.Print(x))
+			return n
+			// return e.Error("List [%s] cannot be evaluated.", e.printer.Print(x))
 		case *data.SymbolNode:
 			return e.evalSymbol(env, x)
 		case *data.VectorNode:
@@ -229,7 +229,6 @@ func (e *evaluator) eval(env data.Env, n data.Node) data.Node {
 }
 
 func (e *evaluator) evalCall(env data.Env, fn *data.FuncNode, args []data.Node) (data.Env, data.Node) {
-
 	// Create a new environment for this function.
 	fn.Env = data.NewEnv(fn.Env)
 
@@ -241,15 +240,14 @@ func (e *evaluator) evalCall(env data.Env, fn *data.FuncNode, args []data.Node) 
 			return env, err
 		}
 		return fn.Env, e.eval(fn.Env, fn.Fun)
-	} else {
-		// Evaluate and bind argurments to their parameters in the new
-		// function environment.
-		vals := e.evalSeq(env, args)
-		if ok, err := e.bindArgs(fn, vals); !ok {
-			return env, err
-		}
-		return fn.Env, fn.Fun
 	}
+	// Evaluate and bind argurments to their parameters in the new
+	// function environment.
+	vals := e.evalSeq(env, args)
+	if ok, err := e.bindArgs(fn, vals); !ok {
+		return env, err
+	}
+	return fn.Env, fn.Fun
 }
 
 func (e *evaluator) bindArgs(fn *data.FuncNode, args []data.Node) (bool, data.Node) {
@@ -291,6 +289,7 @@ func (e *evaluator) evalSymbol(env data.Env, n *data.SymbolNode) data.Node {
 	// See if a value is bound to the symbol is defined in the environment.
 	// Return the value.
 	if v, ok := env.Lookup(n.Name); ok {
+		// e.debug("symbol: %s\n", env, v)
 		return v
 	}
 	// Else the symbol is undefined. Report an error.
@@ -396,7 +395,6 @@ func (e *evaluator) evalSeqBindings(env data.Env, b []data.Node) {
 }
 
 func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
-	fmt.Printf("%v\n", b)
 	for k, v := range b {
 		e.evalSet(env, k, v)
 	}
@@ -410,18 +408,19 @@ func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	}
 	switch ps := ns[0].(type) {
 	case *data.ListNode:
-		if params, ok := paramNames(ps.Items); ok {
-			return data.NewFuncNode(env, params, ns[1])
-		}
-		return e.Error("[fn] parameters must be a symbols.")
+		return e.createNewFuncNode(env, ps.Items, ns[1])
 	case *data.VectorNode:
-		if params, ok := paramNames(ps.Items); ok {
-			return data.NewFuncNode(env, params, ns[1])
-		}
-		return e.Error("[fn] parameters must be symbols.")
+		return e.createNewFuncNode(env, ps.Items, ns[1])
 	default:
 		return e.Error("[fn] First argument to must be a list or vector.")
 	}
+}
+
+func (e *evaluator) createNewFuncNode(env data.Env, args []data.Node, body data.Node) data.Node {
+	if params, ok := paramNames(args); ok {
+		return data.NewFuncNode(env, params, body)
+	}
+	return e.Error("[fn] parameters must be a symbols.")
 }
 
 // paramNames assumes that all nodes in [ns] are symbol nodes and returns the
@@ -610,6 +609,8 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 	case *data.SymbolNode:
 		if y.Name == "unquote" {
 			// Return the element without an enclosing quote.
+			// fmt.Print(e.printer.PrintEnv(env))
+			// return e.eval(env, n.Items[1])
 			return n.Items[1]
 		}
 	case *data.ListNode:
@@ -618,8 +619,12 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 		}
 		if z, ok := y.Items[0].(*data.SymbolNode); ok {
 			if z.Name == "splice-unquote" {
+				// fmt.Printf("splice-unquote: %v\n", y.Items[1])
+				// e.debug("splice-unquote: %s\n", env, y.Items[1])
+				fmt.Print(e.printer.PrintEnv(env))
 				return data.Concat(
 					y.Items[1],
+					// e.eval(env, y.Items[1]),
 					e.quasiquote1(env, data.NewList(n.Items[1:])),
 				)
 			}
@@ -700,6 +705,8 @@ func (e *evaluator) evalStr(env data.Env, ns []data.Node) data.Node {
 	return buf.String()
 }
 
+// evalAnd returns true iff all arguments evaluate to true. It will short-
+// circuit on the first false argument.
 func (e *evaluator) evalAnd(env data.Env, ns []data.Node) data.Node {
 	for _, n := range ns {
 		v := e.eval(env, n)
@@ -710,6 +717,8 @@ func (e *evaluator) evalAnd(env data.Env, ns []data.Node) data.Node {
 	return true
 }
 
+// evalOr returns true iff any arguments evaluate to true. It will short-
+// circuit on the first true argument.
 func (e *evaluator) evalOr(env data.Env, ns []data.Node) data.Node {
 	for _, n := range ns {
 		v := e.eval(env, n)

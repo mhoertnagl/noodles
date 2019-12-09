@@ -1,4 +1,52 @@
 (do
+  (println "Chapter 1")
+  (println "=========")
 
-  10
+  (println)
+  (println "Exercise 1.1")
+  (println "------------")
+  (println (str 10))
+  (println (str (+ 5 3 4)))
+  (println (str (- 9 1)))
+  (println (str (/ 6 2)))
+  (println (str (+ (* 2 4) (- 4 6))))
+  (def a 3)
+  (def b (+ a 1))
+  (println (str (+ a b (* a b))))
+  (println (str (= a b)))
+  (println (str
+    (if (and (> b a) (< b (* a b)))
+      b
+      a)))
+  (println (str
+    (cond (= a 4) 6
+          (= b 4) (+ 6 7 a)
+          else 25)))
+  (println (str (+ 2 (if (> b a) b a))))
+  (println (str
+    (* (cond (> a b) a
+             (< a b) b
+             else (- 1))
+       (+ a 1))))
+
+  (println)
+  (println "Exercise 1.2")
+  (println "------------")
+  (println (str
+    (/ (+ 5
+          4
+          (- 2 (- 3 (+ 6 (/ 4 5)))))
+       (* 3
+          (- 6 2)
+          (- 2 7)))))
+
+  (println)
+  (println "Exercise 1.3")
+  (println "------------")
+  (defn square [x] (* x x))
+  (defn sum-of-squares [xs] (sum (map square xs)))
+  ; (defn max-2 [a b c] 
+  ;   (cond ()))
+
+  (println "Chapter 1 completed.")
 )

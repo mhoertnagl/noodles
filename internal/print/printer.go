@@ -13,6 +13,7 @@ type Printer interface {
 	Fprint(out io.Writer, node data.Node)
 	Fprintln(out io.Writer, node data.Node)
 	Print(node data.Node) string
+	PrintEnv(e data.Env) string
 	FprintErrors(err io.Writer, errs []*data.ErrorNode)
 	PrintErrors(errs ...*data.ErrorNode) string
 }
@@ -72,7 +73,6 @@ func (p *printer) print(n data.Node) {
 		p.buf.WriteString(strconv.FormatFloat(x, 'f', -1, 64))
 	case string:
 		p.printString(x)
-		//p.buf.WriteString(x)
 	case *data.SymbolNode:
 		p.buf.WriteString(x.Name)
 	case *data.ListNode:
@@ -119,22 +119,18 @@ func (p *printer) printHashMap(m data.Map) {
 	p.buf.WriteString("}")
 }
 
-// func (p *printer) PrintEnv(e data.Env) string {
-// 	var buf bytes.Buffer
-// 	w := NewPrinter()
-// 	buf.WriteString("- DEFS ---------------------------------\n")
-// 	for k, v := range e.defs {
-// 		buf.WriteString("  ")
-// 		buf.WriteString(k)
-// 		buf.WriteString(" = ")
-// 		buf.WriteString(w.Print(v))
-// 		buf.WriteString("\n")
-// 	}
-// 	buf.WriteString("- SPECIALS -----------------------------\n")
-// 	for k := range e.specials {
-// 		buf.WriteString("  ")
-// 		buf.WriteString(k)
-// 		buf.WriteString("\n")
-// 	}
-// 	return buf.String()
-// }
+func (p *printer) PrintEnv(e data.Env) string {
+	var buf bytes.Buffer
+	buf.WriteString("- DEFS ---------------------------------\n")
+	for i, b := range e.Bindings() {
+		buf.WriteString(fmt.Sprintf("  - %d -----\n", len(e.Bindings())-i))
+		for k, v := range b {
+			buf.WriteString("    ")
+			buf.WriteString(k)
+			buf.WriteString(" = ")
+			buf.WriteString(p.Print(v))
+			buf.WriteString("\n")
+		}
+	}
+	return buf.String()
+}
