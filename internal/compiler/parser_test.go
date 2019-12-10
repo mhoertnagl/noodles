@@ -16,8 +16,9 @@ func TestParseBool(t *testing.T) {
 }
 
 func TestParseNumbers(t *testing.T) {
+	testpw(t, " 0 ", "0")
 	testpw(t, " 1 ", "1")
-	testpw(t, " 0.3 ", "0.3")
+	// testpw(t, " 0.3 ", "0.3")
 	// testpw(t, " -.3 ", "-0.3")
 }
 

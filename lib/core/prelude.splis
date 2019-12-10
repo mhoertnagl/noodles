@@ -136,6 +136,11 @@
   ;     b
   ;     (f b (reduce f (head xs) (tail xs)))))
 
+  (defn fold [f xs]
+    (if (empty? xs)
+      nil ; TODO: Throw error.
+      (reduce f (head xs) (tail xs)) ))
+
   (defn filter [p xs]
     (cond (empty? xs) xs
           (p (head xs)) (:: (head xs) (filter p (tail xs)))

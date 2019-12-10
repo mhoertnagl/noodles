@@ -28,6 +28,11 @@ func IsBool(n Node) bool {
 	return ok
 }
 
+func IsInteger(n Node) bool {
+	_, ok := n.(int64)
+	return ok
+}
+
 func IsNumber(n Node) bool {
 	_, ok := n.(float64)
 	return ok

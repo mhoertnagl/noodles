@@ -154,7 +154,8 @@ func normalizeString(val string) string {
 }
 
 func (p *parser) parseNumber() Node {
-	if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
+	if v, err := strconv.ParseInt(p.tok, 10, 64); err == nil {
+		// if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
 		// TODO: Create a constant pool for the numbers [-32, 31]?
 		return v
 	}

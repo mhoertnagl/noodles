@@ -1041,6 +1041,15 @@ func TestPreludeAllTrue(t *testing.T) {
 	test(t, `(all-true [(< 0 1) (= 0 0)])`, "true")
 }
 
+func TestDefMacroMultiLevel(t *testing.T) {
+	env := data.NewRootEnv()
+	teste(t, env, "(defmacro x0 (fn [x] `~x))", "")
+	teste(t, env, "(defmacro x1 (fn [x] `(x0 ~x)))", "")
+	teste(t, env, "(x0 42)", "42")
+	teste(t, env, "(x0 (x0 42))", "42")
+	teste(t, env, "(x1 42)", "42")
+}
+
 func test(t *testing.T, i string, e string) {
 	t.Helper()
 	// fmt.Printf("\n\nTesting %s ...\n", i)

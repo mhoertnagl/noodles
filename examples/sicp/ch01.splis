@@ -45,8 +45,20 @@
   (println "------------")
   (defn square [x] (* x x))
   (defn sum-of-squares [xs] (sum (map square xs)))
-  ; (defn max-2 [a b c] 
-  ;   (cond ()))
+
+  (defn max-2 [a b c]
+    (let lst [a b c]
+         min (minimum lst)
+      (remove (fn [x] (= x min)) lst)))
+
+  (println (str (max-2 1 2 3)) " should be [2 3].")
+  (println (str (max-2 4 3 7)) " should be [4 7].")
+
+  (defn sum-of-squares-of-max-2 [a b c]
+    (sum-of-squares (max-2 [a b c])))
+
+  (println (str (sum-of-squares-of-max-2 1 2 3)) " should be 13.")
+  (println (str (sum-of-squares-of-max-2 4 3 7)) " should be 65.")
 
   (println "Chapter 1 completed.")
 )

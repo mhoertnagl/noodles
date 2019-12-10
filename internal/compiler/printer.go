@@ -33,6 +33,8 @@ func (p *printer) print(n Node) {
 		p.buf.WriteString("nil")
 	case IsBool(n):
 		p.buf.WriteString(strconv.FormatBool(n.(bool)))
+	case IsInteger(n):
+		p.buf.WriteString(strconv.FormatInt(n.(int64), 10))
 	case IsNumber(n):
 		p.buf.WriteString(strconv.FormatFloat(n.(float64), 'f', -1, 64))
 	case IsString(n):

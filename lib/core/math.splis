@@ -19,12 +19,19 @@
   ;; otherwise.
   ;;
   ;; @param  num  n  A number.
-  ;; @return bool    `true` if `n` is positive; `true` otherwise.
+  ;; @return bool    `true` if `n` is positive; `false` otherwise.
   (defn pos? [n] (> n 0))
 
-  ;; TODO: Tests. Doc.
+  ;; `even?` tests if a number is even.
+  ;;
+  ;; @param  num  n  A number.
+  ;; @return bool    `true` iff `n` is even.
   (defn even? [n] (= (mod n 2) 0))
-  ;; TODO: Tests. Doc.
+
+  ;; `odd?` tests if a number is odd.
+  ;;
+  ;; @param  num  n  A number.
+  ;; @return bool    `true` iff `n` is odd.
   (defn odd? [n] (= (mod n 2) 1))
 
   ;; `abs` computes the absolute value of `n`.
@@ -33,9 +40,21 @@
   ;; @return num    The absolute value `|n|`.
   (defn abs [n] (if (pos? n) n (- n)))
 
-  ;; TODO: Doc.
+  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
+  ;; empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The sum of all values in `xs`.
   (defn sum [xs] (reduce + 0 xs))
 
-  ;; TODO: Doc.
+  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
+  ;; the empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The product of all values in `xs`.
   (defn prod [xs] (reduce * 1 xs))
+
+  (defn minimum [xs] (fold (fn [a b] (if (< a b) a b)) xs))
+
+  (defn maximum [xs] (fold (fn [a b] (if (> a b) a b)) xs))
 )
