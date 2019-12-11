@@ -15,6 +15,7 @@ type CoreFun1 func(Evaluator, data.Env, data.Node) data.Node
 
 func InitCore(e Evaluator) {
 	addSplisRoot(e)
+	core1n(e, "string?", isString)
 	core1n(e, "list?", isList)
 	// TODO: (vector? )
 	// TODO: (dict? )
@@ -73,6 +74,10 @@ func lt(a, b float64) data.Node { return a < b }
 func gt(a, b float64) data.Node { return a > b }
 func le(a, b float64) data.Node { return a <= b }
 func ge(a, b float64) data.Node { return a >= b }
+
+func isString(e Evaluator, env data.Env, arg data.Node) data.Node {
+	return data.IsString(arg)
+}
 
 func list(e Evaluator, env data.Env, args []data.Node) data.Node {
 	return data.NewList(args)

@@ -47,18 +47,40 @@
   (defn sum-of-squares [xs] (sum (map square xs)))
 
   (defn max-2 [a b c]
-    (let lst [a b c]
-         min (minimum lst)
+    (let (lst [a b c]
+          min (minimum lst))
       (remove (fn [x] (= x min)) lst)))
 
   (println (str (max-2 1 2 3)) " should be [2 3].")
   (println (str (max-2 4 3 7)) " should be [4 7].")
 
   (defn sum-of-squares-of-max-2 [a b c]
-    (sum-of-squares (max-2 [a b c])))
+    (sum-of-squares (max-2 a b c)))
 
   (println (str (sum-of-squares-of-max-2 1 2 3)) " should be 13.")
   (println (str (sum-of-squares-of-max-2 4 3 7)) " should be 65.")
+
+  (println)
+  (println "Exercise 1.4")
+  (println "------------")
+  ; Depending on the value of b we will either add or subtract it from a.
+  ; If b < 0 we subtract a negative number yielding the absolute value of b.
+  (defn a-plus-abs-b [a b] ((if (> b 0) + -) a b))
+
+  (println (str (a-plus-abs-b 1 2)) " should be 3.")
+  (println (str (a-plus-abs-b 1 (- 2))) " should be 3.")
+  (printsln (a-plus-abs-b 1 (- 2)) " should be 3.")
+
+  (println)
+  (println "Exercise 1.5")
+  (println "------------")
+  (defn p [] (p))
+  (defn test [x y] (if (= x 0) 0 y))
+  ; Splis uses applicative-order evaluation.
+  ; The call (test 0 p) will loop forever...
+  (println (str (test 0 p)))
+  ; ...well, or not.
+  ; Why is it printing the 0 and stopping?
 
   (println "Chapter 1 completed.")
 )

@@ -621,7 +621,7 @@ func (e *evaluator) quasiquoteList(env data.Env, n *data.ListNode) data.Node {
 			if z.Name == "splice-unquote" {
 				// fmt.Printf("splice-unquote: %v\n", y.Items[1])
 				// e.debug("splice-unquote: %s\n", env, y.Items[1])
-				fmt.Print(e.printer.PrintEnv(env))
+				// fmt.Print(e.printer.PrintEnv(env))
 				return data.Concat(
 					y.Items[1],
 					// e.eval(env, y.Items[1]),
