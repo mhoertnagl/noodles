@@ -18,6 +18,27 @@ func TestCompileInteger(t *testing.T) {
 	testc(t, "1", vm.Instr(vm.OpConst, 1))
 }
 
+func TestCompileAdd(t *testing.T) {
+	testc(t, "(+)",
+		vm.Instr(vm.OpConst, 0),
+	)
+	testc(t, "(+ 1)",
+		vm.Instr(vm.OpConst, 1),
+	)
+	testc(t, "(+ 1 2)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+	)
+	testc(t, "(+ 1 (+ 2 3))",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	r := compiler.NewReader()
 	p := compiler.NewParser()

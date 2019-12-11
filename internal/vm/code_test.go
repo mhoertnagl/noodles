@@ -1,17 +1,19 @@
 package vm_test
 
-// func TestInstr(t *testing.T) {
-// 	c := vm.ConcatVar(
-// 		vm.Instr(vm.OpConst, 1),
-// 	)
-// }
+import (
+	"bytes"
+	"testing"
 
-// func testToS(t *testing.T, c vm.Ins, e vm.Val) {
-// 	t.Helper()
-// 	m := vm.New(1024)
-// 	m.Run(c)
-// 	a := m.Inspect(0)
-// 	if a != e {
-// 		t.Errorf("Expected [%s] but got [%s].", e, a)
-// 	}
-// }
+	"github.com/mhoertnagl/splis2/internal/vm"
+)
+
+func TestInstr(t *testing.T) {
+	c := vm.ConcatVar(
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+	)
+	e := []byte{0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	if bytes.Compare(c, e) != 0 {
+		t.Errorf("Expecting %v but got %v.", e, c)
+	}
+}
