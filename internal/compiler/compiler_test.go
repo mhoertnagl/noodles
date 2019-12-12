@@ -37,9 +37,119 @@ func TestCompileAdd(t *testing.T) {
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpAdd),
 	)
+	testc(t, "(+ (+ 1 2) 3)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+	)
+	testc(t, "(+ 1 2 3)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestCompileSub(t *testing.T) {
+	testc(t, "(-)",
+		vm.Instr(vm.OpConst, 0),
+	)
+	testc(t, "(- 1)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+	)
+	testc(t, "(- 2 1)",
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+	)
+	testc(t, "(- 3 (- 2 1))",
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpSub),
+	)
+	testc(t, "(- (- 3 2) 1)",
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+	)
+}
+
+func TestCompileMul(t *testing.T) {
+	testc(t, "(*)",
+		vm.Instr(vm.OpConst, 1),
+	)
+	testc(t, "(* 2)",
+		vm.Instr(vm.OpConst, 2),
+	)
+	testc(t, "(* 1 2)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+	)
+	testc(t, "(* 1 (* 2 3))",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpMul),
+	)
+	testc(t, "(* (* 1 2) 3)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpMul),
+	)
+	testc(t, "(* 1 2 3)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpMul),
+	)
+}
+
+func TestCompileDiv(t *testing.T) {
+	testc(t, "(/)",
+		vm.Instr(vm.OpConst, 1),
+	)
+	testc(t, "(/ 2)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpDiv),
+	)
+	testc(t, "(/ 2 1)",
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpDiv),
+	)
+	testc(t, "(/ 3 (/ 2 1))",
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpDiv),
+	)
+	testc(t, "(/ (/ 3 2) 1)",
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpDiv),
+	)
 }
 
 func testc(t *testing.T, i string, e ...vm.Ins) {
+	t.Helper()
 	r := compiler.NewReader()
 	p := compiler.NewParser()
 	c := compiler.NewCompiler()

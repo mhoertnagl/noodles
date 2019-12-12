@@ -1,21 +1,20 @@
 ;; Input/Output routines.
 (do
   ;; TODO: Doc.
-  (defmacro print (fn [& args]
+  (defmacro prints (fn [& args]
     `(write *STDOUT* ~@args) ))
 
   ;; TODO: Doc.
-  (defmacro println (fn [& args]
+  (defmacro printsln (fn [& args]
     `(write *STDOUT* ~@args "\n") ))
 
   ;; TODO: Why do I need to evaluate x before feeding it to str?
   ;; TODO: Is this the right name for it?
   (defn to-str [x] (if (string? x) x (str (eval x))))
 
-  ;; TODO: This should be print and println.
-  (defmacro prints (fn [& args]
+  (defmacro print (fn [& args]
     `(write *STDOUT* ~@(map to-str args)) ))
 
-  (defmacro printsln (fn [& args]
+  (defmacro println (fn [& args]
     `(write *STDOUT* ~@(map to-str args) "\n") ))
 )

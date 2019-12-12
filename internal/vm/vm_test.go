@@ -162,10 +162,11 @@ func TestLocals2(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, 1),
 		vm.Instr(vm.OpGetLocal, 2),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpPopEnv),
 	)
-	testVal(t, int64(5), m.InspectStack(0))
+	testVal(t, int64(6), m.InspectStack(0))
 }
 
 // TODO: Locals with shadowing.
