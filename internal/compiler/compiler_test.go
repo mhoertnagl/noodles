@@ -2,6 +2,7 @@ package compiler_test
 
 import (
 	"bytes"
+	"hash/fnv"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/compiler"
@@ -148,6 +149,20 @@ func TestCompileDiv(t *testing.T) {
 	)
 }
 
+func TestCompileLet1(t *testing.T) {
+	testc(t, "(let (a (+ 1 1)) (+ a a))",
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpSetLocal, hash("a")),
+		vm.Instr(vm.OpGetLocal, hash("a")),
+		vm.Instr(vm.OpGetLocal, hash("a")),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
 	r := compiler.NewReader()
@@ -159,6 +174,13 @@ func testc(t *testing.T, i string, e ...vm.Ins) {
 	ee := vm.Concat(e)
 	x := bytes.Compare(s, ee)
 	if x != 0 {
-		t.Errorf("Mismatch at position [%d] Expecting %v but got %v.", x, ee, s)
+		t.Errorf("Mismatch at position [%d] Expecting \n  %v\n but got \n  %v.", x, ee, s)
 	}
+}
+
+func hash(sym string) uint64 {
+	hg := fnv.New64()
+	hg.Reset()
+	hg.Write([]byte(sym))
+	return hg.Sum64()
 }

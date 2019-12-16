@@ -86,12 +86,6 @@ func (m *vm) Run(code Ins) {
 		case OpPop:
 			m.pop()
 		case OpAdd:
-			// r := int64(0)
-			// artity := m.readUint64()
-			// for i := uint64(0); i < artity; i++ {
-			// 	r += m.popInt64()
-			// }
-			// m.push(r)
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l + r)

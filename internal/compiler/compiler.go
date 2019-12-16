@@ -2,6 +2,8 @@ package compiler
 
 import (
 	"fmt"
+	"hash"
+	"hash/fnv"
 
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
@@ -11,10 +13,13 @@ type Compiler interface {
 }
 
 type compiler struct {
+	hg hash.Hash64
 }
 
 func NewCompiler() Compiler {
-	return &compiler{}
+	return &compiler{
+		hg: fnv.New64(),
+	}
 }
 
 func (c *compiler) Compile(node Node) vm.Ins {
@@ -23,6 +28,8 @@ func (c *compiler) Compile(node Node) vm.Ins {
 		return c.compileBooleanLiteral(n)
 	case int64:
 		return c.compileIntegerLiteral(n)
+	case *SymbolNode:
+		return c.compileSymbol(n)
 	case *ListNode:
 		return c.compileList(n)
 	}
@@ -38,6 +45,10 @@ func (c *compiler) compileBooleanLiteral(n bool) vm.Ins {
 
 func (c *compiler) compileIntegerLiteral(n int64) vm.Ins {
 	return vm.Instr(vm.OpConst, uint64(n))
+}
+
+func (c *compiler) compileSymbol(n *SymbolNode) vm.Ins {
+	return vm.Instr(vm.OpGetLocal, c.hashSymbol(n))
 }
 
 func (c *compiler) compileList(n *ListNode) vm.Ins {
@@ -57,13 +68,14 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileMul(args)
 		case "/":
 			return c.compileDiv(args)
+		case "let":
+			return c.compileLet(args)
 		default:
 			panic(fmt.Sprintf("Cannot compile core function [%v]", sym))
 		}
 	default:
 		panic(fmt.Sprintf("Cannot compile list head [%v]", sym))
 	}
-
 }
 
 func (c *compiler) compileAdd(args []Node) vm.Ins {
@@ -170,4 +182,36 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 	default:
 		panic("Too many arguments")
 	}
+}
+
+func (c *compiler) compileLet(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[Let] requires exactly two arguments.")
+	}
+	if bs, ok := args[0].(*ListNode); ok {
+		if len(bs.Items)%2 == 1 {
+			panic("[Let] reqires an even number of bindings.")
+		}
+		code := make([]vm.Ins, 0)
+		code = append(code, vm.Instr(vm.OpNewEnv))
+		for i := 0; i < len(bs.Items); i += 2 {
+			if sym, ok2 := bs.Items[i].(*SymbolNode); ok2 {
+				code = append(code, c.Compile(bs.Items[i+1]))
+				hsh := c.hashSymbol(sym)
+				code = append(code, vm.Instr(vm.OpSetLocal, hsh))
+			} else {
+				panic(fmt.Sprintf("[Let] cannot bind to [%v].", sym))
+			}
+		}
+		code = append(code, c.Compile(args[1]))
+		code = append(code, vm.Instr(vm.OpPopEnv))
+		return vm.Concat(code)
+	}
+	panic("[Let] requires first argument to be a list of bindings")
+}
+
+func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
+	c.hg.Reset()
+	c.hg.Write([]byte(sym.Name))
+	return c.hg.Sum64()
 }

@@ -169,6 +169,21 @@ func TestLocals2(t *testing.T) {
 	testVal(t, int64(6), m.InspectStack(0))
 }
 
+func TestRunLet1(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+	)
+	testVal(t, int64(4), m.InspectStack(0))
+}
+
 // TODO: Locals with shadowing.
 
 // testToS executes a sequence of instructions in the vm and tests the top of
