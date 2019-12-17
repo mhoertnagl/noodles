@@ -56,7 +56,7 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 	if len(items) == 0 {
 		panic("Empty list")
 	}
-	args := n.Items[1:]
+	args := items[1:]
 	switch sym := items[0].(type) {
 	case *SymbolNode:
 		switch sym.Name {
@@ -70,6 +70,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileDiv(args)
 		case "let":
 			return c.compileLet(args)
+		case "if":
+			return c.compileIf(args)
 		default:
 			panic(fmt.Sprintf("Cannot compile core function [%v]", sym))
 		}
@@ -186,11 +188,11 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 
 func (c *compiler) compileLet(args []Node) vm.Ins {
 	if len(args) != 2 {
-		panic("[Let] requires exactly two arguments.")
+		panic("[let] requires exactly two arguments.")
 	}
 	if bs, ok := args[0].(*ListNode); ok {
 		if len(bs.Items)%2 == 1 {
-			panic("[Let] reqires an even number of bindings.")
+			panic("[let] reqires an even number of bindings.")
 		}
 		code := make([]vm.Ins, 0)
 		code = append(code, vm.Instr(vm.OpNewEnv))
@@ -200,14 +202,14 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 				hsh := c.hashSymbol(sym)
 				code = append(code, vm.Instr(vm.OpSetLocal, hsh))
 			} else {
-				panic(fmt.Sprintf("[Let] cannot bind to [%v].", sym))
+				panic(fmt.Sprintf("[let] cannot bind to [%v].", sym))
 			}
 		}
 		code = append(code, c.Compile(args[1]))
 		code = append(code, vm.Instr(vm.OpPopEnv))
 		return vm.Concat(code)
 	}
-	panic("[Let] requires first argument to be a list of bindings")
+	panic("[let] requires first argument to be a list of bindings")
 }
 
 func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
@@ -215,3 +217,38 @@ func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
 	c.hg.Write([]byte(sym.Name))
 	return c.hg.Sum64()
 }
+
+func (c *compiler) compileIf(args []Node) vm.Ins {
+	// fmt.Printf("%v\n", args)
+	if len(args) != 2 && len(args) != 3 {
+		panic("[if] requires exactly two or three arguments.")
+	}
+
+	code := make([]vm.Ins, 0)
+
+	switch len(args) {
+	case 2:
+		cnd := c.Compile(args[0])
+		cns := c.Compile(args[1])
+		cnsLen := uint64(len(cns))
+		code = append(code, cnd)
+		code = append(code, vm.Instr(vm.OpJumpIfNot, cnsLen))
+		code = append(code, cns)
+	case 3:
+		cnd := c.Compile(args[0])
+		cns := c.Compile(args[1])
+		alt := c.Compile(args[2])
+		cnsLen := uint64(len(cns)) + 9 // Add the length of the jmp instruction.
+		altLen := uint64(len(alt))
+		code = append(code, cnd)
+		code = append(code, vm.Instr(vm.OpJumpIfNot, cnsLen))
+		code = append(code, cns)
+		code = append(code, vm.Instr(vm.OpJump, altLen))
+		code = append(code, alt)
+	}
+	return vm.Concat(code)
+}
+
+// func (c *compiler) compileCond(args []Node) vm.Ins {
+//
+// }

@@ -169,6 +169,23 @@ func TestLocals2(t *testing.T) {
 	testVal(t, int64(6), m.InspectStack(0))
 }
 
+func TestLocals3(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpPopEnv),
+	)
+	testVal(t, int64(6), m.InspectStack(0))
+}
+
 func TestRunLet1(t *testing.T) {
 	m := testRun(t,
 		vm.Instr(vm.OpNewEnv),
@@ -182,6 +199,26 @@ func TestRunLet1(t *testing.T) {
 		vm.Instr(vm.OpPopEnv),
 	)
 	testVal(t, int64(4), m.InspectStack(0))
+}
+
+func TestRunIf1(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
+}
+
+func TestRunIf2(t *testing.T) {
+	testToS(t, int64(0),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
 }
 
 // TODO: Locals with shadowing.

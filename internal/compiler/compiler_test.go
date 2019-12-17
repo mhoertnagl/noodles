@@ -163,6 +163,26 @@ func TestCompileLet1(t *testing.T) {
 	)
 }
 
+func TestCompileIf1(t *testing.T) {
+	testc(t, "(if true 1 0)",
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
+}
+
+func TestCompileIf2(t *testing.T) {
+	testc(t, "(if false 1 0)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 0),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
 	r := compiler.NewReader()
