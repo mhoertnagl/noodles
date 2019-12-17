@@ -81,8 +81,23 @@
   ; ...well, or not.
   ; Why is it printing the 0 and stopping?
 
-  ; 1.1.7 Example: Square Roots by Newton's Method
-  
+  (println)
+  (println "1.1.7 Example: Square Roots by Newton's Method")
+  (println "----------------------------------------------")
+  (defn sqrt-good-enough? [guess x]
+    (< (abs (- (square guess) x)) 0.001))
+  (defn sqrt-improve [guess x]
+    (averagev guess (/ x guess)))
+  (defn sqrt-iter [guess x]
+    (if (sqrt-good-enough? guess x)
+      guess
+      (sqrt-iter (sqrt-improve guess x) x) ))
+  (defn sqrt [x] (sqrt-iter 1.0 x))
+
+  (println "(sqrt 9) = " (sqrt 9))
+  (println "(sqrt (+ 100 37)) = " (sqrt (+ 100 37)))
+  (println "(sqrt (+ (sqrt 2) (sqrt 3))) = " (sqrt (+ (sqrt 2) (sqrt 3))))
+  (println "(square (sqrt 1000)) = " (square (sqrt 1000)))
 
   (println "Chapter 1 completed.")
 )
