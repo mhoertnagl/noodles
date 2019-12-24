@@ -188,11 +188,11 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 
 func (c *compiler) compileLet(args []Node) vm.Ins {
 	if len(args) != 2 {
-		panic("[let] requires exactly two arguments.")
+		panic("[let] requires exactly two arguments")
 	}
 	if bs, ok := args[0].(*ListNode); ok {
 		if len(bs.Items)%2 == 1 {
-			panic("[let] reqires an even number of bindings.")
+			panic("[let] reqires an even number of bindings")
 		}
 		code := make([]vm.Ins, 0)
 		code = append(code, vm.Instr(vm.OpNewEnv))
@@ -202,7 +202,7 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 				hsh := c.hashSymbol(sym)
 				code = append(code, vm.Instr(vm.OpSetLocal, hsh))
 			} else {
-				panic(fmt.Sprintf("[let] cannot bind to [%v].", sym))
+				panic(fmt.Sprintf("[let] cannot bind to [%v]", sym))
 			}
 		}
 		code = append(code, c.Compile(args[1]))
@@ -221,7 +221,7 @@ func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
 func (c *compiler) compileIf(args []Node) vm.Ins {
 	// fmt.Printf("%v\n", args)
 	if len(args) != 2 && len(args) != 3 {
-		panic("[if] requires exactly two or three arguments.")
+		panic("[if] requires exactly two or three arguments")
 	}
 
 	code := make([]vm.Ins, 0)

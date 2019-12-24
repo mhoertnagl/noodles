@@ -401,7 +401,7 @@ func (e *evaluator) evalHashMapBindings(env data.Env, b data.Map) {
 }
 
 // evalFunDef creates a new Function Node with references to the current
-// environment, the lsit of parameter names and the function body.
+// environment, the list of parameter names and the function body.
 func (e *evaluator) evalFunDef(env data.Env, ns []data.Node) data.Node {
 	if len(ns) != 2 {
 		return e.Error("[fn] requires exactly 2 arguments.")
