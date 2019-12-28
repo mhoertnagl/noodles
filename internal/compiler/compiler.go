@@ -70,6 +70,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileDiv(args)
 		case "let":
 			return c.compileLet(args)
+		case "def":
+			return c.compileDef(args)
 		case "if":
 			return c.compileIf(args)
 		default:
@@ -96,13 +98,13 @@ func (c *compiler) compileAdd(args []Node) vm.Ins {
 		//   <(+ x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpAdd, <x3>, OpAdd, <x4>, OpAdd, ...
 		//
-		code := make([]vm.Ins, 0)
-		code = append(code, c.Compile(args[0]))
+		code := vm.NewCodeGen()
+		code.Append(c.Compile(args[0]))
 		for _, arg := range args[1:] {
-			code = append(code, c.Compile(arg))
-			code = append(code, vm.Instr(vm.OpAdd))
+			code.Append(c.Compile(arg))
+			code.Instr(vm.OpAdd)
 		}
-		return vm.Concat(code)
+		return code.Emit()
 	}
 }
 
@@ -113,21 +115,21 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 0)
 	case 1:
 		// Singleton difference (- x) yields (- 0 x) which if effectively -x.
-		code := make([]vm.Ins, 0)
-		code = append(code, vm.Instr(vm.OpConst, 0))
-		code = append(code, c.Compile(args[0]))
-		code = append(code, vm.Instr(vm.OpSub))
-		return vm.Concat(code)
+		code := vm.NewCodeGen()
+		code.Instr(vm.OpConst, 0)
+		code.Append(c.Compile(args[0]))
+		code.Instr(vm.OpSub)
+		return code.Emit()
 	case 2:
 		// Only supports at most two operands and computes their difference.
 		//
 		//   <(- x1 x2)> := <x1>, <x2>, OpSub
 		//
-		code := make([]vm.Ins, 0)
-		code = append(code, c.Compile(args[0]))
-		code = append(code, c.Compile(args[1]))
-		code = append(code, vm.Instr(vm.OpSub))
-		return vm.Concat(code)
+		code := vm.NewCodeGen()
+		code.Append(c.Compile(args[0]))
+		code.Append(c.Compile(args[1]))
+		code.Instr(vm.OpSub)
+		return code.Emit()
 	default:
 		panic("Too many arguments")
 	}
@@ -149,13 +151,13 @@ func (c *compiler) compileMul(args []Node) vm.Ins {
 		//   <(* x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpMul, <x3>, OpMul, <x4>, OpMul, ...
 		//
-		code := make([]vm.Ins, 0)
-		code = append(code, c.Compile(args[0]))
+		code := vm.NewCodeGen()
+		code.Append(c.Compile(args[0]))
 		for _, arg := range args[1:] {
-			code = append(code, c.Compile(arg))
-			code = append(code, vm.Instr(vm.OpMul))
+			code.Append(c.Compile(arg))
+			code.Instr(vm.OpMul)
 		}
-		return vm.Concat(code)
+		return code.Emit()
 	}
 }
 
@@ -166,21 +168,21 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 1)
 	case 1:
 		// Singleton difference (/ x) yields (/ 1 x) which if effectively 1/x.
-		code := make([]vm.Ins, 0)
-		code = append(code, vm.Instr(vm.OpConst, 1))
-		code = append(code, c.Compile(args[0]))
-		code = append(code, vm.Instr(vm.OpDiv))
-		return vm.Concat(code)
+		code := vm.NewCodeGen()
+		code.Instr(vm.OpConst, 1)
+		code.Append(c.Compile(args[0]))
+		code.Instr(vm.OpDiv)
+		return code.Emit()
 	case 2:
 		// Only supports at most two operands and computes their quotient.
 		//
 		//   <(/ x1 x2)> := <x1>, <x2>, OpDiv
 		//
-		code := make([]vm.Ins, 0)
-		code = append(code, c.Compile(args[0]))
-		code = append(code, c.Compile(args[1]))
-		code = append(code, vm.Instr(vm.OpDiv))
-		return vm.Concat(code)
+		code := vm.NewCodeGen()
+		code.Append(c.Compile(args[0]))
+		code.Append(c.Compile(args[1]))
+		code.Instr(vm.OpDiv)
+		return code.Emit()
 	default:
 		panic("Too many arguments")
 	}
@@ -194,61 +196,72 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 		if len(bs.Items)%2 == 1 {
 			panic("[let] reqires an even number of bindings")
 		}
-		code := make([]vm.Ins, 0)
-		code = append(code, vm.Instr(vm.OpNewEnv))
+		code := vm.NewCodeGen()
+		code.Instr(vm.OpNewEnv)
 		for i := 0; i < len(bs.Items); i += 2 {
 			if sym, ok2 := bs.Items[i].(*SymbolNode); ok2 {
-				code = append(code, c.Compile(bs.Items[i+1]))
+				code.Append(c.Compile(bs.Items[i+1]))
 				hsh := c.hashSymbol(sym)
-				code = append(code, vm.Instr(vm.OpSetLocal, hsh))
+				code.Instr(vm.OpSetLocal, hsh)
 			} else {
 				panic(fmt.Sprintf("[let] cannot bind to [%v]", sym))
 			}
 		}
-		code = append(code, c.Compile(args[1]))
-		code = append(code, vm.Instr(vm.OpPopEnv))
-		return vm.Concat(code)
+		code.Append(c.Compile(args[1]))
+		code.Instr(vm.OpPopEnv)
+		return code.Emit()
 	}
 	panic("[let] requires first argument to be a list of bindings")
 }
 
-func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
-	c.hg.Reset()
-	c.hg.Write([]byte(sym.Name))
-	return c.hg.Sum64()
+func (c *compiler) compileDef(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[def] requires exactly two arguments")
+	}
+	if sym, ok := args[0].(*SymbolNode); ok {
+		code := vm.NewCodeGen()
+		code.Append(c.Compile(args[1]))
+		hsh := c.hashSymbol(sym)
+		code.Instr(vm.OpSetGlobal, hsh)
+		return code.Emit()
+	}
+	panic("[def] requires first argument to be a symbol")
 }
 
 func (c *compiler) compileIf(args []Node) vm.Ins {
-	// fmt.Printf("%v\n", args)
 	if len(args) != 2 && len(args) != 3 {
 		panic("[if] requires exactly two or three arguments")
 	}
-
-	code := make([]vm.Ins, 0)
-
+	code := vm.NewCodeGen()
 	switch len(args) {
 	case 2:
 		cnd := c.Compile(args[0])
 		cns := c.Compile(args[1])
 		cnsLen := uint64(len(cns))
-		code = append(code, cnd)
-		code = append(code, vm.Instr(vm.OpJumpIfNot, cnsLen))
-		code = append(code, cns)
+		code.Append(cnd)
+		code.Instr(vm.OpJumpIfNot, cnsLen)
+		code.Append(cns)
 	case 3:
 		cnd := c.Compile(args[0])
 		cns := c.Compile(args[1])
 		alt := c.Compile(args[2])
 		cnsLen := uint64(len(cns)) + 9 // Add the length of the jmp instruction.
 		altLen := uint64(len(alt))
-		code = append(code, cnd)
-		code = append(code, vm.Instr(vm.OpJumpIfNot, cnsLen))
-		code = append(code, cns)
-		code = append(code, vm.Instr(vm.OpJump, altLen))
-		code = append(code, alt)
+		code.Append(cnd)
+		code.Instr(vm.OpJumpIfNot, cnsLen)
+		code.Append(cns)
+		code.Instr(vm.OpJump, altLen)
+		code.Append(alt)
 	}
-	return vm.Concat(code)
+	return code.Emit()
 }
 
 // func (c *compiler) compileCond(args []Node) vm.Ins {
 //
 // }
+
+func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
+	c.hg.Reset()
+	c.hg.Write([]byte(sym.Name))
+	return c.hg.Sum64()
+}

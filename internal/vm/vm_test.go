@@ -201,6 +201,16 @@ func TestRunLet1(t *testing.T) {
 	testVal(t, int64(4), m.InspectStack(0))
 }
 
+func TestRunDef1(t *testing.T) {
+	testToS(t, int64(2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpGetGlobal, 0),
+	)
+}
+
 func TestRunIf1(t *testing.T) {
 	testToS(t, int64(1),
 		vm.Instr(vm.OpTrue),
@@ -222,6 +232,14 @@ func TestRunIf2(t *testing.T) {
 }
 
 // TODO: Locals with shadowing.
+
+func TestRunHalt(t *testing.T) {
+	testToS(t, int64(0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpConst, 1),
+	)
+}
 
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the

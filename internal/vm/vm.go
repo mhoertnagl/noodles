@@ -130,13 +130,21 @@ func (m *vm) Run(code Ins) {
 		case OpPopEnv:
 			m.ep--
 		case OpSetLocal:
-			m.bindLocal(m.readInt64(), m.pop())
+			m.bindEnv(m.ep-1, m.readInt64(), m.pop())
 		case OpGetLocal:
-			m.push(m.lookupLocal(m.readInt64()))
+			m.push(m.lookupEnv(m.ep-1, m.readInt64()))
 		case OpSetGlobal:
-			m.bindGlobal(m.readInt64(), m.pop())
+			m.bindEnv(0, m.readInt64(), m.pop())
 		case OpGetGlobal:
-			m.push(m.lookupGlobal(m.readInt64()))
+			m.push(m.lookupEnv(0, m.readInt64()))
+		// case OpSetLocal:
+		// 	m.bindLocal(m.readInt64(), m.pop())
+		// case OpGetLocal:
+		// 	m.push(m.lookupLocal(m.readInt64()))
+		// case OpSetGlobal:
+		// 	m.bindGlobal(m.readInt64(), m.pop())
+		// case OpGetGlobal:
+		// 	m.push(m.lookupGlobal(m.readInt64()))
 		case OpCall:
 			m.frames[m.fp] = m.ip + 1
 			m.fp++
@@ -144,6 +152,8 @@ func (m *vm) Run(code Ins) {
 		case OpReturn:
 			m.fp--
 			m.ip = m.frames[m.fp]
+		case OpHalt:
+			return
 		default:
 			panic("Unsupported operation.")
 		}
@@ -202,34 +212,51 @@ func (m *vm) newEnv() {
 	m.ep++
 }
 
-func (m *vm) bindLocal(a int64, v Val) {
-	env := m.envs[m.ep-1]
+func (m *vm) bindEnv(ep int64, a int64, v Val) {
+	env := m.envs[ep]
 	if x, ok := env[a]; ok {
-		panic(fmt.Sprintf("Local symbol [%d] already bound to [%v]", a, x))
+		panic(fmt.Sprintf("Symbol [%d] already bound to [%v]", a, x))
 	}
 	env[a] = v
 }
 
-func (m *vm) lookupLocal(a int64) Val {
-	for i := m.ep - 1; i >= 0; i-- {
+func (m *vm) lookupEnv(ep int64, a int64) Val {
+	for i := ep; i >= 0; i-- {
 		if v, ok := m.envs[i][a]; ok {
 			return v
 		}
 	}
-	panic(fmt.Sprintf("Unbound local symbol [%d]", a))
+	panic(fmt.Sprintf("Unbound symbol [%d]", a))
 }
 
-func (m *vm) bindGlobal(a int64, v Val) {
-	env := m.envs[0]
-	if x, ok := env[a]; ok {
-		panic(fmt.Sprintf("Global symbol [%d] already bound to [%v]", a, x))
-	}
-	env[a] = v
-}
+// func (m *vm) bindLocal(a int64, v Val) {
+// 	env := m.envs[m.ep-1]
+// 	if x, ok := env[a]; ok {
+// 		panic(fmt.Sprintf("Local symbol [%d] already bound to [%v]", a, x))
+// 	}
+// 	env[a] = v
+// }
 
-func (m *vm) lookupGlobal(a int64) Val {
-	if v, ok := m.envs[0][a]; ok {
-		return v
-	}
-	panic(fmt.Sprintf("Unbound global symbol [%d]", a))
-}
+// func (m *vm) lookupLocal(a int64) Val {
+// 	for i := m.ep - 1; i >= 0; i-- {
+// 		if v, ok := m.envs[i][a]; ok {
+// 			return v
+// 		}
+// 	}
+// 	panic(fmt.Sprintf("Unbound local symbol [%d]", a))
+// }
+
+// func (m *vm) bindGlobal(a int64, v Val) {
+// 	env := m.envs[0]
+// 	if x, ok := env[a]; ok {
+// 		panic(fmt.Sprintf("Global symbol [%d] already bound to [%v]", a, x))
+// 	}
+// 	env[a] = v
+// }
+
+// func (m *vm) lookupGlobal(a int64) Val {
+// 	if v, ok := m.envs[0][a]; ok {
+// 		return v
+// 	}
+// 	panic(fmt.Sprintf("Unbound global symbol [%d]", a))
+// }

@@ -163,6 +163,15 @@ func TestCompileLet1(t *testing.T) {
 	)
 }
 
+func TestCompileDef1(t *testing.T) {
+	testc(t, "(def b (+ 1 1))",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpSetGlobal, hash("b")),
+	)
+}
+
 func TestCompileIf1(t *testing.T) {
 	testc(t, "(if true 1 0)",
 		vm.Instr(vm.OpTrue),
