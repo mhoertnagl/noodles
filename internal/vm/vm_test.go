@@ -241,6 +241,41 @@ func TestRunHalt(t *testing.T) {
 	)
 }
 
+func TestRunFunCall(t *testing.T) {
+	testToS(t, int64(3),
+		vm.Instr(vm.OpConst, 1),
+		// vm.Instr(vm.OpDebug, 1),
+		// -| 1
+		vm.Instr(vm.OpConst, 39),
+		// vm.Instr(vm.OpDebug, 1),
+		// -| 1 @30
+		// call fn (1) => 1 + 1
+		vm.Instr(vm.OpCall),
+		// -| 2
+		// -| 2 1
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpAdd),
+		// -| 3
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x x))
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpNewEnv),
+		// Stack contains arguments in reverse order.
+		vm.Instr(vm.OpSetLocal, 0),
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpDebug, vm.DbgStack),
+		vm.Instr(vm.OpPopEnv),
+		// -| 2*x
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of

@@ -58,6 +58,8 @@ const (
 	OpReturn
 
 	OpHalt
+
+	OpDebug
 )
 
 // OpMeta contains the human-readable name of the operation and the length in
@@ -97,9 +99,10 @@ var meta = map[Op]*OpMeta{
 	OpGetLocal:  {"GetLocal", []int{8}},
 	OpSetGlobal: {"SetGlobal", []int{8}},
 	OpGetGlobal: {"GetGlobal", []int{8}},
-	OpCall:      {"Call", []int{8}},
-	OpReturn:    {"Return", []int{8}},
+	OpCall:      {"Call", []int{}},
+	OpReturn:    {"Return", []int{}},
 	OpHalt:      {"Halt", []int{}},
+	OpDebug:     {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

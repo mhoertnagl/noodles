@@ -13,6 +13,10 @@ import (
 //       Lookup can then be implemented the usual way.
 // TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
 
+const (
+	DbgStack = uint64(1)
+)
+
 type VM interface {
 	Run(code Ins)
 	InspectStack(offset int64) Val
@@ -137,23 +141,28 @@ func (m *vm) Run(code Ins) {
 			m.bindEnv(0, m.readInt64(), m.pop())
 		case OpGetGlobal:
 			m.push(m.lookupEnv(0, m.readInt64()))
-		// case OpSetLocal:
-		// 	m.bindLocal(m.readInt64(), m.pop())
-		// case OpGetLocal:
-		// 	m.push(m.lookupLocal(m.readInt64()))
-		// case OpSetGlobal:
-		// 	m.bindGlobal(m.readInt64(), m.pop())
-		// case OpGetGlobal:
-		// 	m.push(m.lookupGlobal(m.readInt64()))
 		case OpCall:
-			m.frames[m.fp] = m.ip + 1
+			m.frames[m.fp] = m.ip // + 1 // 1 byte OpCall
+			// fmt.Printf("RP: %d", m.ip+1)
 			m.fp++
-			m.ip += m.readInt64()
+			// m.ip += m.readInt64()
+			m.ip = m.popInt64()
 		case OpReturn:
 			m.fp--
+			// fmt.Printf("RP: %d", m.frames[m.fp])
 			m.ip = m.frames[m.fp]
 		case OpHalt:
 			return
+		case OpDebug:
+			mode := m.readUint64()
+			// Bit 0 show stack.
+			if mode&DbgStack == 1 {
+				fmt.Print("-|")
+				for i := int64(0); i < m.sp; i++ {
+					fmt.Printf(" %d", m.stack[i])
+				}
+				fmt.Print("\n")
+			}
 		default:
 			panic("Unsupported operation.")
 		}
@@ -228,35 +237,3 @@ func (m *vm) lookupEnv(ep int64, a int64) Val {
 	}
 	panic(fmt.Sprintf("Unbound symbol [%d]", a))
 }
-
-// func (m *vm) bindLocal(a int64, v Val) {
-// 	env := m.envs[m.ep-1]
-// 	if x, ok := env[a]; ok {
-// 		panic(fmt.Sprintf("Local symbol [%d] already bound to [%v]", a, x))
-// 	}
-// 	env[a] = v
-// }
-
-// func (m *vm) lookupLocal(a int64) Val {
-// 	for i := m.ep - 1; i >= 0; i-- {
-// 		if v, ok := m.envs[i][a]; ok {
-// 			return v
-// 		}
-// 	}
-// 	panic(fmt.Sprintf("Unbound local symbol [%d]", a))
-// }
-
-// func (m *vm) bindGlobal(a int64, v Val) {
-// 	env := m.envs[0]
-// 	if x, ok := env[a]; ok {
-// 		panic(fmt.Sprintf("Global symbol [%d] already bound to [%v]", a, x))
-// 	}
-// 	env[a] = v
-// }
-
-// func (m *vm) lookupGlobal(a int64) Val {
-// 	if v, ok := m.envs[0][a]; ok {
-// 		return v
-// 	}
-// 	panic(fmt.Sprintf("Unbound global symbol [%d]", a))
-// }
