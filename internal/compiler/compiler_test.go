@@ -192,6 +192,18 @@ func TestCompileIf2(t *testing.T) {
 	)
 }
 
+func TestCompileDo(t *testing.T) {
+	testc(t, "(do  (def a 1) (def b 2) (+ a b))",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSetGlobal, hash("a")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpSetGlobal, hash("b")),
+		vm.Instr(vm.OpGetLocal, hash("a")),
+		vm.Instr(vm.OpGetLocal, hash("b")),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
 	r := compiler.NewReader()
@@ -203,7 +215,7 @@ func testc(t *testing.T, i string, e ...vm.Ins) {
 	ee := vm.Concat(e)
 	x := bytes.Compare(s, ee)
 	if x != 0 {
-		t.Errorf("Mismatch at position [%d] Expecting \n  %v\n but got \n  %v.", x, ee, s)
+		t.Errorf("Mismatch [%d] Expecting \n  %v\n but got \n  %v.", x, ee, s)
 	}
 }
 

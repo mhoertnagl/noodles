@@ -74,6 +74,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileDef(args)
 		case "if":
 			return c.compileIf(args)
+		case "do":
+			return c.compileDo(args)
 		default:
 			panic(fmt.Sprintf("Cannot compile core function [%v]", sym))
 		}
@@ -252,6 +254,14 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 		code.Append(cns)
 		code.Instr(vm.OpJump, altLen)
 		code.Append(alt)
+	}
+	return code.Emit()
+}
+
+func (c *compiler) compileDo(args []Node) vm.Ins {
+	code := vm.NewCodeGen()
+	for _, arg := range args {
+		code.Append(c.Compile(arg))
 	}
 	return code.Emit()
 }
