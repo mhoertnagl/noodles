@@ -99,5 +99,13 @@
   (println "(sqrt (+ (sqrt 2) (sqrt 3))) = " (sqrt (+ (sqrt 2) (sqrt 3))))
   (println "(square (sqrt 1000)) = " (square (sqrt 1000)))
 
+  (println)
+  (println "Exercise 1.6")
+  (println "------------")
+  (println "sqrt-iter will recurse infinitely because all arguments to new-if")
+  (println "will be evaluated before the invocation of new-if. This includes")
+  (println "the else-clause which is a recursive call to sqrt-iter.")
+
+  (println)
   (println "Chapter 1 completed.")
 )

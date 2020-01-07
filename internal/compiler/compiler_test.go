@@ -193,7 +193,7 @@ func TestCompileIf2(t *testing.T) {
 }
 
 func TestCompileDo(t *testing.T) {
-	testc(t, "(do  (def a 1) (def b 2) (+ a b))",
+	testc(t, "(do (def a 1) (def b 2) (+ a b))",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSetGlobal, hash("a")),
 		vm.Instr(vm.OpConst, 2),
@@ -201,6 +201,86 @@ func TestCompileDo(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, hash("a")),
 		vm.Instr(vm.OpGetLocal, hash("b")),
 		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestCompileAnonymousFun1(t *testing.T) {
+	testc(t, `(fn [x] (+ x 1))`,
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCompileAnonymousFun2(t *testing.T) {
+	testc(t, `((fn [x] (+ x 1)) 1)`,
+		// ((fn ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCompileAnonymousFun3(t *testing.T) {
+	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
+		// ((fn ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpCall),
+		// (+ ((fn ...) 1) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCompileLeafFunDef(t *testing.T) {
+	testc(t, `
+    (do
+      (def inc (fn [x] (+ x 1)))
+      (+ (inc 1) 1)
+    )`,
+		// (def inc (fn ...))
+		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpSetGlobal, hash("inc")),
+		// (inc 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpGetLocal, hash("inc")),
+		vm.Instr(vm.OpCall),
+		// (+ (inc ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
 	)
 }
 
