@@ -54,19 +54,19 @@
   ;;
   ;; @param  (num) xs  A list of numbers.
   ;; @return num       The product of all values in `xs`.
-  (defn prod [xs] (reduce * 1 xs))
+  (defn prodv [xs] (reduce * 1 xs))
 
-  (defn prodv [& xs] (prod xs))
+  (defn prod [& xs] (prodv xs))
 
-  (defn minimum [xs] (fold (fn [a b] (if (< a b) a b)) xs))
+  (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
 
-  (defn minimumv [& xs] (minimum xs))
+  (defn minimum [& xs] (minimumv xs))
 
-  (defn maximum [xs] (fold (fn [a b] (if (> a b) a b)) xs))
+  (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
 
-  (defn maximumv [& xs] (maximum xs))
+  (defn maximum [& xs] (maximumv xs))
 
-  (defn average [xs] (/ (sum xs) (count xs)))
+  (defn averagev [xs] (/ (sum xs) (count xs)))
 
-  (defn averagev [& xs] (average xs))
+  (defn average [& xs] (averagev xs))
 )

@@ -48,7 +48,7 @@
 
   (defn max-2 [a b c]
     (let (lst [a b c]
-          min (minimum lst))
+          min (minimumv lst))
       (remove (fn [x] (= x min)) lst)))
 
   (println (max-2 1 2 3) " should be [2 3].")
@@ -87,7 +87,7 @@
   (defn sqrt-good-enough? [guess x]
     (< (abs (- (square guess) x)) 0.001))
   (defn sqrt-improve [guess x]
-    (averagev guess (/ x guess)))
+    (average guess (/ x guess)))
   (defn sqrt-iter [guess x]
     (if (sqrt-good-enough? guess x)
       guess
@@ -102,9 +102,128 @@
   (println)
   (println "Exercise 1.6")
   (println "------------")
-  (println "sqrt-iter will recurse infinitely because all arguments to new-if")
-  (println "will be evaluated before the invocation of new-if. This includes")
-  (println "the else-clause which is a recursive call to sqrt-iter.")
+  (println "sqrt-iter will recurse infinitely because all arguments to new-if\n"
+           "will be evaluated before the invocation of new-if. This includes\n"
+           "the else-clause which is a recursive call to sqrt-iter.")
+
+  (println)
+  (println "Exercise 1.7")
+  (println "------------")
+  (println "(sqrt (/ 1000)) = " (sqrt (/ 1000)))
+  (println "The correct value would be 0.031622777 but\n"
+           "(- (square (sqrt (/ 1000))) (/ 1000)) = "
+           (- (square (sqrt (/ 1000))) (/ 1000))
+           " < 0.001 \nwhich is already 'good enough'.")
+  ; The following loops forever.
+  ; (println "(sqrt 99999999999999999999999) = " (sqrt 99999999999999999999999))
+
+  (defn sqrt2-good-enough? [g2 g1]
+    (< (abs (- g2 g1)) (/ g1 1000)))
+  (defn sqrt2-iter [g2 g1 x]
+    (if (sqrt2-good-enough? g2 g1)
+      g2
+      (sqrt2-iter (sqrt-improve g2 x) g2 x) ))
+  (defn sqrt2 [x] (sqrt2-iter (sqrt-improve 1.0 x) 1.0 x))
+
+  (println "(sqrt2 9) = " (sqrt2 9))
+  (println "(sqrt2 (+ 100 37)) = " (sqrt2 (+ 100 37)))
+  (println "(sqrt2 (+ (sqrt2 2) (sqrt2 3))) = " (sqrt2 (+ (sqrt2 2) (sqrt2 3))))
+  (println "(square (sqrt2 1000)) = " (square (sqrt2 1000)))
+  (println "(sqrt2 (/ 1000)) = " (sqrt2 (/ 1000)))
+  (println "sqrt2 performs better on small numbers.")
+
+  (println)
+  (println "Exercise 1.8")
+  (println "------------")
+  (defn curt [x] (let (
+    good-enough? (fn [g2 g1] (< (abs (- g2 g1)) (/ g1 1000)))
+    improve (fn [guess x] (average guess guess (/ x (square guess))))
+    iter (fn [g2 g1 x] (if (good-enough? g2 g1) g2 (iter (improve g2 x) g2 x))))
+    (iter (improve 1.0 x) 1.0 x)))
+
+  (println "(curt 27) = " (curt 27))
+  (println "(curt (/ 1000)) = " (curt (/ 1000)))
+
+  ;; Exercise 1.9
+  ;; ------------
+  ;;
+  ;; (+ 4 5)
+  ;; (inc (+ 3 5))
+  ;; (inc (inc (+ 2 5)))
+  ;; (inc (inc (inc (+ 1 5))))
+  ;; (inc (inc (inc (inc (+ 0 5)))))
+  ;; (inc (inc (inc (inc 5))))
+  ;; (inc (inc (inc 6)))
+  ;; (inc (inc 7))
+  ;; (inc 8)
+  ;; 9
+  ;;
+  ;; (+ 4 5)
+  ;; (+ 3 6)
+  ;; (+ 2 7)
+  ;; (+ 1 8)
+  ;; (+ 0 9)
+  ;; 9
+  ;;
+  ;; First one is recursive, second one is iterative.
+
+  (println)
+  (println "Exercise 1.10")
+  (println "-------------")
+  (defn ackermann [x y]
+    (cond (= y 0) 0
+          (= x 0) (* 2 y)
+          (= y 1) 2
+          else (ackermann (- x 1)
+                          (ackermann x (- y 1))) ))
+
+  (println "(ackermann 1 10) = " (ackermann 1 10))
+  (println "(ackermann 2 4) = " (ackermann 2 4))
+  (println "(ackermann 3 3) = " (ackermann 3 3))
+
+  ;; (f n) = (A 0 n) = 2*n
+  ;; (g n) = (A 1 n) = 2^n
+  ;; (h n) = (A 2 n) = 2^(2^n)
+
+  (println)
+  (println "Exercise 1.11")
+  (println "-------------")
+  (defn tib-rec [n]
+    (if (< n 3)
+      n
+      (+ (tib-rec (- n 1))
+         (tib-rec (- n 2))
+         (tib-rec (- n 3))) ))
+
+  (println "(tib-rec 1) = " (tib-rec 1))
+  (println "(tib-rec 2) = " (tib-rec 2))
+  (println "(tib-rec 3) = " (tib-rec 3))
+  (println "(tib-rec 4) = " (tib-rec 4))
+  (println "(tib-rec 5) = " (tib-rec 5))
+  (println "(tib-rec 6) = " (tib-rec 6))
+
+  (defn tib [n] (let (
+    tib-iter (fn [a b c n]
+      (if (= n 0)
+        c
+        (tib-iter (+ a b c) a b (- n 1)) )))
+    (tib-iter 2 1 0 n)))
+
+  (println "(tib 1) = " (tib 1))
+  (println "(tib 2) = " (tib 2))
+  (println "(tib 3) = " (tib 3))
+  (println "(tib 4) = " (tib 4))
+  (println "(tib 5) = " (tib 5))
+  (println "(tib 6) = " (tib 6))
+
+  (println)
+  (println "Exercise 1.12")
+  (println "-------------")
+
+  ;; Exercise 1.13
+  ;; -------------
+  ;;
+  ;;
 
   (println)
   (println "Chapter 1 completed.")
