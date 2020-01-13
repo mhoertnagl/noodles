@@ -10,26 +10,41 @@ import (
 )
 
 func TestCompileBool(t *testing.T) {
-	testc(t, "true", vm.Instr(vm.OpTrue))
-	testc(t, "false", vm.Instr(vm.OpFalse))
+	testc(t, "true",
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+	testc(t, "false",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
 }
 
 func TestCompileInteger(t *testing.T) {
-	testc(t, "0", vm.Instr(vm.OpConst, 0))
-	testc(t, "1", vm.Instr(vm.OpConst, 1))
+	testc(t, "0",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
+	)
+	testc(t, "1",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpHalt),
+	)
 }
 
 func TestCompileAdd(t *testing.T) {
 	testc(t, "(+)",
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(+ 1)",
 		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(+ 1 2)",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(+ 1 (+ 2 3))",
 		vm.Instr(vm.OpConst, 1),
@@ -37,6 +52,7 @@ func TestCompileAdd(t *testing.T) {
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(+ (+ 1 2) 3)",
 		vm.Instr(vm.OpConst, 1),
@@ -44,6 +60,7 @@ func TestCompileAdd(t *testing.T) {
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(+ 1 2 3)",
 		vm.Instr(vm.OpConst, 1),
@@ -51,22 +68,26 @@ func TestCompileAdd(t *testing.T) {
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
 func TestCompileSub(t *testing.T) {
 	testc(t, "(-)",
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(- 1)",
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(- 2 1)",
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(- 3 (- 2 1))",
 		vm.Instr(vm.OpConst, 3),
@@ -74,6 +95,7 @@ func TestCompileSub(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
 		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(- (- 3 2) 1)",
 		vm.Instr(vm.OpConst, 3),
@@ -81,20 +103,24 @@ func TestCompileSub(t *testing.T) {
 		vm.Instr(vm.OpSub),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
 func TestCompileMul(t *testing.T) {
 	testc(t, "(*)",
 		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(* 2)",
 		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(* 1 2)",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(* 1 (* 2 3))",
 		vm.Instr(vm.OpConst, 1),
@@ -102,6 +128,7 @@ func TestCompileMul(t *testing.T) {
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpMul),
 		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(* (* 1 2) 3)",
 		vm.Instr(vm.OpConst, 1),
@@ -109,6 +136,7 @@ func TestCompileMul(t *testing.T) {
 		vm.Instr(vm.OpMul),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(* 1 2 3)",
 		vm.Instr(vm.OpConst, 1),
@@ -116,22 +144,26 @@ func TestCompileMul(t *testing.T) {
 		vm.Instr(vm.OpMul),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
 func TestCompileDiv(t *testing.T) {
 	testc(t, "(/)",
 		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(/ 2)",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(/ 2 1)",
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(/ 3 (/ 2 1))",
 		vm.Instr(vm.OpConst, 3),
@@ -139,6 +171,7 @@ func TestCompileDiv(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpDiv),
 		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpHalt),
 	)
 	testc(t, "(/ (/ 3 2) 1)",
 		vm.Instr(vm.OpConst, 3),
@@ -146,6 +179,7 @@ func TestCompileDiv(t *testing.T) {
 		vm.Instr(vm.OpDiv),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -160,6 +194,7 @@ func TestCompileLet1(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, hash("a")),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -169,6 +204,7 @@ func TestCompileDef1(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpSetGlobal, hash("b")),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -179,6 +215,7 @@ func TestCompileIf1(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpJump, 9),
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -189,6 +226,7 @@ func TestCompileIf2(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpJump, 9),
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -201,11 +239,14 @@ func TestCompileDo(t *testing.T) {
 		vm.Instr(vm.OpGetLocal, hash("a")),
 		vm.Instr(vm.OpGetLocal, hash("b")),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
 	)
 }
 
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),

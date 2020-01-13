@@ -12,17 +12,35 @@ type Compiler interface {
 	Compile(node Node) vm.Ins
 }
 
+type fnDef struct {
+	addr uint64
+	code vm.Ins
+}
+
 type compiler struct {
-	hg hash.Hash64
+	hg  hash.Hash64
+	fns []*fnDef
 }
 
 func NewCompiler() Compiler {
 	return &compiler{
-		hg: fnv.New64(),
+		hg:  fnv.New64(),
+		fns: make([]*fnDef, 0),
 	}
 }
 
 func (c *compiler) Compile(node Node) vm.Ins {
+	code := vm.NewCodeGen()
+	code.Append(c.compile(node))
+	code.Instr(vm.OpHalt)
+	for _, fd := range c.fns {
+		fd.addr = code.Len()
+		code.Append(fd.code)
+	}
+	return code.Emit()
+}
+
+func (c *compiler) compile(node Node) vm.Ins {
 	switch n := node.(type) {
 	case bool:
 		return c.compileBooleanLiteral(n)
@@ -76,6 +94,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileIf(args)
 		case "do":
 			return c.compileDo(args)
+		case "fn":
+			return c.compileFn(args)
 		default:
 			panic(fmt.Sprintf("Cannot compile core function [%v]", sym))
 		}
@@ -91,7 +111,7 @@ func (c *compiler) compileAdd(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 0)
 	case 1:
 		// Singleton sum (+ x) yields x.
-		return c.Compile(args[0])
+		return c.compile(args[0])
 	default:
 		// Will compile this expression to a sequence of compiled subexpressions and
 		// addition operations except for the first pair. The resulting sequence of
@@ -101,9 +121,9 @@ func (c *compiler) compileAdd(args []Node) vm.Ins {
 		//     <x1>, <x2>, OpAdd, <x3>, OpAdd, <x4>, OpAdd, ...
 		//
 		code := vm.NewCodeGen()
-		code.Append(c.Compile(args[0]))
+		code.Append(c.compile(args[0]))
 		for _, arg := range args[1:] {
-			code.Append(c.Compile(arg))
+			code.Append(c.compile(arg))
 			code.Instr(vm.OpAdd)
 		}
 		return code.Emit()
@@ -119,7 +139,7 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 		// Singleton difference (- x) yields (- 0 x) which if effectively -x.
 		code := vm.NewCodeGen()
 		code.Instr(vm.OpConst, 0)
-		code.Append(c.Compile(args[0]))
+		code.Append(c.compile(args[0]))
 		code.Instr(vm.OpSub)
 		return code.Emit()
 	case 2:
@@ -128,8 +148,8 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 		//   <(- x1 x2)> := <x1>, <x2>, OpSub
 		//
 		code := vm.NewCodeGen()
-		code.Append(c.Compile(args[0]))
-		code.Append(c.Compile(args[1]))
+		code.Append(c.compile(args[0]))
+		code.Append(c.compile(args[1]))
 		code.Instr(vm.OpSub)
 		return code.Emit()
 	default:
@@ -144,7 +164,7 @@ func (c *compiler) compileMul(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 1)
 	case 1:
 		// Singleton product (* x) yields x.
-		return c.Compile(args[0])
+		return c.compile(args[0])
 	default:
 		// Will compile this expression to a sequence of compiled subexpressions and
 		// multiplication operations except for the first pair. The resulting
@@ -154,9 +174,9 @@ func (c *compiler) compileMul(args []Node) vm.Ins {
 		//     <x1>, <x2>, OpMul, <x3>, OpMul, <x4>, OpMul, ...
 		//
 		code := vm.NewCodeGen()
-		code.Append(c.Compile(args[0]))
+		code.Append(c.compile(args[0]))
 		for _, arg := range args[1:] {
-			code.Append(c.Compile(arg))
+			code.Append(c.compile(arg))
 			code.Instr(vm.OpMul)
 		}
 		return code.Emit()
@@ -172,7 +192,7 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		// Singleton difference (/ x) yields (/ 1 x) which if effectively 1/x.
 		code := vm.NewCodeGen()
 		code.Instr(vm.OpConst, 1)
-		code.Append(c.Compile(args[0]))
+		code.Append(c.compile(args[0]))
 		code.Instr(vm.OpDiv)
 		return code.Emit()
 	case 2:
@@ -181,8 +201,8 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		//   <(/ x1 x2)> := <x1>, <x2>, OpDiv
 		//
 		code := vm.NewCodeGen()
-		code.Append(c.Compile(args[0]))
-		code.Append(c.Compile(args[1]))
+		code.Append(c.compile(args[0]))
+		code.Append(c.compile(args[1]))
 		code.Instr(vm.OpDiv)
 		return code.Emit()
 	default:
@@ -202,14 +222,14 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 		code.Instr(vm.OpNewEnv)
 		for i := 0; i < len(bs.Items); i += 2 {
 			if sym, ok2 := bs.Items[i].(*SymbolNode); ok2 {
-				code.Append(c.Compile(bs.Items[i+1]))
+				code.Append(c.compile(bs.Items[i+1]))
 				hsh := c.hashSymbol(sym)
 				code.Instr(vm.OpSetLocal, hsh)
 			} else {
 				panic(fmt.Sprintf("[let] cannot bind to [%v]", sym))
 			}
 		}
-		code.Append(c.Compile(args[1]))
+		code.Append(c.compile(args[1]))
 		code.Instr(vm.OpPopEnv)
 		return code.Emit()
 	}
@@ -222,7 +242,7 @@ func (c *compiler) compileDef(args []Node) vm.Ins {
 	}
 	if sym, ok := args[0].(*SymbolNode); ok {
 		code := vm.NewCodeGen()
-		code.Append(c.Compile(args[1]))
+		code.Append(c.compile(args[1]))
 		hsh := c.hashSymbol(sym)
 		code.Instr(vm.OpSetGlobal, hsh)
 		return code.Emit()
@@ -237,16 +257,16 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 	code := vm.NewCodeGen()
 	switch len(args) {
 	case 2:
-		cnd := c.Compile(args[0])
-		cns := c.Compile(args[1])
+		cnd := c.compile(args[0])
+		cns := c.compile(args[1])
 		cnsLen := uint64(len(cns))
 		code.Append(cnd)
 		code.Instr(vm.OpJumpIfNot, cnsLen)
 		code.Append(cns)
 	case 3:
-		cnd := c.Compile(args[0])
-		cns := c.Compile(args[1])
-		alt := c.Compile(args[2])
+		cnd := c.compile(args[0])
+		cns := c.compile(args[1])
+		alt := c.compile(args[2])
 		cnsLen := uint64(len(cns)) + 9 // Add the length of the jmp instruction.
 		altLen := uint64(len(alt))
 		code.Append(cnd)
@@ -261,7 +281,7 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 func (c *compiler) compileDo(args []Node) vm.Ins {
 	code := vm.NewCodeGen()
 	for _, arg := range args {
-		code.Append(c.Compile(arg))
+		code.Append(c.compile(arg))
 	}
 	return code.Emit()
 }
@@ -269,6 +289,42 @@ func (c *compiler) compileDo(args []Node) vm.Ins {
 // func (c *compiler) compileCond(args []Node) vm.Ins {
 //
 // }
+
+func (c *compiler) compileFn(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[fn] expects exactly 2 arguments")
+	}
+	fd := &fnDef{}
+	switch x := args[0].(type) {
+	case *ListNode:
+		fd.code = c.compileFn2(x.Items, args[1])
+	case *VectorNode:
+		fd.code = c.compileFn2(x.Items, args[1])
+	default:
+		panic("[fn] first argument must be a list or vector")
+	}
+	id := len(c.fns)
+	c.fns = append(c.fns, fd)
+	// TODO: Record position for later address correction.
+	return vm.Instr(vm.OpConst, uint64(id))
+}
+
+func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
+	code := vm.NewCodeGen()
+	code.Instr(vm.OpNewEnv)
+	for i := len(params) - 1; i >= 0; i-- {
+		switch x := params[i].(type) {
+		case *SymbolNode:
+			code.Instr(vm.OpSetLocal, c.hashSymbol(x))
+		default:
+			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", i))
+		}
+	}
+	code.Append(c.compile(body))
+	code.Instr(vm.OpPopEnv)
+	code.Instr(vm.OpReturn)
+	return code.Emit()
+}
 
 func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
 	c.hg.Reset()
