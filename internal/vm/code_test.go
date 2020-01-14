@@ -17,3 +17,13 @@ func TestInstr(t *testing.T) {
 		t.Errorf("Expecting %v but got %v.", e, c)
 	}
 }
+
+func TestCorrect(t *testing.T) {
+	c := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	n := uint64(0x0102030405060708)
+	e := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	vm.Correct(c, 1, n)
+	if bytes.Compare(c, e) != 0 {
+		t.Errorf("Expecting %v but got %v.", e, c)
+	}
+}

@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"encoding/binary"
 	"fmt"
 	"hash"
 	"hash/fnv"
@@ -33,11 +34,33 @@ func (c *compiler) Compile(node Node) vm.Ins {
 	code := vm.NewCodeGen()
 	code.Append(c.compile(node))
 	code.Instr(vm.OpHalt)
+	c.appendFunctions(code)
+	return c.correctFunctionCalls(code.Emit())
+}
+
+func (c *compiler) appendFunctions(code vm.CodeGen) {
 	for _, fd := range c.fns {
 		fd.addr = code.Len()
 		code.Append(fd.code)
 	}
-	return code.Emit()
+}
+
+func (c *compiler) correctFunctionCalls(code vm.Ins) vm.Ins {
+	len := len(code)
+	for i := 0; i < len; {
+		op := code[i]
+		mt, err := vm.LookupMeta(op)
+		if err != nil {
+			panic(err)
+		}
+		if op == vm.OpRef {
+			id := binary.BigEndian.Uint64(code[i+1 : i+9])
+			fn := c.fns[id]
+			vm.Correct(code, i+1, fn.addr)
+		}
+		i += mt.Size() + 1
+	}
+	return code
 }
 
 func (c *compiler) compile(node Node) vm.Ins {
@@ -75,9 +98,9 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 		panic("Empty list")
 	}
 	args := items[1:]
-	switch sym := items[0].(type) {
+	switch x := items[0].(type) {
 	case *SymbolNode:
-		switch sym.Name {
+		switch x.Name {
 		case "+":
 			return c.compileAdd(args)
 		case "-":
@@ -97,10 +120,13 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 		case "fn":
 			return c.compileFn(args)
 		default:
-			panic(fmt.Sprintf("Cannot compile core function [%v]", sym))
+			return c.compileCall(x, args)
+			// panic(fmt.Sprintf("Cannot compile core function [%v]", x))
 		}
+	case *ListNode:
+		return c.compileList(x)
 	default:
-		panic(fmt.Sprintf("Cannot compile list head [%v]", sym))
+		panic(fmt.Sprintf("Cannot compile list head [%v]", x))
 	}
 }
 
@@ -305,8 +331,8 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	}
 	id := len(c.fns)
 	c.fns = append(c.fns, fd)
-	// TODO: Record position for later address correction.
-	return vm.Instr(vm.OpConst, uint64(id))
+	// TODO: Make a dedicated type refCell?
+	return vm.Instr(vm.OpRef, uint64(id))
 }
 
 func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
@@ -323,6 +349,16 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 	code.Append(c.compile(body))
 	code.Instr(vm.OpPopEnv)
 	code.Instr(vm.OpReturn)
+	return code.Emit()
+}
+
+func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
+	code := vm.NewCodeGen()
+	for _, arg := range args {
+		code.Append(c.compile(arg))
+	}
+	code.Instr(vm.OpGetGlobal, c.hashSymbol(sym))
+	code.Instr(vm.OpCall)
 	return code.Emit()
 }
 

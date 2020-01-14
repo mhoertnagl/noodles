@@ -245,7 +245,7 @@ func TestCompileDo(t *testing.T) {
 
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
-		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 10),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
@@ -262,7 +262,7 @@ func TestCompileAnonymousFun2(t *testing.T) {
 	testc(t, `((fn [x] (+ x 1)) 1)`,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpRef, 39),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
@@ -280,7 +280,7 @@ func TestCompileAnonymousFun3(t *testing.T) {
 	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpRef, 39),
 		vm.Instr(vm.OpCall),
 		// (+ ((fn ...) 1) 1)
 		vm.Instr(vm.OpConst, 1),
@@ -304,11 +304,11 @@ func TestCompileLeafFunDef(t *testing.T) {
       (+ (inc 1) 1)
     )`,
 		// (def inc (fn ...))
-		vm.Instr(vm.OpConst, 39),
+		vm.Instr(vm.OpRef, 48),
 		vm.Instr(vm.OpSetGlobal, hash("inc")),
 		// (inc 1)
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpGetLocal, hash("inc")),
+		vm.Instr(vm.OpGetGlobal, hash("inc")),
 		vm.Instr(vm.OpCall),
 		// (+ (inc ...) 1)
 		vm.Instr(vm.OpConst, 1),
@@ -319,7 +319,7 @@ func TestCompileLeafFunDef(t *testing.T) {
 		vm.Instr(vm.OpSetLocal, hash("x")),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 	)

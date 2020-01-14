@@ -53,6 +53,7 @@ const (
 	OpSetGlobal
 	OpGetGlobal
 
+	OpRef
 	OpCall
 	// OpTailCall
 	OpReturn
@@ -72,37 +73,45 @@ type OpMeta struct {
 var meta = map[Op]*OpMeta{
 	OpConst: {"Const", []int{8}},
 	OpTrue:  {"True", []int{}},
+
 	OpFalse: {"False", []int{}},
-	OpPop:   {"Pop", []int{}},
-	OpAdd:   {"Add", []int{}},
-	OpSub:   {"Sub", []int{}},
-	OpMul:   {"Mul", []int{}},
-	OpDiv:   {"Div", []int{}},
+
+	OpPop: {"Pop", []int{}},
+
+	OpAdd: {"Add", []int{}},
+	OpSub: {"Sub", []int{}},
+	OpMul: {"Mul", []int{}},
+	OpDiv: {"Div", []int{}},
 	// OpAnd
 	// OpOr
 	// OpInv
 	// OpNor			x nor x == !x
 	// OpXor
-	OpSll:       {"Sll", []int{}},
-	OpSrl:       {"Srl", []int{}},
-	OpSra:       {"Sra", []int{}},
-	OpEQ:        {"EQ", []int{}},
-	OpNE:        {"NE", []int{}},
-	OpLT:        {"LT", []int{}},
-	OpLE:        {"LE", []int{}},
+	OpSll: {"Sll", []int{}},
+	OpSrl: {"Srl", []int{}},
+	OpSra: {"Sra", []int{}},
+
+	OpEQ: {"EQ", []int{}},
+	OpNE: {"NE", []int{}},
+	OpLT: {"LT", []int{}},
+	OpLE: {"LE", []int{}},
+
 	OpJump:      {"Jump", []int{8}},
 	OpJumpIf:    {"JumpIf", []int{8}},
 	OpJumpIfNot: {"JumpIfNot", []int{8}},
+
 	OpNewEnv:    {"NewEnv", []int{}},
 	OpPopEnv:    {"PopEnv", []int{}},
 	OpSetLocal:  {"SetLocal", []int{8}},
 	OpGetLocal:  {"GetLocal", []int{8}},
 	OpSetGlobal: {"SetGlobal", []int{8}},
 	OpGetGlobal: {"GetGlobal", []int{8}},
-	OpCall:      {"Call", []int{}},
-	OpReturn:    {"Return", []int{}},
-	OpHalt:      {"Halt", []int{}},
-	OpDebug:     {"Debug", []int{8}},
+
+	OpRef:    {"Ref", []int{8}},
+	OpCall:   {"Call", []int{}},
+	OpReturn: {"Return", []int{}},
+	OpHalt:   {"Halt", []int{}},
+	OpDebug:  {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
@@ -117,11 +126,17 @@ func (m *OpMeta) Size() int {
 // LookupMeta returns meta data for an opcode or an error if the code is
 // undefined. The meta data contains the human-readable name of the operation
 // and the length in bytes of each of its arguments.
-func LookupMeta(op byte) (*OpMeta, error) {
+func LookupMeta(op Op) (*OpMeta, error) {
 	if m, ok := meta[op]; ok {
 		return m, nil
 	}
 	return nil, fmt.Errorf("opcode [%d] undefined", op)
+}
+
+func Correct(code Ins, pos int, new uint64) {
+	for i := 0; i < 8; i++ {
+		code[pos+7-i] = byte(new >> uint64(8*i))
+	}
 }
 
 // Instr creates a new instruction from an opcode and a variable number of
