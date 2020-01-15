@@ -121,10 +121,9 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileFn(args)
 		default:
 			return c.compileCall(x, args)
-			// panic(fmt.Sprintf("Cannot compile core function [%v]", x))
 		}
 	case *ListNode:
-		return c.compileList(x)
+		return c.compileListCall(x, args)
 	default:
 		panic(fmt.Sprintf("Cannot compile list head [%v]", x))
 	}
@@ -331,13 +330,25 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	}
 	id := len(c.fns)
 	c.fns = append(c.fns, fd)
-	// TODO: Make a dedicated type refCell?
 	return vm.Instr(vm.OpRef, uint64(id))
 }
 
 func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 	code := vm.NewCodeGen()
-	code.Instr(vm.OpNewEnv)
+	switch len(params) {
+	case 0:
+		code.Append(c.compile(body))
+	default:
+		code.Instr(vm.OpNewEnv)
+		c.compileFnParams(code, params)
+		code.Append(c.compile(body))
+		code.Instr(vm.OpPopEnv)
+	}
+	code.Instr(vm.OpReturn)
+	return code.Emit()
+}
+
+func (c *compiler) compileFnParams(code vm.CodeGen, params []Node) {
 	for i := len(params) - 1; i >= 0; i-- {
 		switch x := params[i].(type) {
 		case *SymbolNode:
@@ -346,20 +357,32 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", i))
 		}
 	}
-	code.Append(c.compile(body))
-	code.Instr(vm.OpPopEnv)
-	code.Instr(vm.OpReturn)
-	return code.Emit()
 }
 
 func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 	code := vm.NewCodeGen()
-	for _, arg := range args {
-		code.Append(c.compile(arg))
-	}
+	c.compileNodes(code, args)
 	code.Instr(vm.OpGetGlobal, c.hashSymbol(sym))
 	code.Instr(vm.OpCall)
 	return code.Emit()
+}
+
+func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
+	code := vm.NewCodeGen()
+	c.compileNodes(code, args)
+	code.Append(c.compileList(lst))
+	// TODO: Is this correct in any case?
+	// What about: (((fn [] (fn [x] (+ x 1)))) 1) we need to emit OpCall twice.
+	if code.OpAt(-1) != vm.OpCall {
+		code.Instr(vm.OpCall)
+	}
+	return code.Emit()
+}
+
+func (c *compiler) compileNodes(code vm.CodeGen, nodes []Node) {
+	for _, node := range nodes {
+		code.Append(c.compile(node))
+	}
 }
 
 func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {

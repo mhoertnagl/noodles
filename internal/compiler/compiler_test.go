@@ -258,11 +258,30 @@ func TestCompileAnonymousFun1(t *testing.T) {
 	)
 }
 
+func TestCompileAnonymousFun11(t *testing.T) {
+	testc(t, `(fn [] (fn [x] (+ x 1)))`,
+		vm.Instr(vm.OpRef, 41),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+		// (fn [] ...)
+		// 0-adic functions don't require a local environment.
+		vm.Instr(vm.OpRef, 10),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 func TestCompileAnonymousFun2(t *testing.T) {
 	testc(t, `((fn [x] (+ x 1)) 1)`,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 39),
+		vm.Instr(vm.OpRef, 20),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
@@ -280,7 +299,7 @@ func TestCompileAnonymousFun3(t *testing.T) {
 	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 39),
+		vm.Instr(vm.OpRef, 30),
 		vm.Instr(vm.OpCall),
 		// (+ ((fn ...) 1) 1)
 		vm.Instr(vm.OpConst, 1),
@@ -324,6 +343,9 @@ func TestCompileLeafFunDef(t *testing.T) {
 		vm.Instr(vm.OpReturn),
 	)
 }
+
+// TODO: Deeply nested function call
+// TODO: A function that returns a function
 
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()

@@ -199,7 +199,7 @@ func (m *vm) popUInt64() uint64 {
 }
 
 func (m *vm) readOp() Op {
-	op := Op(m.code[m.ip])
+	op := m.code[m.ip]
 	m.ip++
 	return op
 }
