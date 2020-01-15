@@ -63,6 +63,12 @@ const (
 	OpDebug
 )
 
+// Arguments to OpDebug.
+const (
+	// DbgStack prints the stack.
+	DbgStack = uint64(1)
+)
+
 // OpMeta contains the human-readable name of the operation and the length in
 // bytes of each of its arguments.
 type OpMeta struct {

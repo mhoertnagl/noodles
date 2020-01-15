@@ -30,6 +30,11 @@ func NewCompiler() Compiler {
 	}
 }
 
+// TODO: Alternative scheme
+//       OpCallNew - generates a new environment.
+//       OpCall    - does not generate an environment.
+//       With this we can implement leaf functions and tail calls.
+
 func (c *compiler) Compile(node Node) vm.Ins {
 	code := vm.NewCodeGen()
 	code.Append(c.compile(node))
@@ -245,6 +250,7 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 		}
 		code := vm.NewCodeGen()
 		code.Instr(vm.OpNewEnv)
+		// TODO: Separate function.
 		for i := 0; i < len(bs.Items); i += 2 {
 			if sym, ok2 := bs.Items[i].(*SymbolNode); ok2 {
 				code.Append(c.compile(bs.Items[i+1]))
