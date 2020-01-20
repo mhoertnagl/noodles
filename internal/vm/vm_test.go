@@ -1,6 +1,7 @@
 package vm_test
 
 import (
+	"hash/fnv"
 	"reflect"
 	"testing"
 
@@ -233,6 +234,19 @@ func TestRunIf2(t *testing.T) {
 
 // TODO: Locals with shadowing.
 
+func TestRunCreateVector1(t *testing.T) {
+	e := []vm.Val{int64(1), int64(2), int64(3)}
+	testToS(t, e,
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+	)
+}
+
 func TestRunHalt(t *testing.T) {
 	testToS(t, int64(0),
 		vm.Instr(vm.OpConst, 0),
@@ -307,7 +321,15 @@ func testVal(t *testing.T, expected vm.Val, actual vm.Val) {
 	if aType != eType {
 		t.Errorf("Expected [%v] but got [%v].", eType, aType)
 	}
-	if expected != actual {
+	if reflect.DeepEqual(expected, actual) == false {
+		// if expected != actual {
 		t.Errorf("Expected [%v] but got [%v].", expected, actual)
 	}
+}
+
+func hash(sym string) uint64 {
+	hg := fnv.New64()
+	hg.Reset()
+	hg.Write([]byte(sym))
+	return hg.Sum64()
 }

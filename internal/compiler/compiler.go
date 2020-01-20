@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"encoding/binary"
 	"fmt"
 	"hash"
 	"hash/fnv"
@@ -36,36 +35,14 @@ func NewCompiler() Compiler {
 //       With this we can implement leaf functions and tail calls.
 
 func (c *compiler) Compile(node Node) vm.Ins {
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	code.Append(c.compile(node))
+	// Marks the end of non-function code. This will halt the CPU. Code beyond
+	// that point contains function definitions only.
 	code.Instr(vm.OpHalt)
-	c.appendFunctions(code)
-	return c.correctFunctionCalls(code.Emit())
-}
-
-func (c *compiler) appendFunctions(code vm.CodeGen) {
-	for _, fd := range c.fns {
-		fd.addr = code.Len()
-		code.Append(fd.code)
-	}
-}
-
-func (c *compiler) correctFunctionCalls(code vm.Ins) vm.Ins {
-	len := len(code)
-	for i := 0; i < len; {
-		op := code[i]
-		mt, err := vm.LookupMeta(op)
-		if err != nil {
-			panic(err)
-		}
-		if op == vm.OpRef {
-			id := binary.BigEndian.Uint64(code[i+1 : i+9])
-			fn := c.fns[id]
-			vm.Correct(code, i+1, fn.addr)
-		}
-		i += mt.Size() + 1
-	}
-	return code
+	code.AppendFunctions(c.fns)
+	code.CorrectFunctionCalls(c.fns)
+	return code.Emit()
 }
 
 func (c *compiler) compile(node Node) vm.Ins {
@@ -76,10 +53,12 @@ func (c *compiler) compile(node Node) vm.Ins {
 		return c.compileIntegerLiteral(n)
 	case *SymbolNode:
 		return c.compileSymbol(n)
+	case *VectorNode:
+		return c.compileVector(n)
 	case *ListNode:
 		return c.compileList(n)
 	}
-	return nil
+	panic(fmt.Sprintf("Unsupported node [%v]", node))
 }
 
 func (c *compiler) compileBooleanLiteral(n bool) vm.Ins {
@@ -95,6 +74,16 @@ func (c *compiler) compileIntegerLiteral(n int64) vm.Ins {
 
 func (c *compiler) compileSymbol(n *SymbolNode) vm.Ins {
 	return vm.Instr(vm.OpGetLocal, c.hashSymbol(n))
+}
+
+func (c *compiler) compileVector(n *VectorNode) vm.Ins {
+	code := NewCodeGen()
+	code.Instr(vm.OpEmptyVector)
+	for i := len(n.Items) - 1; i >= 0; i-- {
+		code.Append(c.compile(n.Items[i]))
+		code.Instr(vm.OpCons)
+	}
+	return code.Emit()
 }
 
 func (c *compiler) compileList(n *ListNode) vm.Ins {
@@ -124,6 +113,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileDo(args)
 		case "fn":
 			return c.compileFn(args)
+		case "::":
+			return c.compileCons(args)
 		default:
 			return c.compileCall(x, args)
 		}
@@ -150,7 +141,7 @@ func (c *compiler) compileAdd(args []Node) vm.Ins {
 		//   <(+ x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpAdd, <x3>, OpAdd, <x4>, OpAdd, ...
 		//
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Append(c.compile(args[0]))
 		for _, arg := range args[1:] {
 			code.Append(c.compile(arg))
@@ -167,7 +158,7 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 0)
 	case 1:
 		// Singleton difference (- x) yields (- 0 x) which if effectively -x.
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Instr(vm.OpConst, 0)
 		code.Append(c.compile(args[0]))
 		code.Instr(vm.OpSub)
@@ -177,7 +168,7 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 		//
 		//   <(- x1 x2)> := <x1>, <x2>, OpSub
 		//
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Append(c.compile(args[0]))
 		code.Append(c.compile(args[1]))
 		code.Instr(vm.OpSub)
@@ -203,7 +194,7 @@ func (c *compiler) compileMul(args []Node) vm.Ins {
 		//   <(* x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpMul, <x3>, OpMul, <x4>, OpMul, ...
 		//
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Append(c.compile(args[0]))
 		for _, arg := range args[1:] {
 			code.Append(c.compile(arg))
@@ -220,7 +211,7 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		return vm.Instr(vm.OpConst, 1)
 	case 1:
 		// Singleton difference (/ x) yields (/ 1 x) which if effectively 1/x.
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Instr(vm.OpConst, 1)
 		code.Append(c.compile(args[0]))
 		code.Instr(vm.OpDiv)
@@ -230,7 +221,7 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		//
 		//   <(/ x1 x2)> := <x1>, <x2>, OpDiv
 		//
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Append(c.compile(args[0]))
 		code.Append(c.compile(args[1]))
 		code.Instr(vm.OpDiv)
@@ -248,7 +239,7 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 		if len(bs.Items)%2 == 1 {
 			panic("[let] reqires an even number of bindings")
 		}
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Instr(vm.OpNewEnv)
 		// TODO: Separate function.
 		for i := 0; i < len(bs.Items); i += 2 {
@@ -272,7 +263,7 @@ func (c *compiler) compileDef(args []Node) vm.Ins {
 		panic("[def] requires exactly two arguments")
 	}
 	if sym, ok := args[0].(*SymbolNode); ok {
-		code := vm.NewCodeGen()
+		code := NewCodeGen()
 		code.Append(c.compile(args[1]))
 		hsh := c.hashSymbol(sym)
 		code.Instr(vm.OpSetGlobal, hsh)
@@ -285,7 +276,7 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 	if len(args) != 2 && len(args) != 3 {
 		panic("[if] requires exactly two or three arguments")
 	}
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	switch len(args) {
 	case 2:
 		cnd := c.compile(args[0])
@@ -310,7 +301,7 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 }
 
 func (c *compiler) compileDo(args []Node) vm.Ins {
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	for _, arg := range args {
 		code.Append(c.compile(arg))
 	}
@@ -340,7 +331,7 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 }
 
 func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	switch len(params) {
 	case 0:
 		code.Append(c.compile(body))
@@ -354,7 +345,7 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileFnParams(code vm.CodeGen, params []Node) {
+func (c *compiler) compileFnParams(code CodeGen, params []Node) {
 	for i := len(params) - 1; i >= 0; i-- {
 		switch x := params[i].(type) {
 		case *SymbolNode:
@@ -365,8 +356,19 @@ func (c *compiler) compileFnParams(code vm.CodeGen, params []Node) {
 	}
 }
 
+func (c *compiler) compileCons(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[::] expects exactly 2 arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[1]))
+	code.Append(c.compile(args[0]))
+	code.Instr(vm.OpCons)
+	return code.Emit()
+}
+
 func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	c.compileNodes(code, args)
 	code.Instr(vm.OpGetGlobal, c.hashSymbol(sym))
 	code.Instr(vm.OpCall)
@@ -374,7 +376,7 @@ func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 }
 
 func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
-	code := vm.NewCodeGen()
+	code := NewCodeGen()
 	c.compileNodes(code, args)
 	code.Append(c.compileList(lst))
 	// TODO: Is this correct in any case?
@@ -385,7 +387,7 @@ func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileNodes(code vm.CodeGen, nodes []Node) {
+func (c *compiler) compileNodes(code CodeGen, nodes []Node) {
 	for _, node := range nodes {
 		code.Append(c.compile(node))
 	}

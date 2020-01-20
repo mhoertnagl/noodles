@@ -243,6 +243,32 @@ func TestCompileDo(t *testing.T) {
 	)
 }
 
+func TestCompileVector1(t *testing.T) {
+	testc(t, "[1 2 3]",
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileVector2(t *testing.T) {
+	testc(t, "(:: 1 (:: 2 (:: 3 [])))",
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
 		vm.Instr(vm.OpRef, 10),

@@ -15,51 +15,45 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
-
+	// OpNil
 	OpTrue
 	OpFalse
-
+	OpEmptyList
+	OpEmptyVector
 	OpPop
 	// OpDup
-
 	OpAdd
 	OpSub
 	OpMul
 	OpDiv
-
+	// OpAnd
+	// OpOr
+	// OpInv
+	// OpSll
+	// OpSrl
+	// OpSras
+	OpCons
 	OpAnd
 	OpOr
-	// OpInv
-	// OpNor			x nor x == !x
-	// OpXor
-
-	OpSll
-	OpSrl
-	OpSra
-
+	OpNot
 	OpEQ
 	OpNE
 	OpLT
 	OpLE
-
 	OpJump
 	OpJumpIf
 	OpJumpIfNot
-
 	OpNewEnv
 	OpPopEnv
 	OpSetLocal
 	OpGetLocal
 	OpSetGlobal
 	OpGetGlobal
-
 	OpRef
 	OpCall
 	// OpTailCall
 	OpReturn
-
 	OpHalt
-
 	OpDebug
 )
 
@@ -78,46 +72,44 @@ type OpMeta struct {
 
 var meta = map[Op]*OpMeta{
 	OpConst: {"Const", []int{8}},
-	OpTrue:  {"True", []int{}},
-
-	OpFalse: {"False", []int{}},
-
-	OpPop: {"Pop", []int{}},
-
-	OpAdd: {"Add", []int{}},
-	OpSub: {"Sub", []int{}},
-	OpMul: {"Mul", []int{}},
-	OpDiv: {"Div", []int{}},
-	// OpAnd
-	// OpOr
-	// OpInv
-	// OpNor			x nor x == !x
-	// OpXor
-	OpSll: {"Sll", []int{}},
-	OpSrl: {"Srl", []int{}},
-	OpSra: {"Sra", []int{}},
-
-	OpEQ: {"EQ", []int{}},
-	OpNE: {"NE", []int{}},
-	OpLT: {"LT", []int{}},
-	OpLE: {"LE", []int{}},
-
+	// OpNil:         {"Nil", []int{}},
+	OpTrue:        {"True", []int{}},
+	OpFalse:       {"False", []int{}},
+	OpEmptyList:   {"EmptyList", []int{}},
+	OpEmptyVector: {"EmptyVector", []int{}},
+	OpPop:         {"Pop", []int{}},
+	OpAdd:         {"Add", []int{}},
+	OpSub:         {"Sub", []int{}},
+	OpMul:         {"Mul", []int{}},
+	OpDiv:         {"Div", []int{}},
+	// OpAnd:         {"And", []int{}},
+	// OpOr:          {"Or", []int{}},
+	// OpInv:         {"Inv", []int{}},
+	// OpSll:         {"Sll", []int{}},
+	// OpSrl:         {"Srl", []int{}},
+	// OpSra:         {"Sra", []int{}},
+	OpCons:      {"Cons", []int{}},
+	OpAnd:       {"And", []int{}},
+	OpOr:        {"Or", []int{}},
+	OpNot:       {"Not", []int{}},
+	OpEQ:        {"EQ", []int{}},
+	OpNE:        {"NE", []int{}},
+	OpLT:        {"LT", []int{}},
+	OpLE:        {"LE", []int{}},
 	OpJump:      {"Jump", []int{8}},
 	OpJumpIf:    {"JumpIf", []int{8}},
 	OpJumpIfNot: {"JumpIfNot", []int{8}},
-
 	OpNewEnv:    {"NewEnv", []int{}},
 	OpPopEnv:    {"PopEnv", []int{}},
 	OpSetLocal:  {"SetLocal", []int{8}},
 	OpGetLocal:  {"GetLocal", []int{8}},
 	OpSetGlobal: {"SetGlobal", []int{8}},
 	OpGetGlobal: {"GetGlobal", []int{8}},
-
-	OpRef:    {"Ref", []int{8}},
-	OpCall:   {"Call", []int{}},
-	OpReturn: {"Return", []int{}},
-	OpHalt:   {"Halt", []int{}},
-	OpDebug:  {"Debug", []int{8}},
+	OpRef:       {"Ref", []int{8}},
+	OpCall:      {"Call", []int{}},
+	OpReturn:    {"Return", []int{}},
+	OpHalt:      {"Halt", []int{}},
+	OpDebug:     {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

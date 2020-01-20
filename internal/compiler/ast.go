@@ -89,13 +89,14 @@ func SpliceUnquote(n Node) *ListNode {
 	return NewList2(NewSymbol("splice-unquote"), n)
 }
 
-func Cons(n Node, m Node) *ListNode {
-	return NewList2(NewSymbol("::"), n, m)
-}
-
-func Concat(n Node, m Node) *ListNode {
-	return NewList2(NewSymbol(":::"), n, m)
-}
+//
+// func Cons(n Node, m Node) *ListNode {
+// 	return NewList2(NewSymbol("::"), n, m)
+// }
+//
+// func Concat(n Node, m Node) *ListNode {
+// 	return NewList2(NewSymbol(":::"), n, m)
+// }
 
 type VectorNode struct {
 	Items []Node
@@ -133,19 +134,3 @@ func NewHashMap(items Map) *HashMapNode {
 func NewEmptyHashMap() *HashMapNode {
 	return NewHashMap(make(Map))
 }
-
-// type FuncNode struct {
-// 	Env     Env
-// 	Pars    []string
-// 	Fun     Node
-// 	IsMacro bool
-// }
-//
-// func NewFuncNode(env Env, pars []string, fun Node) Node {
-// 	return &FuncNode{Env: env, Pars: pars, Fun: fun, IsMacro: false}
-// }
-//
-// func IsFuncNode(n Node) bool {
-// 	_, ok := n.(*FuncNode)
-// 	return ok
-// }

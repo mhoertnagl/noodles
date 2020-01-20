@@ -73,10 +73,14 @@ func (m *vm) Run(code Ins) {
 		switch m.readOp() {
 		case OpConst:
 			m.push(m.readInt64())
+			// case OpNil:
+			//   m.push(nil)
 		case OpFalse:
 			m.push(false)
 		case OpTrue:
 			m.push(true)
+		case OpEmptyVector:
+			m.push(make([]Val, 0))
 		case OpPop:
 			m.pop()
 		case OpAdd:
@@ -95,18 +99,29 @@ func (m *vm) Run(code Ins) {
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l / r)
-		case OpSll:
-			r := m.popUInt64()
-			l := m.popUInt64()
-			m.push(l << r)
-		case OpSrl:
-			r := m.popUInt64()
-			l := m.popUInt64()
-			m.push(l >> r)
-		case OpSra:
-			r := m.popUInt64()
-			l := m.popInt64()
-			m.push(l >> r)
+		case OpCons:
+			v := m.pop()
+			l := m.popVector()
+			// TODO: This will not create a copy of the vector.
+			m.push(append([]Val{v}, l...))
+		// case OpHead:
+		// 	l := m.popVector()
+		// 	m.push(l[0])
+		// case OpTail:
+		// 	l := m.popVector()
+		// 	m.push(l[1:])
+		// case OpSll:
+		// 	r := m.popUInt64()
+		// 	l := m.popUInt64()
+		// 	m.push(l << r)
+		// case OpSrl:
+		// 	r := m.popUInt64()
+		// 	l := m.popUInt64()
+		// 	m.push(l >> r)
+		// case OpSra:
+		// 	r := m.popUInt64()
+		// 	l := m.popInt64()
+		// 	m.push(l >> r)
 		case OpJump:
 			m.ip += m.readInt64()
 		case OpJumpIf:
@@ -186,6 +201,10 @@ func (m *vm) popInt64() int64 {
 
 func (m *vm) popUInt64() uint64 {
 	return m.pop().(uint64)
+}
+
+func (m *vm) popVector() []Val {
+	return m.pop().([]Val)
 }
 
 func (m *vm) readOp() Op {
