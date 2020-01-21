@@ -104,24 +104,40 @@ func (m *vm) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(append([]Val{v}, l...))
-		// case OpHead:
-		// 	l := m.popVector()
-		// 	m.push(l[0])
-		// case OpTail:
-		// 	l := m.popVector()
-		// 	m.push(l[1:])
-		// case OpSll:
-		// 	r := m.popUInt64()
-		// 	l := m.popUInt64()
-		// 	m.push(l << r)
-		// case OpSrl:
-		// 	r := m.popUInt64()
-		// 	l := m.popUInt64()
-		// 	m.push(l >> r)
-		// case OpSra:
-		// 	r := m.popUInt64()
-		// 	l := m.popInt64()
-		// 	m.push(l >> r)
+			// case OpHead:
+			// 	l := m.popVector()
+			// 	m.push(l[0])
+			// case OpTail:
+			// 	l := m.popVector()
+			// 	m.push(l[1:])
+			// case OpSll:
+			// 	r := m.popUInt64()
+			// 	l := m.popUInt64()
+			// 	m.push(l << r)
+			// case OpSrl:
+			// 	r := m.popUInt64()
+			// 	l := m.popUInt64()
+			// 	m.push(l >> r)
+			// case OpSra:
+			// 	r := m.popUInt64()
+			// 	l := m.popInt64()
+			// 	m.push(l >> r)
+		case OpEQ:
+			r := m.pop()
+			l := m.pop()
+			m.push(m.eq(l, r))
+		case OpNE:
+			r := m.pop()
+			l := m.pop()
+			m.push(m.eq(l, r) == false)
+		case OpLT:
+			r := m.pop()
+			l := m.pop()
+			m.push(m.lt(l, r))
+		case OpLE:
+			r := m.pop()
+			l := m.pop()
+			m.push(m.le(l, r))
 		case OpJump:
 			m.ip += m.readInt64()
 		case OpJumpIf:
@@ -245,4 +261,37 @@ func (m *vm) lookupEnv(ep int64, a int64) Val {
 		}
 	}
 	panic(fmt.Sprintf("Unbound symbol [%d]", a))
+}
+
+func (m *vm) eq(l Val, r Val) bool {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll == rr
+		}
+	}
+	return false
+}
+
+func (m *vm) lt(l Val, r Val) bool {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll < rr
+		}
+	}
+	return false
+}
+
+func (m *vm) le(l Val, r Val) bool {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll <= rr
+		}
+	}
+	return false
 }

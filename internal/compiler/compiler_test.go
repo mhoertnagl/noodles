@@ -230,6 +230,82 @@ func TestCompileIf2(t *testing.T) {
 	)
 }
 
+func TestCompileAnd0(t *testing.T) {
+	testc(t, "(and)",
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileAnd1(t *testing.T) {
+	testc(t, "(and false)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileAnd2(t *testing.T) {
+	testc(t, "(and false true)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileAnd3(t *testing.T) {
+	testc(t, "(and false true false)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 20),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileOr0(t *testing.T) {
+	testc(t, "(or)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileOr1(t *testing.T) {
+	testc(t, "(or false)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileOr2(t *testing.T) {
+	testc(t, "(or false true)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 10),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileOr3(t *testing.T) {
+	testc(t, "(or false true false)",
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 20),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 10),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileDo(t *testing.T) {
 	testc(t, "(do (def a 1) (def b 2) (+ a b))",
 		vm.Instr(vm.OpConst, 1),

@@ -7,7 +7,9 @@ import (
 )
 
 type CodeGen interface {
+	Prepend(i vm.Ins)
 	Append(i vm.Ins)
+	PrependInstr(op vm.Op, args ...uint64)
 	Instr(op vm.Op, args ...uint64)
 	OpAt(offset int) vm.Op
 	AppendFunctions(fns []*fnDef)
@@ -26,8 +28,16 @@ func NewCodeGen() CodeGen {
 	}
 }
 
+func (c *codeGen) Prepend(i vm.Ins) {
+	c.code = vm.ConcatVar(i, c.code)
+}
+
 func (c *codeGen) Append(i vm.Ins) {
 	c.code = vm.ConcatVar(c.code, i)
+}
+
+func (c *codeGen) PrependInstr(op vm.Op, args ...uint64) {
+	c.code = vm.ConcatVar(vm.Instr(op, args...), c.code)
 }
 
 func (c *codeGen) Instr(op vm.Op, args ...uint64) {

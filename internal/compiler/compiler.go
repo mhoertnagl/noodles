@@ -115,6 +115,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileFn(args)
 		case "::":
 			return c.compileCons(args)
+		case "and":
+			return c.compileAnd(args)
 		default:
 			return c.compileCall(x, args)
 		}
@@ -228,6 +230,51 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 		return code.Emit()
 	default:
 		panic("Too many arguments")
+	}
+}
+
+func (c *compiler) compileAnd(args []Node) vm.Ins {
+	switch len(args) {
+	case 0:
+		// Empty and (and) yields true.
+		return vm.Instr(vm.OpTrue)
+	case 1:
+		// Singleton and (and x) yields x.
+		return c.compile(args[0])
+	default:
+		// Compiles an  and expressh at least two aguments. The expression is
+		// compied in reverse. This way, we can tell the distance for the jumps at
+		// after each agrument evaluation if it yields False.
+		//
+		//   <(and x1 x2 ... xn)> :=
+		//        <x1>
+		//        OpJumpIfNot @A
+		//        <x2>
+		//        OpJumpIfNot @A
+		//        ...
+		//        <xn>
+		//        OpJump 1
+		//     A: OpFalse
+		//
+		code := NewCodeGen()
+		// Compile the second to last instruction that jumps over the False
+		// constant. If all arguments evaluated to True then ther will be True on
+		// the stack. If the last argument evaluated to False then the expression is
+		// False and False is on the stack.
+		code.Instr(vm.OpJump, 1)
+		// Prepend all but the first argument in reverse. The length of the code
+		// in each iteration equals the distance to jump if evaluation of a argument
+		// yields False.
+		for i := len(args) - 1; i > 0; i-- {
+			code.Prepend(c.compile(args[i]))
+			code.PrependInstr(vm.OpJumpIfNot, code.Len())
+		}
+		// Preprend the first argument.
+		code.Prepend(c.compile(args[0]))
+		// Each evaluation except for the last one that yielded False will jump to
+		// this istruction that puts False on the stack.
+		code.Instr(vm.OpFalse)
+		return code.Emit()
 	}
 }
 

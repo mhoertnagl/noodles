@@ -131,8 +131,218 @@ func TestIfElseTrue1(t *testing.T) {
 }
 
 // TODO: If, elseif, else
-// TODO: ||
-// TODO: &&
+
+func TestRunAnd1(t *testing.T) {
+	testToS(t, false,
+		// a
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		// b
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunAnd2(t *testing.T) {
+	testToS(t, false,
+		// a
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		// b
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunAnd3(t *testing.T) {
+	testToS(t, false,
+		// a
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		// b
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunAnd4(t *testing.T) {
+	testToS(t, true,
+		// a
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 10),
+		// b
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunOr1(t *testing.T) {
+	testToS(t, false,
+		// a
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 10),
+		// b
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunOr2(t *testing.T) {
+	testToS(t, true,
+		// a
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 10),
+		// b
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunOr3(t *testing.T) {
+	testToS(t, true,
+		// a
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 10),
+		// b
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunOr4(t *testing.T) {
+	testToS(t, true,
+		// a
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 10),
+		// b
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLT1(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpLT),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLT2(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpLT),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLT3(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpLT),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLE1(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpLE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLE2(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpLE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunLE3(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ1(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ2(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ3(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunNE1(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpNE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunNE2(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpNE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunNE3(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpNE),
+		vm.Instr(vm.OpHalt),
+	)
+}
 
 // TODO: Environments,locals.
 
