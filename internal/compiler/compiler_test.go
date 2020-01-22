@@ -183,6 +183,68 @@ func TestCompileDiv(t *testing.T) {
 	)
 }
 
+func TestCompileNot(t *testing.T) {
+	testc(t, "(not true)",
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpNot),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileLT(t *testing.T) {
+	testc(t, "(< 0 1)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpLT),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileLE(t *testing.T) {
+	testc(t, "(<= 0 1)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpLE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileGT(t *testing.T) {
+	testc(t, "(> 0 1)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpLT),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileGE(t *testing.T) {
+	testc(t, "(>= 0 1)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpLE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileEQ(t *testing.T) {
+	testc(t, "(= 0 1)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileNE(t *testing.T) {
+	testc(t, "(!= 0 1)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpNE),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileLet1(t *testing.T) {
 	testc(t, "(let (a (+ 1 1)) (+ a a))",
 		vm.Instr(vm.OpNewEnv),
@@ -209,12 +271,10 @@ func TestCompileDef1(t *testing.T) {
 }
 
 func TestCompileIf1(t *testing.T) {
-	testc(t, "(if true 1 0)",
+	testc(t, "(if true 1)",
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpJumpIfNot, 9),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 9),
-		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpHalt),
 	)
 }
@@ -414,6 +474,30 @@ func TestCompileAnonymousFun3(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCompileAnonymousFun4(t *testing.T) {
+	testc(t, `(((fn [] (fn [x] (+ x 1)))) 1)`,
+		// (((fn ...)) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 52),
+		// Call the 0-adic function that returns the 1-adic function.
+		vm.Instr(vm.OpCall),
+		// Call the 1-adic function.
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+		// (fn [] ...)
+		vm.Instr(vm.OpRef, 21),
 		vm.Instr(vm.OpReturn),
 	)
 }

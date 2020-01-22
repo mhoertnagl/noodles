@@ -99,6 +99,9 @@ func (m *vm) Run(code Ins) {
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l / r)
+		case OpNot:
+			v := m.popBool()
+			m.push(!v)
 		case OpCons:
 			v := m.pop()
 			l := m.popVector()

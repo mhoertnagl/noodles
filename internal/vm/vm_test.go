@@ -132,6 +132,22 @@ func TestIfElseTrue1(t *testing.T) {
 
 // TODO: If, elseif, else
 
+func TestRunNot1(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpNot),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunNot2(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpNot),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestRunAnd1(t *testing.T) {
 	testToS(t, false,
 		// a

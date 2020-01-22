@@ -103,6 +103,18 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileMul(args)
 		case "/":
 			return c.compileDiv(args)
+		case "<":
+			return c.compileLT(args)
+		case "<=":
+			return c.compileLE(args)
+		case ">":
+			return c.compileGT(args)
+		case ">=":
+			return c.compileGE(args)
+		case "=":
+			return c.compileEQ(args)
+		case "!=":
+			return c.compileNE(args)
 		case "let":
 			return c.compileLet(args)
 		case "def":
@@ -115,6 +127,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileFn(args)
 		case "::":
 			return c.compileCons(args)
+		case "not":
+			return c.compileNot(args)
 		case "and":
 			return c.compileAnd(args)
 		case "or":
@@ -233,6 +247,82 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 	default:
 		panic("Too many arguments")
 	}
+}
+
+func (c *compiler) compileEQ(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[=] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Append(c.compile(args[1]))
+	code.Instr(vm.OpEQ)
+	return code.Emit()
+}
+
+func (c *compiler) compileNE(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[!=] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Append(c.compile(args[1]))
+	code.Instr(vm.OpNE)
+	return code.Emit()
+}
+
+func (c *compiler) compileLT(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[<] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Append(c.compile(args[1]))
+	code.Instr(vm.OpLT)
+	return code.Emit()
+}
+
+func (c *compiler) compileLE(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[<=] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Append(c.compile(args[1]))
+	code.Instr(vm.OpLE)
+	return code.Emit()
+}
+
+func (c *compiler) compileGT(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[>] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[1]))
+	code.Append(c.compile(args[0]))
+	code.Instr(vm.OpLT)
+	return code.Emit()
+}
+
+func (c *compiler) compileGE(args []Node) vm.Ins {
+	if len(args) != 2 {
+		panic("[>=] requires exactly two arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[1]))
+	code.Append(c.compile(args[0]))
+	code.Instr(vm.OpLE)
+	return code.Emit()
+}
+
+func (c *compiler) compileNot(args []Node) vm.Ins {
+	if len(args) != 1 {
+		panic("[not] requires exactly one arguments")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Instr(vm.OpNot)
+	return code.Emit()
 }
 
 func (c *compiler) compileAnd(args []Node) vm.Ins {
@@ -450,11 +540,7 @@ func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 	code := NewCodeGen()
 	c.compileNodes(code, args)
 	code.Append(c.compileList(lst))
-	// TODO: Is this correct in any case?
-	// What about: (((fn [] (fn [x] (+ x 1)))) 1) we need to emit OpCall twice.
-	if code.OpAt(-1) != vm.OpCall {
-		code.Instr(vm.OpCall)
-	}
+	code.Instr(vm.OpCall)
 	return code.Emit()
 }
 
