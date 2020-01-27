@@ -4,13 +4,16 @@
   ;;
   ;; ```(def not (fn [x] (if x false true)))```
   ;;
-  ;; one can leverage `defn` to achief a mor concise definition:
+  ;; one can leverage `defn` to achief a more concise definition:
   ;;
   ;; ```(defn not [x] (if x false true))```
   ;;
   ;; @param sym   name  The name of the function.
   ;; @param (sym) args  The list of arument symbols.
   ;; @param (any) body  The body of the function.
+  ; TODO: Shorter.
+  ; (defmacro defn [name args body]
+  ;   `(def ~name (fn ~args ~body)) )
   (defmacro defn (fn [name args body]
     `(def ~name (fn ~args ~body)) ))
 

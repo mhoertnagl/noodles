@@ -260,6 +260,21 @@ func TestCompileLet1(t *testing.T) {
 	)
 }
 
+func TestCompileLet2(t *testing.T) {
+	testc(t, "(let (a 1 b 2) (+ a b))",
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSetLocal, hash("a")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpSetLocal, hash("b")),
+		vm.Instr(vm.OpGetLocal, hash("a")),
+		vm.Instr(vm.OpGetLocal, hash("b")),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileDef1(t *testing.T) {
 	testc(t, "(def b (+ 1 1))",
 		vm.Instr(vm.OpConst, 1),

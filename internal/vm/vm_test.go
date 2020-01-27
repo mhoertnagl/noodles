@@ -516,6 +516,93 @@ func TestRunFunCall(t *testing.T) {
 	)
 }
 
+func TestCallAnonymousFun1(t *testing.T) {
+	testToS(t, int64(2),
+		// ((fn ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 20),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCallAnonymousFun2(t *testing.T) {
+	testToS(t, int64(3),
+		// ((fn ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 30),
+		vm.Instr(vm.OpCall),
+		// (+ ((fn ...) 1) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCallAnonymousFun3(t *testing.T) {
+	testToS(t, int64(2),
+		// (((fn ...)) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 52),
+		// Call the 0-adic function that returns the 1-adic function.
+		vm.Instr(vm.OpCall),
+		// Call the 1-adic function.
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+		// (fn [] ...)
+		vm.Instr(vm.OpRef, 21),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCallAnonymousFun4(t *testing.T) {
+	testToS(t, int64(3),
+		// (def inc (fn ...))
+		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpSetGlobal, hash("inc")),
+		// (inc 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpGetGlobal, hash("inc")),
+		vm.Instr(vm.OpCall),
+		// (+ (inc ...) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of
@@ -548,7 +635,6 @@ func testVal(t *testing.T, expected vm.Val, actual vm.Val) {
 		t.Errorf("Expected [%v] but got [%v].", eType, aType)
 	}
 	if reflect.DeepEqual(expected, actual) == false {
-		// if expected != actual {
 		t.Errorf("Expected [%v] but got [%v].", expected, actual)
 	}
 }

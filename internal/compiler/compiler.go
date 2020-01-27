@@ -419,6 +419,14 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 	panic("[let] requires first argument to be a list of bindings")
 }
 
+// compileDef compiles a global definition. Global definitions will be bound in
+// the root environment and are available in the entire codebase for the entire
+// lifetime of the program.
+//
+//   <(def x y)> :=
+//        <y>
+//        OpSetGlobal #x
+//
 func (c *compiler) compileDef(args []Node) vm.Ins {
 	if len(args) != 2 {
 		panic("[def] requires exactly two arguments")
@@ -435,7 +443,7 @@ func (c *compiler) compileDef(args []Node) vm.Ins {
 
 func (c *compiler) compileIf(args []Node) vm.Ins {
 	if len(args) != 2 && len(args) != 3 {
-		panic("[if] requires exactly two or three arguments")
+		panic("[if] requires either two or three arguments")
 	}
 	code := NewCodeGen()
 	switch len(args) {

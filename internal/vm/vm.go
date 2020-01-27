@@ -75,6 +75,8 @@ func (m *vm) Run(code Ins) {
 			m.push(m.readInt64())
 			// case OpNil:
 			//   m.push(nil)
+		case OpRef:
+			m.push(m.readInt64())
 		case OpFalse:
 			m.push(false)
 		case OpTrue:
