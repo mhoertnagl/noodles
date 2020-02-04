@@ -32,6 +32,7 @@ const (
 	// OpSll
 	// OpSrl
 	// OpSras
+	OpList
 	OpCons
 	OpAnd
 	OpOr
@@ -53,6 +54,7 @@ const (
 	OpCall
 	// OpTailCall
 	OpReturn
+	OpEnd
 	OpHalt
 	OpDebug
 )
@@ -88,6 +90,7 @@ var meta = map[Op]*OpMeta{
 	// OpSll:         {"Sll", []int{}},
 	// OpSrl:         {"Srl", []int{}},
 	// OpSra:         {"Sra", []int{}},
+	OpList:      {"List", []int{}},
 	OpCons:      {"Cons", []int{}},
 	OpAnd:       {"And", []int{}},
 	OpOr:        {"Or", []int{}},
@@ -108,6 +111,7 @@ var meta = map[Op]*OpMeta{
 	OpRef:       {"Ref", []int{8}},
 	OpCall:      {"Call", []int{}},
 	OpReturn:    {"Return", []int{}},
+	OpEnd:       {"End", []int{}},
 	OpHalt:      {"Halt", []int{}},
 	OpDebug:     {"Debug", []int{8}},
 }

@@ -469,17 +469,15 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileDo(args []Node) vm.Ins {
-	code := NewCodeGen()
-	for _, arg := range args {
-		code.Append(c.compile(arg))
-	}
-	return code.Emit()
-}
-
 // func (c *compiler) compileCond(args []Node) vm.Ins {
 //
 // }
+
+func (c *compiler) compileDo(args []Node) vm.Ins {
+	code := NewCodeGen()
+	c.compileNodes(code, args)
+	return code.Emit()
+}
 
 func (c *compiler) compileFn(args []Node) vm.Ins {
 	if len(args) != 2 {
@@ -507,6 +505,8 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 	default:
 		code.Instr(vm.OpNewEnv)
 		c.compileFnParams(code, params)
+		// Removes the function argument's end marker from the stack.
+		code.Instr(vm.OpPop)
 		code.Append(c.compile(body))
 		code.Instr(vm.OpPopEnv)
 	}
@@ -515,13 +515,22 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 }
 
 func (c *compiler) compileFnParams(code CodeGen, params []Node) {
-	for i := len(params) - 1; i >= 0; i-- {
-		switch x := params[i].(type) {
+	for pos := len(params) - 1; pos >= 0; pos-- {
+		switch param := params[pos].(type) {
 		case *SymbolNode:
-			code.Instr(vm.OpSetLocal, c.hashSymbol(x))
+			c.compileFnParam(code, param)
 		default:
-			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", i))
+			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
 		}
+	}
+}
+
+func (c *compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
+	switch sym.Name {
+	case "&":
+		code.Instr(vm.OpList)
+	default:
+		code.Instr(vm.OpSetLocal, c.hashSymbol(sym))
 	}
 }
 
@@ -538,7 +547,8 @@ func (c *compiler) compileCons(args []Node) vm.Ins {
 
 func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 	code := NewCodeGen()
-	c.compileNodes(code, args)
+	code.Instr(vm.OpEnd)
+	c.compileNodesReverse(code, args)
 	code.Instr(vm.OpGetGlobal, c.hashSymbol(sym))
 	code.Instr(vm.OpCall)
 	return code.Emit()
@@ -546,7 +556,8 @@ func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 
 func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 	code := NewCodeGen()
-	c.compileNodes(code, args)
+	code.Instr(vm.OpEnd)
+	c.compileNodesReverse(code, args)
 	code.Append(c.compileList(lst))
 	code.Instr(vm.OpCall)
 	return code.Emit()
@@ -555,6 +566,12 @@ func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 func (c *compiler) compileNodes(code CodeGen, nodes []Node) {
 	for _, node := range nodes {
 		code.Append(c.compile(node))
+	}
+}
+
+func (c *compiler) compileNodesReverse(code CodeGen, nodes []Node) {
+	for i := len(nodes) - 1; i >= 0; i-- {
+		code.Append(c.compile(nodes[i]))
 	}
 }
 
