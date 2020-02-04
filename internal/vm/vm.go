@@ -7,6 +7,12 @@ import (
 
 // TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
 
+// This is a special marker that marks the end of a sequence on the stack.
+// For instance an end is pushed onto the stack before the arguments to a
+// function invocation are pushed. The virtual machine can leverage this marker
+// to provide varargs support.
+var end Val = nil
+
 type VM interface {
 	Run(code Ins)
 	InspectStack(offset int64) Val
@@ -104,11 +110,18 @@ func (m *vm) Run(code Ins) {
 		case OpNot:
 			v := m.popBool()
 			m.push(!v)
+		case OpList:
+			l := make([]Val, 0)
+			for v := m.pop(); v != end; {
+				l = prepend(v, l)
+				v = m.pop()
+			}
+			m.push(l)
 		case OpCons:
 			v := m.pop()
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
-			m.push(append([]Val{v}, l...))
+			m.push(prepend(v, l))
 			// case OpHead:
 			// 	l := m.popVector()
 			// 	m.push(l[0])
@@ -168,15 +181,14 @@ func (m *vm) Run(code Ins) {
 		case OpGetGlobal:
 			m.push(m.lookupEnv(0, m.readInt64()))
 		case OpCall:
-			m.frames[m.fp] = m.ip // + 1 // 1 byte OpCall
-			// fmt.Printf("RP: %d", m.ip+1)
+			m.frames[m.fp] = m.ip
 			m.fp++
-			// m.ip += m.readInt64()
 			m.ip = m.popInt64()
 		case OpReturn:
 			m.fp--
-			// fmt.Printf("RP: %d", m.frames[m.fp])
 			m.ip = m.frames[m.fp]
+		case OpEnd:
+			m.push(end)
 		case OpHalt:
 			return
 		case OpDebug:
@@ -299,4 +311,8 @@ func (m *vm) le(l Val, r Val) bool {
 		}
 	}
 	return false
+}
+
+func prepend(v Val, l []Val) []Val {
+	return append([]Val{v}, l...)
 }

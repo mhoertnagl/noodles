@@ -427,6 +427,7 @@ func TestCompileAnonymousFun1(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -437,11 +438,12 @@ func TestCompileAnonymousFun1(t *testing.T) {
 
 func TestCompileAnonymousFun11(t *testing.T) {
 	testc(t, `(fn [] (fn [x] (+ x 1)))`,
-		vm.Instr(vm.OpRef, 41),
+		vm.Instr(vm.OpRef, 42),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -449,6 +451,7 @@ func TestCompileAnonymousFun11(t *testing.T) {
 		vm.Instr(vm.OpReturn),
 		// (fn [] ...)
 		// 0-adic functions don't require a local environment.
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpRef, 10),
 		vm.Instr(vm.OpReturn),
 	)
@@ -457,13 +460,15 @@ func TestCompileAnonymousFun11(t *testing.T) {
 func TestCompileAnonymousFun2(t *testing.T) {
 	testc(t, `((fn [x] (+ x 1)) 1)`,
 		// ((fn ...) 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 20),
+		vm.Instr(vm.OpRef, 21),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -475,8 +480,9 @@ func TestCompileAnonymousFun2(t *testing.T) {
 func TestCompileAnonymousFun3(t *testing.T) {
 	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
 		// ((fn ...) 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 30),
+		vm.Instr(vm.OpRef, 31),
 		vm.Instr(vm.OpCall),
 		// (+ ((fn ...) 1) 1)
 		vm.Instr(vm.OpConst, 1),
@@ -485,6 +491,7 @@ func TestCompileAnonymousFun3(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -496,8 +503,10 @@ func TestCompileAnonymousFun3(t *testing.T) {
 func TestCompileAnonymousFun4(t *testing.T) {
 	testc(t, `(((fn [] (fn [x] (+ x 1)))) 1)`,
 		// (((fn ...)) 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 52),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpRef, 55),
 		// Call the 0-adic function that returns the 1-adic function.
 		vm.Instr(vm.OpCall),
 		// Call the 1-adic function.
@@ -506,13 +515,15 @@ func TestCompileAnonymousFun4(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 		// (fn [] ...)
-		vm.Instr(vm.OpRef, 21),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpRef, 23),
 		vm.Instr(vm.OpReturn),
 	)
 }
@@ -524,9 +535,10 @@ func TestCompileLeafFunDef(t *testing.T) {
       (+ (inc 1) 1)
     )`,
 		// (def inc (fn ...))
-		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpRef, 49),
 		vm.Instr(vm.OpSetGlobal, hash("inc")),
 		// (inc 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpGetGlobal, hash("inc")),
 		vm.Instr(vm.OpCall),
@@ -537,6 +549,7 @@ func TestCompileLeafFunDef(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -545,8 +558,32 @@ func TestCompileLeafFunDef(t *testing.T) {
 	)
 }
 
-// TODO: Deeply nested function call
-// TODO: A function that returns a function
+// TODO: Deeply nested function calls
+
+func TestCompileVariadicFun(t *testing.T) {
+	testc(t, `((fn [x & xs] (:: x xs)) 1 2 3 4)`,
+		// ((fn ...) 1 2 3 4)
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 4),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x & xs] (:: x xs))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpSetLocal, hash("xs")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("xs")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
 
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()

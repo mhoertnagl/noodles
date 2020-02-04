@@ -501,6 +501,8 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 	code := NewCodeGen()
 	switch len(params) {
 	case 0:
+		// Removes the function argument's end marker from the stack.
+		code.Instr(vm.OpPop)
 		code.Append(c.compile(body))
 	default:
 		code.Instr(vm.OpNewEnv)
@@ -515,14 +517,22 @@ func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
 }
 
 func (c *compiler) compileFnParams(code CodeGen, params []Node) {
-	for pos := len(params) - 1; pos >= 0; pos-- {
-		switch param := params[pos].(type) {
+	for pos, param := range params {
+		switch sym := param.(type) {
 		case *SymbolNode:
-			c.compileFnParam(code, param)
+			c.compileFnParam(code, sym)
 		default:
 			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
 		}
 	}
+	// for pos := len(params) - 1; pos >= 0; pos-- {
+	// 	switch param := params[pos].(type) {
+	// 	case *SymbolNode:
+	// 		c.compileFnParam(code, param)
+	// 	default:
+	// 		panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
+	// 	}
+	// }
 }
 
 func (c *compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
