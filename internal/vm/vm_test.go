@@ -473,6 +473,34 @@ func TestRunCreateVector1(t *testing.T) {
 	)
 }
 
+func TestRunCreateVector2(t *testing.T) {
+	e := []vm.Val{int64(1), int64(2), int64(3)}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunDissolve(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpDissolve),
+	)
+	testVal(t, int64(1), m.InspectStack(0))
+	testVal(t, int64(2), m.InspectStack(1))
+	testVal(t, int64(3), m.InspectStack(2))
+	testVal(t, nil, m.InspectStack(3))
+}
+
 func TestRunHalt(t *testing.T) {
 	testToS(t, int64(0),
 		vm.Instr(vm.OpConst, 0),
@@ -516,37 +544,18 @@ func TestRunFunCall(t *testing.T) {
 	)
 }
 
-func TestCallAnonymousFun1(t *testing.T) {
+func TestCallAnonymousFun2(t *testing.T) {
 	testToS(t, int64(2),
 		// ((fn ...) 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 20),
+		vm.Instr(vm.OpRef, 21),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
-		vm.Instr(vm.OpGetLocal, hash("x")),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
-		vm.Instr(vm.OpReturn),
-	)
-}
-
-func TestCallAnonymousFun2(t *testing.T) {
-	testToS(t, int64(3),
-		// ((fn ...) 1)
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 30),
-		vm.Instr(vm.OpCall),
-		// (+ ((fn ...) 1) 1)
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -556,10 +565,35 @@ func TestCallAnonymousFun2(t *testing.T) {
 }
 
 func TestCallAnonymousFun3(t *testing.T) {
+	testToS(t, int64(3),
+		// ((fn ...) 1)
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 31),
+		vm.Instr(vm.OpCall),
+		// (+ ((fn ...) 1) 1)
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+		// (fn [x] (+ x 1))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCallAnonymousFun4(t *testing.T) {
 	testToS(t, int64(2),
 		// (((fn ...)) 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 52),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpRef, 55),
 		// Call the 0-adic function that returns the 1-adic function.
 		vm.Instr(vm.OpCall),
 		// Call the 1-adic function.
@@ -568,23 +602,26 @@ func TestCallAnonymousFun3(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 		// (fn [] ...)
-		vm.Instr(vm.OpRef, 21),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpRef, 23),
 		vm.Instr(vm.OpReturn),
 	)
 }
 
-func TestCallAnonymousFun4(t *testing.T) {
+func TestCallLeafFunDef(t *testing.T) {
 	testToS(t, int64(3),
 		// (def inc (fn ...))
-		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpRef, 49),
 		vm.Instr(vm.OpSetGlobal, hash("inc")),
 		// (inc 1)
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpGetGlobal, hash("inc")),
 		vm.Instr(vm.OpCall),
@@ -595,9 +632,35 @@ func TestCallAnonymousFun4(t *testing.T) {
 		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetLocal, hash("x")),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestCallVariadicFun(t *testing.T) {
+	testToS(t, []vm.Val{int64(1), int64(2), int64(3), int64(4)},
+		// ((fn ...) 1 2 3 4)
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 4),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		// (fn [x & xs] (:: x xs))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpSetLocal, hash("xs")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("xs")),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 	)

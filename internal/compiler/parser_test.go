@@ -93,23 +93,14 @@ func TestParseQuote(t *testing.T) {
 	testpw(t, ` '{ "a" 1 } `, `(quote {"a" 1})`)
 }
 
-func TestParseQuasiquote(t *testing.T) {
-	testpw(t, " `42 ", "(quasiquote 42)")
-	testpw(t, " `\"x\" ", `(quasiquote "x")`)
-	testpw(t, " `() ", "(quasiquote ())")
-	testpw(t, " `(+ 1 1) ", "(quasiquote (+ 1 1))")
-	testpw(t, " `[1 2 3] ", "(quasiquote [1 2 3])")
-	testpw(t, " `{ \"a\" 1 } ", `(quasiquote {"a" 1})`)
+func TestParseQuoteUnquote(t *testing.T) {
+	testpw(t, " '~42 ", "(quote (unquote 42))")
+	testpw(t, " '(+ ~a ~b) ", "(quote (+ (unquote a) (unquote b)))")
 }
 
-func TestParseQuasiquoteUnquote(t *testing.T) {
-	testpw(t, " `~42 ", "(quasiquote (unquote 42))")
-	testpw(t, " `(+ ~a ~b) ", "(quasiquote (+ (unquote a) (unquote b)))")
-}
-
-func TestParseQuasiquoteSpliceUnquote(t *testing.T) {
-	testpw(t, " `~@(42) ", "(quasiquote (splice-unquote (42)))")
-	testpw(t, " `(+ ~@(a b) c) ", "(quasiquote (+ (splice-unquote (a b)) c))")
+func TestParseQuoteSpliceUnquote(t *testing.T) {
+	testpw(t, " '~@(42) ", "(quote (unquote (dissolve (42))))")
+	testpw(t, " '(+ ~@(a b) c) ", "(quote (+ (unquote (dissolve (a b))) c))")
 }
 
 func testpw(t *testing.T, i string, e string) {

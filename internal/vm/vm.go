@@ -74,8 +74,8 @@ func (m *vm) InspectFrames(offset int64) int64 {
 func (m *vm) Run(code Ins) {
 	m.ip = 0
 	m.code = code
-	len := int64(len(code))
-	for m.ip < len {
+	ln := int64(len(code))
+	for m.ip < ln {
 		switch m.readOp() {
 		case OpConst:
 			m.push(m.readInt64())
@@ -112,16 +112,21 @@ func (m *vm) Run(code Ins) {
 			m.push(!v)
 		case OpList:
 			l := make([]Val, 0)
-			for v := m.pop(); v != end; {
-				l = prepend(v, l)
-				v = m.pop()
+			for v := m.pop(); v != end; v = m.pop() {
+				l = append(l, v)
 			}
+			m.push(end)
 			m.push(l)
 		case OpCons:
 			v := m.pop()
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
+		case OpDissolve:
+			l := m.popVector()
+			for i := len(l) - 1; i >= 0; i-- {
+				m.push(l[i])
+			}
 			// case OpHead:
 			// 	l := m.popVector()
 			// 	m.push(l[0])
@@ -195,11 +200,7 @@ func (m *vm) Run(code Ins) {
 			mode := m.readUint64()
 			// Bit 0 show stack.
 			if mode&DbgStack == 1 {
-				fmt.Print("-|")
-				for i := int64(0); i < m.sp; i++ {
-					fmt.Printf(" %d", m.stack[i])
-				}
-				fmt.Print("\n")
+				m.printStack()
 			}
 		default:
 			panic("Unsupported operation.")
@@ -213,9 +214,6 @@ func (m *vm) push(v Val) {
 }
 
 // func (m *vm) peek() Val {
-// 	if m.sp <= 0 {
-// 		return nil
-// 	}
 // 	return m.stack[m.sp-1]
 // }
 
@@ -311,6 +309,14 @@ func (m *vm) le(l Val, r Val) bool {
 		}
 	}
 	return false
+}
+
+func (m *vm) printStack() {
+	fmt.Print("-|")
+	for i := int64(0); i < m.sp; i++ {
+		fmt.Printf(" %v", m.stack[i])
+	}
+	fmt.Print("\n")
 }
 
 func prepend(v Val, l []Val) []Val {

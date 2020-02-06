@@ -11,7 +11,6 @@ func TestIgnoreWhitespace(t *testing.T) {
 }
 
 func TestSpecials(t *testing.T) {
-	testr(t, "~@", "~@", "")
 	testr(t, "(", "(", "")
 	testr(t, ")", ")", "")
 	testr(t, "[", "[", "")

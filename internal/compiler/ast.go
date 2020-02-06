@@ -77,16 +77,12 @@ func Quote(n Node) *ListNode {
 	return NewList2(NewSymbol("quote"), n)
 }
 
-func Quasiquote(n Node) *ListNode {
-	return NewList2(NewSymbol("quasiquote"), n)
-}
-
 func Unquote(n Node) *ListNode {
 	return NewList2(NewSymbol("unquote"), n)
 }
 
-func SpliceUnquote(n Node) *ListNode {
-	return NewList2(NewSymbol("splice-unquote"), n)
+func Dissolve(n Node) *ListNode {
+	return NewList2(NewSymbol("dissolve"), n)
 }
 
 //

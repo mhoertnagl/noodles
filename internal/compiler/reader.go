@@ -60,17 +60,15 @@ func (r *reader) Pos() int {
 // https://regex101.com/r/Awgqpk/1
 func buildPattern() string {
 	var pat bytes.Buffer
-	pat.WriteString(`[\s,]*`)                      // whitespace or commas
-	pat.WriteString("(")                           // Begin capture group
-	pat.WriteString("~@")                          // ~@
-	pat.WriteString("|")                           // or
-	pat.WriteString("[\\[\\]{}\\(\\)'`~^@]")       // any of [, ], {, }, (, ), ', `, ~, ^, @
-	pat.WriteString("|")                           // or
-	pat.WriteString(`"(?:\\"|[^"])*"?`)            // strings with escape characters and an optional " at the end
-	pat.WriteString("|")                           // or
-	pat.WriteString("[^\\s\\[\\]{}\\('\"`,;\\)]+") // symbols (including numbers)
-	pat.WriteString(")")                           // End capture group
-	pat.WriteString("|")                           // or
-	pat.WriteString(";[^\n]*(?:$|\n)")             // comments
+	pat.WriteString(`[\s,]*`)                     // whitespace or commas
+	pat.WriteString("(")                          // Begin capture group
+	pat.WriteString("[\\[\\]{}\\(\\)'~^@]")       // any of [, ], {, }, (, ), ', ~, ^, @
+	pat.WriteString("|")                          // or
+	pat.WriteString(`"(?:\\"|[^"])*"?`)           // strings with escape characters and an optional " at the end
+	pat.WriteString("|")                          // or
+	pat.WriteString("[^\\s\\[\\]{}\\('\",;\\)]+") // symbols (including numbers)
+	pat.WriteString(")")                          // End capture group
+	pat.WriteString("|")                          // or
+	pat.WriteString(";[^\n]*(?:$|\n)")            // comments
 	return pat.String()
 }

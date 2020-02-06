@@ -70,15 +70,12 @@ func (p *parser) parse() Node {
 	case p.tok == "'":
 		p.consume("'")
 		return Quote(p.parse())
-	case p.tok == "`":
-		p.consume("`")
-		return Quasiquote(p.parse())
 	case p.tok == "~":
 		p.consume("~")
 		return Unquote(p.parse())
-	case p.tok == "~@":
-		p.consume("~@")
-		return SpliceUnquote(p.parse())
+	case p.tok == "@":
+		p.consume("@")
+		return Dissolve(p.parse())
 	default:
 		return p.parseAtom()
 	}

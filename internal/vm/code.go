@@ -34,6 +34,7 @@ const (
 	// OpSras
 	OpList
 	OpCons
+	OpDissolve
 	OpAnd
 	OpOr
 	OpNot
@@ -92,6 +93,7 @@ var meta = map[Op]*OpMeta{
 	// OpSra:         {"Sra", []int{}},
 	OpList:      {"List", []int{}},
 	OpCons:      {"Cons", []int{}},
+	OpDissolve:  {"Dissolve", []int{}},
 	OpAnd:       {"And", []int{}},
 	OpOr:        {"Or", []int{}},
 	OpNot:       {"Not", []int{}},

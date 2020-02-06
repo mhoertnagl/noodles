@@ -525,14 +525,6 @@ func (c *compiler) compileFnParams(code CodeGen, params []Node) {
 			panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
 		}
 	}
-	// for pos := len(params) - 1; pos >= 0; pos-- {
-	// 	switch param := params[pos].(type) {
-	// 	case *SymbolNode:
-	// 		c.compileFnParam(code, param)
-	// 	default:
-	// 		panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
-	// 	}
-	// }
 }
 
 func (c *compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
