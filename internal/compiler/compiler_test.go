@@ -585,13 +585,28 @@ func TestCompileVariadicFun(t *testing.T) {
 	)
 }
 
+func TestCompileSimpleQuote(t *testing.T) {
+	testc(t, `'(+ 1 1)`,
+		vm.Instr(vm.OpRef, 10),
+		vm.Instr(vm.OpHalt),
+		// (fn [] (+ 1 1))
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
 	r := compiler.NewReader()
 	p := compiler.NewParser()
 	c := compiler.NewCompiler()
+	w := compiler.NewQuoteRewriter()
 	r.Load(i)
 	n := p.Parse(r)
+	n = w.Rewrite(n)
 	s := c.Compile(n)
 	ee := vm.Concat(e)
 	x := bytes.Compare(s, ee)
