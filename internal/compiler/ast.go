@@ -85,6 +85,10 @@ func Dissolve(n Node) *ListNode {
 	return NewList2(NewSymbol("dissolve"), n)
 }
 
+func Fn(args []Node, body Node) *ListNode {
+	return NewList2(NewSymbol("fn"), NewVector2(args...), body)
+}
+
 //
 // func Cons(n Node, m Node) *ListNode {
 // 	return NewList2(NewSymbol("::"), n, m)

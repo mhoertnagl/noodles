@@ -33,6 +33,11 @@ func NewCompiler() Compiler {
 //       OpCallNew - generates a new environment.
 //       OpCall    - does not generate an environment.
 //       With this we can implement leaf functions and tail calls.
+// TODO: Variadic +, *, do, and, or, vector, list, ...
+// TODO: Compile defn?
+// TODO: Macros
+// TODO: Closure
+// TODO: static scoping?
 
 func (c *compiler) Compile(node Node) vm.Ins {
 	code := NewCodeGen()
@@ -133,6 +138,8 @@ func (c *compiler) compileList(n *ListNode) vm.Ins {
 			return c.compileAnd(args)
 		case "or":
 			return c.compileOr(args)
+		case "dissolve":
+			return c.compileDissolve(args)
 		default:
 			return c.compileCall(x, args)
 		}
@@ -544,6 +551,16 @@ func (c *compiler) compileCons(args []Node) vm.Ins {
 	code.Append(c.compile(args[1]))
 	code.Append(c.compile(args[0]))
 	code.Instr(vm.OpCons)
+	return code.Emit()
+}
+
+func (c *compiler) compileDissolve(args []Node) vm.Ins {
+	if len(args) != 1 {
+		panic("[@] expects exactly 1 argument")
+	}
+	code := NewCodeGen()
+	code.Append(c.compile(args[0]))
+	code.Instr(vm.OpDissolve)
 	return code.Emit()
 }
 

@@ -30,6 +30,14 @@ func TestRewriteSimpleQuote(t *testing.T) {
 	testcrw(t, `'(+ 1 1)`, `(fn [] (+ 1 1))`)
 }
 
+func TestRewriteReplacementQuote(t *testing.T) {
+	testcrw(t, `'(+ ~a ~b)`, `(fn [a b] (+ a b))`)
+}
+
+func TestRewriteSpliceQuote(t *testing.T) {
+	testcrw(t, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
+}
+
 func testcrw(t *testing.T, i string, e string) {
 	t.Helper()
 	r := compiler.NewReader()
