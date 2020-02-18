@@ -7,58 +7,98 @@ import (
 )
 
 func TestRewriteBoolean(t *testing.T) {
-	testcrw(t, `true`, `true`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `true`, `true`)
 }
 
 func TestRewriteInteger(t *testing.T) {
-	testcrw(t, `1`, `1`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `1`, `1`)
 }
 
 func TestRewriteSymbol(t *testing.T) {
-	testcrw(t, `a`, `a`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `a`, `a`)
 }
 
 func TestRewriteVector(t *testing.T) {
-	testcrw(t, `[1 2 3]`, `[1 2 3]`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `[1 2 3]`, `[1 2 3]`)
 }
 
 func TestRewriteList(t *testing.T) {
-	testcrw(t, `(1 2 3)`, `(1 2 3)`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `(1 2 3)`, `(1 2 3)`)
 }
 
 func TestRewriteSimpleQuote(t *testing.T) {
-	testcrw(t, `'(+ 1 1)`, `(fn [] (+ 1 1))`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `'(+ 1 1)`, `(fn [] (+ 1 1))`)
 }
 
 func TestRewriteReplacementQuote(t *testing.T) {
-	testcrw(t, `'(+ ~a ~b)`, `(fn [a b] (+ a b))`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `'(+ ~a ~b)`, `(fn [a b] (+ a b))`)
 }
 
 func TestRewriteSpliceQuote(t *testing.T) {
-	testcrw(t, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
 }
 
-func testcrw(t *testing.T, i string, e string) {
+func TestRewriteArgsSimple(t *testing.T) {
+	pars := []string{"a"}
+	args := []compiler.Node{parse("(+ 1 1)")}
+	rw := compiler.NewArgsRewriter(pars, args)
+	testRewriter(t, rw, `(* a a)`, `(* (+ 1 1) (+ 1 1))`)
+}
+
+func TestRewriteArgsDeep(t *testing.T) {
+	pars := []string{"a", "b"}
+	args := []compiler.Node{parse("(+ 1 1)"), parse("(- 2)")}
+	rw := compiler.NewArgsRewriter(pars, args)
+	testRewriter(t, rw, `(* (* a b) a)`, `(* (* (+ 1 1) (- 2)) (+ 1 1))`)
+}
+
+func TestRewriteDefmacroSimple(t *testing.T) {
+	is := `(do
+    (defmacro defn [name args body] (def name (fn args body)))
+    (defn inc [x] (+ x 1))
+  )`
+	es := `(do (def inc (fn [x] (+ x 1))))`
+	rw := compiler.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroNested(t *testing.T) {
+	is := `(do
+    (defmacro m1 [a b] (m2 b a))
+    (defmacro m2 [a b] (- a b))
+    (m1 1 2)
+  )`
+	es := `(do (- 2 1))`
+	rw := compiler.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func testRewriter(t *testing.T, rw compiler.Rewriter, i string, e string) {
 	t.Helper()
+	in := parse(i)
+	en := parse(e)
+	an := rw.Rewrite(in)
+	pr := compiler.NewPrinter()
+	as := pr.Print(an)
+	es := pr.Print(en)
+	if equalNode(an, en) == false {
+		t.Errorf("Mismatch Expecting \n  [%s]\n but got \n  [%s].", es, as)
+	}
+}
+
+func parse(i string) compiler.Node {
 	r := compiler.NewReader()
 	p := compiler.NewParser()
 	r.Load(i)
-	in := p.Parse(r)
-	r.Load(e)
-	en := p.Parse(r)
-	testrw(t, in, en)
-}
-
-func testrw(t *testing.T, i compiler.Node, e compiler.Node) {
-	t.Helper()
-	qr := compiler.NewQuoteRewriter()
-	a := qr.Rewrite(i)
-	pr := compiler.NewPrinter()
-	as := pr.Print(a)
-	es := pr.Print(e)
-	if equalNode(a, e) == false {
-		t.Errorf("Mismatch Expecting \n  [%s]\n but got \n  [%s].", es, as)
-	}
+	return p.Parse(r)
 }
 
 func equalNode(l compiler.Node, r compiler.Node) bool {
