@@ -20,6 +20,7 @@ const (
 	OpFalse
 	OpEmptyList
 	OpEmptyVector
+	OpStr
 	OpPop
 	// OpDup
 	OpAdd
@@ -56,6 +57,8 @@ const (
 	// OpTailCall
 	OpReturn
 	OpEnd
+	// TODO: Perhaps obsolete if we switch script and function portion and start
+	//       vm at script start.
 	OpHalt
 	OpDebug
 )
@@ -80,6 +83,7 @@ var meta = map[Op]*OpMeta{
 	OpFalse:       {"False", []int{}},
 	OpEmptyList:   {"EmptyList", []int{}},
 	OpEmptyVector: {"EmptyVector", []int{}},
+	OpStr:         {"String", []int{8}},
 	OpPop:         {"Pop", []int{}},
 	OpAdd:         {"Add", []int{}},
 	OpSub:         {"Sub", []int{}},
@@ -147,7 +151,7 @@ func Correct(code Ins, pos int, new uint64) {
 // arguments.
 func Instr(op Op, args ...uint64) Ins {
 	m := meta[op]
-	sz := m.Size() + 1
+	sz := 1 + m.Size()
 	ins := make(Ins, sz)
 	pos := 1
 
@@ -165,6 +169,17 @@ func Instr(op Op, args ...uint64) Ins {
 		}
 		pos += as
 	}
+	return ins
+}
+
+func Str(s string) Ins {
+	b := []byte(s)
+	ln := len(b)
+	sz := 1 + 8 + ln
+	ins := make(Ins, sz)
+	ins[0] = OpStr
+	binary.BigEndian.PutUint64(ins[1:9], uint64(ln))
+	copy(ins[9:sz], b)
 	return ins
 }
 
