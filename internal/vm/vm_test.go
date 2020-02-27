@@ -666,6 +666,13 @@ func TestCallVariadicFun(t *testing.T) {
 	)
 }
 
+func TestRunStringConst(t *testing.T) {
+	testToS(t, "Hello, World!",
+		vm.Str("Hello, World!"),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of

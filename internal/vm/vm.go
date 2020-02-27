@@ -89,6 +89,9 @@ func (m *vm) Run(code Ins) {
 			m.push(true)
 		case OpEmptyVector:
 			m.push(make([]Val, 0))
+		case OpStr:
+			l := m.readUint64()
+			m.push(m.readString(int64(l)))
 		case OpPop:
 			m.pop()
 		case OpAdd:
@@ -254,6 +257,12 @@ func (m *vm) readInt64() int64 {
 	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
 	m.ip += 8
 	return int64(v)
+}
+
+func (m *vm) readString(l int64) string {
+	s := string(m.code[m.ip : m.ip+l])
+	m.ip += l
+	return s
 }
 
 func (m *vm) newEnv() {
