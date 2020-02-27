@@ -31,6 +31,13 @@ func TestCompileInteger(t *testing.T) {
 	)
 }
 
+func TestCompileString(t *testing.T) {
+	testc(t, `"Hello, World!"`,
+		vm.Str("Hello, World!"),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileAdd(t *testing.T) {
 	testc(t, "(+)",
 		vm.Instr(vm.OpConst, 0),

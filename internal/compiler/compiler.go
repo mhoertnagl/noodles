@@ -56,6 +56,8 @@ func (c *compiler) compile(node Node) vm.Ins {
 		return c.compileBooleanLiteral(n)
 	case int64:
 		return c.compileIntegerLiteral(n)
+	case string:
+		return c.compileStringLiteral(n)
 	case *SymbolNode:
 		return c.compileSymbol(n)
 	case *VectorNode:
@@ -63,7 +65,7 @@ func (c *compiler) compile(node Node) vm.Ins {
 	case *ListNode:
 		return c.compileList(n)
 	}
-	panic(fmt.Sprintf("Unsupported node [%v]", node))
+	panic(fmt.Sprintf("Compiler: Unsupported node [%v:%T]", node, node))
 }
 
 func (c *compiler) compileBooleanLiteral(n bool) vm.Ins {
@@ -75,6 +77,10 @@ func (c *compiler) compileBooleanLiteral(n bool) vm.Ins {
 
 func (c *compiler) compileIntegerLiteral(n int64) vm.Ins {
 	return vm.Instr(vm.OpConst, uint64(n))
+}
+
+func (c *compiler) compileStringLiteral(n string) vm.Ins {
+	return vm.Str(n)
 }
 
 func (c *compiler) compileSymbol(n *SymbolNode) vm.Ins {

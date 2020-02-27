@@ -55,6 +55,8 @@ func (r *macroRewriter) Rewrite(n Node) Node {
 		return r.rewriteBoolean(x)
 	case int64:
 		return r.rewriteInteger(x)
+	case string:
+		return r.rewriteString(x)
 	case *SymbolNode:
 		return r.rewriteSymbol(x)
 	case *VectorNode:
@@ -62,7 +64,7 @@ func (r *macroRewriter) Rewrite(n Node) Node {
 	case *ListNode:
 		return r.rewriteList(x)
 	}
-	panic(fmt.Sprintf("Unsupported node [%v:%T]", n, n))
+	panic(fmt.Sprintf("Macro-Rewriter: Unsupported node [%v:%T]", n, n))
 }
 
 func (r *macroRewriter) rewriteBoolean(n bool) Node {
@@ -70,6 +72,10 @@ func (r *macroRewriter) rewriteBoolean(n bool) Node {
 }
 
 func (r *macroRewriter) rewriteInteger(n int64) Node {
+	return n
+}
+
+func (r *macroRewriter) rewriteString(n string) Node {
 	return n
 }
 

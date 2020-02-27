@@ -20,6 +20,8 @@ func (r *quoteRewriter) rewrite(n Node) ([]Node, Node) {
 		return r.rewriteBoolean(x)
 	case int64:
 		return r.rewriteInteger(x)
+	case string:
+		return r.rewriteString(x)
 	case *SymbolNode:
 		return r.rewriteSymbol(x)
 	case *VectorNode:
@@ -27,7 +29,7 @@ func (r *quoteRewriter) rewrite(n Node) ([]Node, Node) {
 	case *ListNode:
 		return r.rewriteList(x)
 	}
-	panic(fmt.Sprintf("Unsupported node [%v:%T]", n, n))
+	panic(fmt.Sprintf("Quote-Rewriter: Unsupported node [%v:%T]", n, n))
 }
 
 func (r *quoteRewriter) rewriteBoolean(n bool) ([]Node, Node) {
@@ -35,7 +37,10 @@ func (r *quoteRewriter) rewriteBoolean(n bool) ([]Node, Node) {
 }
 
 func (r *quoteRewriter) rewriteInteger(n int64) ([]Node, Node) {
-	// fmt.Printf("%v\n", n)
+	return r.empty(), n
+}
+
+func (r *quoteRewriter) rewriteString(n string) ([]Node, Node) {
 	return r.empty(), n
 }
 

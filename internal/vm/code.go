@@ -172,10 +172,11 @@ func Instr(op Op, args ...uint64) Ins {
 	return ins
 }
 
+// TODO: ~> codegen?
 func Str(s string) Ins {
 	b := []byte(s)
 	ln := len(b)
-	sz := 1 + 8 + ln
+	sz := 9 + ln
 	ins := make(Ins, sz)
 	ins[0] = OpStr
 	binary.BigEndian.PutUint64(ins[1:9], uint64(ln))
