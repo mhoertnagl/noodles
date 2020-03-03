@@ -141,6 +141,7 @@ func LookupMeta(op Op) (*OpMeta, error) {
 	return nil, fmt.Errorf("opcode [%d] undefined", op)
 }
 
+// TODO: ~> bin?
 func Correct(code Ins, pos int, new uint64) {
 	for i := 0; i < 8; i++ {
 		code[pos+7-i] = byte(new >> uint64(8*i))
@@ -172,7 +173,7 @@ func Instr(op Op, args ...uint64) Ins {
 	return ins
 }
 
-// TODO: ~> codegen?
+// TODO: ~> bin?
 func Str(s string) Ins {
 	b := []byte(s)
 	ln := len(b)
@@ -184,11 +185,13 @@ func Str(s string) Ins {
 	return ins
 }
 
+// TODO: ~> bin?
 // Concat joins an array of instructions.
 func Concat(is []Ins) Ins {
 	return bytes.Join(is, []byte{})
 }
 
+// TODO: ~> bin?
 // ConcatVar joins a variable number of instructions.
 func ConcatVar(is ...Ins) Ins {
 	return Concat(is)

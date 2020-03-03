@@ -499,9 +499,9 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	fd := &fnDef{}
 	switch x := args[0].(type) {
 	case *ListNode:
-		fd.code = c.compileFn2(x.Items, args[1])
+		fd.code = c.compileFnBody(x.Items, args[1])
 	case *VectorNode:
-		fd.code = c.compileFn2(x.Items, args[1])
+		fd.code = c.compileFnBody(x.Items, args[1])
 	default:
 		panic("[fn] first argument must be a list or vector")
 	}
@@ -510,7 +510,7 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	return vm.Instr(vm.OpRef, uint64(id))
 }
 
-func (c *compiler) compileFn2(params []Node, body Node) vm.Ins {
+func (c *compiler) compileFnBody(params []Node, body Node) vm.Ins {
 	code := NewCodeGen()
 	switch len(params) {
 	case 0:
