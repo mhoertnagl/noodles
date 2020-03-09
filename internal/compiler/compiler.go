@@ -34,8 +34,6 @@ func NewCompiler() Compiler {
 //       OpCall    - does not generate an environment.
 //       With this we can implement leaf functions and tail calls.
 // TODO: Variadic +, *, do, and, or, vector, list, ...
-// TODO: Compile defn?
-// TODO: Macros
 // TODO: Closure
 // TODO: static scoping?
 
