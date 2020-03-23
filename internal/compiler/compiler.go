@@ -5,11 +5,13 @@ import (
 	"hash"
 	"hash/fnv"
 
+	"github.com/mhoertnagl/splis2/internal/bin"
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
 type Compiler interface {
 	Compile(node Node) vm.Ins
+	Compile2(node Node) *bin.Lib
 }
 
 type fnDef struct {
@@ -36,6 +38,19 @@ func NewCompiler() Compiler {
 // TODO: Variadic +, *, do, and, or, vector, list, ...
 // TODO: Closure
 // TODO: static scoping?
+
+func (c *compiler) Compile2(node Node) *bin.Lib {
+	lib := bin.NewLib()
+	lib.Code = c.compile(node)
+	// Append all compiled functions into a contiguous block and record the
+	// entry points. The entry points will be stored in the Entries section
+	// of the library. The Fns section contains the function code blocks.
+	for _, fd := range c.fns {
+		lib.Entries = append(lib.Entries, uint64(len(lib.Fns)))
+		lib.Fns = vm.ConcatVar(lib.Fns, fd.code)
+	}
+	return lib
+}
 
 func (c *compiler) Compile(node Node) vm.Ins {
 	code := NewCodeGen()

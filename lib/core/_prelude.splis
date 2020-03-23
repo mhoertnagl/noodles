@@ -11,8 +11,11 @@
   ;; @param sym   name  The name of the function.
   ;; @param (sym) args  The list of arument symbols.
   ;; @param (any) body  The body of the function.
+  ; TODO: Shorter.
   ; (defmacro defn [name args body]
   ;   `(def ~name (fn ~args ~body)) )
+  (defmacro defn (fn [name args body]
+    `(def ~name (fn ~args ~body)) ))
 
   ;; `use` reads, parses and evaluates a splis module.
   ;;
@@ -26,49 +29,45 @@
   ;; omitted.
   ;;
   ;; @param str module  The module.
-  ; (defn use [module]
-  ;   (eval (parse (read-file (join *SPLIS_HOME* module ".splis")))))
-
-  (def inc (fn [x] (+ x 1)))
-
-  (def dec (fn [x] (- x 1)))
+  (defn use [module]
+    (eval (parse (read-file (join *SPLIS_HOME* module ".splis")))))
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
   ;; @param  any x  A value.
   ;; @return bool   `true` iff `x` is `nil`.
-  ; (defn nil? [x] (= x nil))
+  (defn nil? [x] (= x nil))
 
   ;; `true?` returns true if and only if `x` is the boolean `true`.
   ;;
   ;; @param  any x  A value.
   ;; @return bool  `true` iff `x` is the boolean `true`.
-  ; (defn true? [x] (= x true))
+  (defn true? [x] (= x true))
 
   ;; `false?` returns true if and only if `x` is the boolean `false`.
   ;;
   ;; @param  any x  A value.
   ;; @return bool  `true` iff `x` is the boolean `false`.
-  ; (defn false? [x] (= x false))
+  (defn false? [x] (= x false))
 
   ;; `not` returns `false` if `x` is truthy; `true` otherwise. `not` is an
   ;; alias for `false?`.
   ;;
   ;; @param  any  x  A value.
   ;; @return bool    `false` if `x` is truthy; `true` otherwise.
-  ; (def not false?)
+  (def not false?)
 
   ;; `else` is an alias for the boolean atom `true`. Used in `cond` expressions
   ;; to denote the default branch.
-  ; (def else true)
+  (def else true)
 
   ;; `identity` returns the argument unchanged.
   ;;
   ;; @param  any x  Any argument.
   ;; @return any    `x` unchanged.
-  ; (defn identity [x] x)
-  ; TODO: This should work in the new implementation.
-  ; (defmacro identity [x] x)
+  (defn identity [x] x)
+  ; TODO: This does not work.
+  ; (defmacro identity (fn [x] x))
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -79,10 +78,10 @@
   ;; @param  num end    The end number (excluded).
   ;; @param  num step   The increment step size.
   ;; @return (num)      The sequence of numbers from `a` up to `b`.
-  ; (defn range [start end step]
-  ;   (if (>= start end)
-  ;     ()
-  ;     (:: start (range (+ start step) end step))))
+  (defn range [start end step]
+    (if (>= start end)
+      ()
+      (:: start (range (+ start step) end step))))
 
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -91,16 +90,16 @@
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
   ;; @return (num)      The sequence of integers from `a` up to `b`.
-  ; (defn irange [start end] (range start end 1))
+  (defn irange [start end] (range start end 1))
 
   ;; TODO: clojure uses mapv for vectors.
 
-  ; (defmacro apply [f args]
-  ;   `(~f ~@args) )
+  (defmacro apply (fn [f args]
+    `(~f ~@args)) )
 
   ; TODO: Not working.
-  ; (defn all-true [xs] (apply and xs))
-  ; (defn any-true [xs] (apply or xs))
+  (defn all-true [xs] (apply and xs))
+  (defn any-true [xs] (apply or xs))
 
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
@@ -110,10 +109,10 @@
   ;; @param  (T)     xs  A list of elements.
   ;; @return (S)         The list of elements applied to the unary function
   ;;                     individually.
-  ; (defn map [f xs]
-  ;   (if (empty? xs)
-  ;     xs ; Will preserve the type of the sequence.
-  ;     (:: (f (head xs)) (map f (tail xs)))))
+  (defn map [f xs]
+    (if (empty? xs)
+      xs ; Will preserve the type of the sequence.
+      (:: (f (head xs)) (map f (tail xs)))))
 
   ; (defn flat-map [p xs]
   ;   (if (empty? xs)
@@ -130,38 +129,37 @@
   ;; @param  (S)       xs  A list of elements.
   ;; @return T             The left-associative reduction of `xs` into a single
   ;;                       element.
-  ; (defn reduce [f b xs]
-  ;   (if (empty? xs)
-  ;     b
-  ;     (reduce f (f b (head xs)) (tail xs))))
+  (defn reduce [f b xs]
+    (if (empty? xs)
+      b
+      (reduce f (f b (head xs)) (tail xs))))
 
   ; (defn reduce-right [f b xs]
   ;   (if (empty? xs)
   ;     b
   ;     (f b (reduce f (head xs) (tail xs)))))
 
-  ; (defn fold [f xs]
-  ;   (if (empty? xs)
-  ;     nil ; TODO: Throw error.
-  ;     (reduce f (head xs) (tail xs)) ))
+  (defn fold [f xs]
+    (if (empty? xs)
+      nil ; TODO: Throw error.
+      (reduce f (head xs) (tail xs)) ))
 
-  ; (defn filter [p xs]
-  ;   (cond (empty? xs) xs
-  ;         (p (head xs)) (:: (head xs) (filter p (tail xs)))
-  ;         else (filter p (tail xs)) ))
+  (defn filter [p xs]
+    (cond (empty? xs) xs
+          (p (head xs)) (:: (head xs) (filter p (tail xs)))
+          else (filter p (tail xs)) ))
 
-  ; (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
+  (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
 
-  ; (defn all [p xs]
-  ;   (cond (empty? xs) true
-  ;         (not (p (head xs))) false
-  ;         else (all p (tail xs)) ))
+  (defn all [p xs]
+    (cond (empty? xs) true
+          (not (p (head xs))) false
+          else (all p (tail xs)) ))
 
-  ; (defn any [p xs]
-  ;   (cond (empty? xs) false
-  ;         (p (head xs)) true
-  ;         else (any p (tail xs)) ))
-
+  (defn any [p xs]
+    (cond (empty? xs) false
+          (p (head xs)) true
+          else (any p (tail xs)) ))
   ;; (defn reverse [xs])
 
   ; (defn drop [n xs]
@@ -197,6 +195,6 @@
   ;     (:: v (repeat (- n 1) v)) ))
 
   ;; (defn flatten [xs])
-  ; (use "lib/core/math")
-  ; (use "lib/core/io")
+  (use "lib/core/math")
+  (use "lib/core/io")
 )

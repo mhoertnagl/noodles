@@ -1,6 +1,7 @@
 package bin_test
 
 import (
+	"hash/fnv"
 	"reflect"
 	"testing"
 
@@ -10,16 +11,75 @@ import (
 
 func TestLinkLib(t *testing.T) {
 	lb1 := bin.NewLib()
-	lb1.Code = vm.ConcatVar(
-		vm.Instr(vm.OpRef, 0),
-	)
 	lb1.Entries = []uint64{0}
-	lb2 := bin.NewLib()
-	lb2.Code = vm.ConcatVar(
-		vm.Instr(vm.OpRef, 0),
+	lb1.Fns = vm.ConcatVar(
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
 	)
+	lb1.Code = vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 0),
+		vm.Instr(vm.OpCall),
+	)
+
+	lb2 := bin.NewLib()
 	lb2.Entries = []uint64{0}
+	lb2.Fns = vm.ConcatVar(
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+	lb2.Code = vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 0),
+		vm.Instr(vm.OpCall),
+	)
+
 	exp := bin.NewLib()
+	exp.Entries = []uint64{0, 32}
+	exp.Fns = vm.ConcatVar(
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+	exp.Code = vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 1),
+		vm.Instr(vm.OpCall),
+	)
+
 	lnk := bin.NewLinker()
 	lnk.Add(lb1)
 	lnk.Add(lb2)
@@ -56,4 +116,11 @@ func assertLibsEqual(t *testing.T, a *bin.Lib, e *bin.Lib) {
 			e.Macros,
 		)
 	}
+}
+
+func hash(sym string) uint64 {
+	hg := fnv.New64()
+	hg.Reset()
+	hg.Write([]byte(sym))
+	return hg.Sum64()
 }

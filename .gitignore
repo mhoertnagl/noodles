@@ -4,6 +4,14 @@
 *.dll
 *.so
 *.dylib
+# Binaries for the Linux build.
+bin/splic
+bin/splil
+bin/splis
+
+# Splis libraries and binaries.
+*.splis.lib
+*.splis.bin
 
 # Test binary, build with `go test -c`
 *.test

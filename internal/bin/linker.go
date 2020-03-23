@@ -41,6 +41,9 @@ func (lnk *Linker) Lib() *Lib {
 
 func (lnk *Linker) Code() []byte {
 	updateRefAddresses(lnk.lib)
+	// TODO: Hier fehlen die Funktionen.
+	// TODO: Append the functions to the end. Add OpHalt
+	//       Or add to the front and insert jump to code.
 	return lnk.lib.Code
 }
 

@@ -9,6 +9,16 @@ type macroDef struct {
 	body Node
 }
 
+type macroRewriter struct {
+	macros macroDefs
+}
+
+func NewMacroRewriter() *macroRewriter {
+	return &macroRewriter{
+		macros: macroDefs{},
+	}
+}
+
 func (r *macroRewriter) addMacro(name Node, pars Node, body Node) {
 	if sym, ok := name.(*SymbolNode); ok {
 		if _, found := r.macros[sym.Name]; found {
@@ -37,16 +47,6 @@ func getParamNames(parsNode Node) []string {
 		return names
 	}
 	panic(fmt.Sprintf("[defmacro] argument 2 has to be a vector of symbols"))
-}
-
-func NewMacroRewriter() *macroRewriter {
-	return &macroRewriter{
-		macros: macroDefs{},
-	}
-}
-
-type macroRewriter struct {
-	macros macroDefs
 }
 
 func (r *macroRewriter) Rewrite(n Node) Node {
@@ -117,9 +117,4 @@ func (r *macroRewriter) rewriteItems(ns []Node) []Node {
 		}
 	}
 	return ms
-	// ms := make([]Node, len(ns))
-	// for i, n := range ns {
-	// 	ms[i] = r.Rewrite(n)
-	// }
-	// return ms
 }

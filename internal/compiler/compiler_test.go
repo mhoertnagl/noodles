@@ -640,6 +640,25 @@ func TestCompileSpliceQuote(t *testing.T) {
 	)
 }
 
+func TestCompileSpliceQuote2(t *testing.T) {
+	testc(t, `'(+ ~@a ~@b)`,
+		vm.Instr(vm.OpRef, 10),
+		vm.Instr(vm.OpHalt),
+		// (fn [a b] (+ @a @b))
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("a")),
+		vm.Instr(vm.OpSetLocal, hash("b")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("a")),
+		vm.Instr(vm.OpDissolve),
+		vm.Instr(vm.OpGetLocal, hash("b")),
+		vm.Instr(vm.OpDissolve),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
 	r := compiler.NewReader()
