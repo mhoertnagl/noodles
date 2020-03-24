@@ -1,6 +1,7 @@
 package bin_test
 
 import (
+	"bytes"
 	"hash/fnv"
 	"reflect"
 	"testing"
@@ -84,6 +85,114 @@ func TestLinkLib(t *testing.T) {
 	lnk.Add(lb1)
 	lnk.Add(lb2)
 	assertLibsEqual(t, lnk.Lib(), exp)
+}
+
+func TestLinkBin0(t *testing.T) {
+	lib := bin.NewLib()
+	lib.Entries = []uint64{}
+	lib.Fns = vm.ConcatVar()
+	lib.Code = vm.ConcatVar(
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+	)
+
+	lnk := bin.NewLinker()
+	lnk.Add(lib)
+
+	exp := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 0),
+
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+	)
+
+	assertCodeEqual(t, lnk.Code(), exp)
+}
+
+func TestLinkBin(t *testing.T) {
+	lib := bin.NewLib()
+	lib.Entries = []uint64{0, 32}
+	lib.Fns = vm.ConcatVar(
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+	lib.Code = vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 1),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpAdd),
+	)
+
+	lnk := bin.NewLinker()
+	lnk.Add(lib)
+
+	exp := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 64),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 9),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 41),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpAdd),
+	)
+
+	assertCodeEqual(t, lnk.Code(), exp)
+}
+
+func assertCodeEqual(t *testing.T, a []byte, e []byte) {
+	t.Helper()
+	x := bytes.Compare(a, e)
+	if x != 0 {
+		t.Errorf("Mismatch [%d] Expecting \n  %v\n but got \n  %v.", x, e, a)
+	}
 }
 
 func assertLibsEqual(t *testing.T, a *bin.Lib, e *bin.Lib) {

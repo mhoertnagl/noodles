@@ -673,6 +673,53 @@ func TestRunStringConst(t *testing.T) {
 	)
 }
 
+func TestRunTest0Bin(t *testing.T) {
+	testToS(t, int64(6),
+		vm.Instr(vm.OpJump, 0),
+
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunTestLinkBin(t *testing.T) {
+	testToS(t, int64(6),
+		vm.Instr(vm.OpJump, 64),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpNewEnv),
+		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpRef, 9),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpRef, 41),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of

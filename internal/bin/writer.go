@@ -14,6 +14,7 @@ func WriteStatic(code vm.Ins, file *os.File) {
 	if err != nil {
 		panic(err)
 	}
+	w.Flush()
 }
 
 func WriteLib(lib *Lib, file *os.File) {

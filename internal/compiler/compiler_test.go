@@ -292,6 +292,18 @@ func TestCompileDef1(t *testing.T) {
 	)
 }
 
+// TODO: Müssen wir das unterstützen? Ich glaube nicht. Es genügt wenn wir
+//       den Macro-Rewriter zum Compiler hinzufügen.
+func TestCompileDef2(t *testing.T) {
+	testc(t, "(def (fn [] b) (+ 1 1))",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpSetGlobal, hash("b")),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileIf1(t *testing.T) {
 	testc(t, "(if true 1)",
 		vm.Instr(vm.OpTrue),
