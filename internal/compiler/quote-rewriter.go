@@ -1,12 +1,15 @@
 package compiler
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
+
+type quoteRewriter struct {
+}
 
 func NewQuoteRewriter() *quoteRewriter {
 	return &quoteRewriter{}
-}
-
-type quoteRewriter struct {
 }
 
 func (r *quoteRewriter) Rewrite(n Node) Node {
@@ -89,7 +92,7 @@ func (r *quoteRewriter) rewriteItems(ns []Node) ([]Node, []Node) {
 	ms := r.empty()
 	for _, n := range ns {
 		s, m := r.rewrite(n)
-		ss = append(ss, s...)
+		ss = join(ss, s)
 		ms = append(ms, m)
 	}
 	return ss, ms
@@ -97,4 +100,22 @@ func (r *quoteRewriter) rewriteItems(ns []Node) ([]Node, []Node) {
 
 func (r *quoteRewriter) empty() []Node {
 	return make([]Node, 0)
+}
+
+func join(a []Node, b []Node) []Node {
+	for _, x := range b {
+		if !contains(a, x) {
+			a = append(a, x)
+		}
+	}
+	return a
+}
+
+func contains(a []Node, x Node) bool {
+	for _, y := range a {
+		if reflect.DeepEqual(y, x) {
+			return true
+		}
+	}
+	return false
 }

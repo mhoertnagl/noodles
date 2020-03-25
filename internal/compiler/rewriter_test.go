@@ -46,6 +46,19 @@ func TestRewriteSpliceQuote(t *testing.T) {
 	testRewriter(t, rw, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
 }
 
+func TestRewriteNestedQuote(t *testing.T) {
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw,
+		`'(+ ~a ('(+ ~a ~b) a 1))`,
+		`(fn [a] (+ a ((fn [a b] (+ a b)) a 1)))`,
+	)
+}
+
+func TestRewriteQuoteWithMultiOccuranceOfSingelVariable(t *testing.T) {
+	rw := compiler.NewQuoteRewriter()
+	testRewriter(t, rw, `'(* ~n ~n ~n)`, `(fn [n] (* n n n))`)
+}
+
 func TestRewriteArgsSimple(t *testing.T) {
 	pars := []string{"a"}
 	args := []compiler.Node{parse("(+ 1 1)")}

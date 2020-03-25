@@ -89,15 +89,6 @@ func Fn(args []Node, body Node) *ListNode {
 	return NewList2(NewSymbol("fn"), NewVector2(args...), body)
 }
 
-//
-// func Cons(n Node, m Node) *ListNode {
-// 	return NewList2(NewSymbol("::"), n, m)
-// }
-//
-// func Concat(n Node, m Node) *ListNode {
-// 	return NewList2(NewSymbol(":::"), n, m)
-// }
-
 type VectorNode struct {
 	Items []Node
 }

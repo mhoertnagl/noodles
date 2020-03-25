@@ -13,12 +13,13 @@ func main() {
 	flag.Parse()
 
 	// TODO: Load Usings.
-	// TODO: Add rewriters (quotes, macros)
+	// TODO: Add rewriters (macros)
 	// TODO: Feed macros from referenced libs to macro rewriter.
 
 	rdr := compiler.NewReader()
 	prs := compiler.NewParser()
 	cmp := compiler.NewCompiler()
+	qrw := compiler.NewQuoteRewriter()
 
 	for _, inFileName := range flag.Args() {
 		inFileBytes, err := ioutil.ReadFile(inFileName)
@@ -28,13 +29,14 @@ func main() {
 
 		rdr.Load(string(inFileBytes))
 		n := prs.Parse(rdr)
-		l := cmp.Compile2(n)
+		n = qrw.Rewrite(n)
+		lib := cmp.CompileLib(n)
 
 		outFile, err := os.Create(inFileName + ".lib")
 		if err != nil {
 			panic(err)
 		}
 
-		bin.WriteLib(l, outFile)
+		bin.WriteLib(lib, outFile)
 	}
 }

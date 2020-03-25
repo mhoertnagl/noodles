@@ -11,7 +11,7 @@ import (
 
 type Compiler interface {
 	Compile(node Node) vm.Ins
-	Compile2(node Node) *bin.Lib
+	CompileLib(node Node) *bin.Lib
 }
 
 type fnDef struct {
@@ -39,7 +39,7 @@ func NewCompiler() Compiler {
 // TODO: Closure
 // TODO: static scoping?
 
-func (c *compiler) Compile2(node Node) *bin.Lib {
+func (c *compiler) CompileLib(node Node) *bin.Lib {
 	lib := bin.NewLib()
 	lib.Code = c.compile(node)
 	// Append all compiled functions into a contiguous block and record the

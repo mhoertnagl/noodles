@@ -1,0 +1,4 @@
+(do
+  (def cube '(* ~n ~n ~n))
+  (cube 3)
+)

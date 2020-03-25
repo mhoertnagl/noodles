@@ -295,6 +295,7 @@ func TestCompileDef1(t *testing.T) {
 // TODO: Müssen wir das unterstützen? Ich glaube nicht. Es genügt wenn wir
 //       den Macro-Rewriter zum Compiler hinzufügen.
 func TestCompileDef2(t *testing.T) {
+	t.SkipNow()
 	testc(t, "(def (fn [] b) (+ 1 1))",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 1),
@@ -670,6 +671,31 @@ func TestCompileSpliceQuote2(t *testing.T) {
 		vm.Instr(vm.OpReturn),
 	)
 }
+
+// func TestCompileQuote2(t *testing.T) {
+// 	code := `
+//   (do
+//     (def cube '(* ~n ~n ~n))
+//     (cube 3)
+//   )
+//   `
+// 	testc(t, code,
+// 		vm.Instr(vm.OpRef, 10),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [a b] (+ @a @b))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("a")),
+// 		vm.Instr(vm.OpSetLocal, hash("b")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("a")),
+// 		vm.Instr(vm.OpDissolve),
+// 		vm.Instr(vm.OpGetLocal, hash("b")),
+// 		vm.Instr(vm.OpDissolve),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
 
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
