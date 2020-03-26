@@ -136,38 +136,32 @@ func (m *vm) Run(code Ins) {
 			for i := len(l) - 1; i >= 0; i-- {
 				m.push(l[i])
 			}
-			// (bit-and a1 a2 ...)
-		case OpAnd:
-			a := ^uint64(0)
-			for v := m.popUInt64(); v != end; v = m.popUInt64() {
-				a = a & v
-			}
-			m.push(a)
-			// (bit-or a1 a2 ...)
-		case OpOr:
-			a := uint64(0)
-			for v := m.popUInt64(); v != end; v = m.popUInt64() {
-				a = a | v
-			}
-			m.push(a)
-			// (bit-inv a1 a2 ...)
-		case OpInv:
-			m.push(^m.popUInt64())
-			// (sll a1 a2)
-		case OpSll:
-			r := m.popUInt64()
-			l := m.popUInt64()
-			m.push(l << r)
-			// (srl a1 a2)
-		case OpSrl:
-			r := m.popUInt64()
-			l := m.popUInt64()
-			m.push(l >> r)
-			// (sra a1 a2)
-		case OpSra:
-			r := m.popUInt64()
-			l := m.popInt64()
-			m.push(l >> r)
+		// case OpAnd:
+		// 	a := ^int64(0)
+		// 	for v := m.pop(); v != end; v = m.pop() {
+		// 		a = a & v.(int64)
+		// 	}
+		// 	m.push(a)
+		// case OpOr:
+		// 	a := int64(0)
+		// 	for v := m.pop(); v != end; v = m.pop() {
+		// 		a = a | v.(int64)
+		// 	}
+		// 	m.push(a)
+		// case OpInv:
+		// 	m.push(^m.popInt64())
+		// case OpSll:
+		// 	r := m.popInt64()
+		// 	l := m.popInt64()
+		// 	m.push(l << uint64(r))
+		// case OpSrl:
+		// 	r := m.popInt64()
+		// 	l := m.popInt64()
+		// 	m.push(int64(uint64(l) >> uint64(r)))
+		// case OpSra:
+		// 	r := m.popInt64()
+		// 	l := m.popInt64()
+		// 	m.push(l >> uint64(r))
 		case OpEQ:
 			r := m.pop()
 			l := m.pop()

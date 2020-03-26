@@ -401,6 +401,52 @@ func TestCompileOr3(t *testing.T) {
 	)
 }
 
+// func TestCompileBitAnd(t *testing.T) {
+// 	testc(t, "(bit-and 12 10)",
+// 		vm.Instr(vm.OpConst, 12),
+// 		vm.Instr(vm.OpConst, 10),
+// 		vm.Instr(vm.OpAnd),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestCompileBitOr(t *testing.T) {
+// 	testc(t, "(bit-or 12 10)",
+// 		vm.Instr(vm.OpConst, 12),
+// 		vm.Instr(vm.OpConst, 10),
+// 		vm.Instr(vm.OpOr),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestCompileBitShiftLeft(t *testing.T) {
+// 	testc(t, "(bit-shift-left 8 2)",
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestCompileBitShiftRight(t *testing.T) {
+// 	testc(t, "(bit-shift-right 8 2)",
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestCompileBitShiftRightSigned(t *testing.T) {
+// 	testc(t, "(bit-shift-right-signed (- 8) 2)",
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+
 func TestCompileDo(t *testing.T) {
 	testc(t, "(do (def a 1) (def b 2) (+ a b))",
 		vm.Instr(vm.OpConst, 1),

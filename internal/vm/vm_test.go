@@ -360,6 +360,73 @@ func TestRunNE3(t *testing.T) {
 	)
 }
 
+// func TestRunBitAnd(t *testing.T) {
+// 	testToS(t, int64(8),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 12),
+// 		vm.Instr(vm.OpConst, 10),
+// 		vm.Instr(vm.OpAnd),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitOr(t *testing.T) {
+// 	testToS(t, int64(14),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 12),
+// 		vm.Instr(vm.OpConst, 10),
+// 		vm.Instr(vm.OpOr),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitInv(t *testing.T) {
+// 	testToS(t, int64(^2),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpInv),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitInv2(t *testing.T) {
+// 	testToS(t, int64(^-3),
+// 		vm.Instr(vm.OpConst, 0),
+// 		vm.Instr(vm.OpConst, 3),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpInv),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitShiftLeft(t *testing.T) {
+// 	testToS(t, int64(32),
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitShiftRight(t *testing.T) {
+// 	testToS(t, int64(2),
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSrl),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+//
+// func TestRunBitShiftRightSigned(t *testing.T) {
+// 	testToS(t, int64(-2),
+// 		vm.Instr(vm.OpConst, 0),
+// 		vm.Instr(vm.OpConst, 8),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpSra),
+// 		vm.Instr(vm.OpHalt),
+// 	)
+// }
+
 // TODO: Environments,locals.
 
 func TestLocals1(t *testing.T) {

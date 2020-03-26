@@ -33,26 +33,29 @@ const (
 	OpCons
 	OpDissolve
 
-	OpAnd
-	OpOr
-	OpInv
-	OpSll
-	OpSrl
-	OpSra
+	// OpAnd
+	// OpOr
+	// OpInv
+	// OpSll
+	// OpSrl
+	// OpSra
 
 	OpEQ
 	OpNE
 	OpLT
 	OpLE
+
 	OpJump
 	OpJumpIf
 	OpJumpIfNot
+
 	OpNewEnv
 	OpPopEnv
 	OpSetLocal
 	OpGetLocal
 	OpSetGlobal
 	OpGetGlobal
+
 	OpRef
 	OpCall
 	// OpTailCall
@@ -90,17 +93,15 @@ var meta = map[Op]*OpMeta{
 	OpSub:         {"Sub", []int{}},
 	OpMul:         {"Mul", []int{}},
 	OpDiv:         {"Div", []int{}},
+	OpList:        {"List", []int{}},
+	OpCons:        {"Cons", []int{}},
+	OpDissolve:    {"Dissolve", []int{}},
 	// OpAnd:         {"And", []int{}},
 	// OpOr:          {"Or", []int{}},
 	// OpInv:         {"Inv", []int{}},
 	// OpSll:         {"Sll", []int{}},
 	// OpSrl:         {"Srl", []int{}},
 	// OpSra:         {"Sra", []int{}},
-	OpList:      {"List", []int{}},
-	OpCons:      {"Cons", []int{}},
-	OpDissolve:  {"Dissolve", []int{}},
-	OpAnd:       {"And", []int{}},
-	OpOr:        {"Or", []int{}},
 	OpNot:       {"Not", []int{}},
 	OpEQ:        {"EQ", []int{}},
 	OpNE:        {"NE", []int{}},
