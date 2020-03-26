@@ -9,17 +9,17 @@ import (
 	"github.com/mhoertnagl/splis2/internal/compiler"
 )
 
+// TODO: Load Usings.
+// TODO: Add rewriters (macros)
+// TODO: Feed macros from referenced libs to macro rewriter.
+
 func main() {
 	flag.Parse()
 
-	// TODO: Load Usings.
-	// TODO: Add rewriters (macros)
-	// TODO: Feed macros from referenced libs to macro rewriter.
-
 	rdr := compiler.NewReader()
 	prs := compiler.NewParser()
-	cmp := compiler.NewCompiler()
 	qrw := compiler.NewQuoteRewriter()
+	cmp := compiler.NewCompiler()
 
 	for _, inFileName := range flag.Args() {
 		inFileBytes, err := ioutil.ReadFile(inFileName)

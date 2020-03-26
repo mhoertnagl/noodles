@@ -27,18 +27,19 @@ const (
 	OpSub
 	OpMul
 	OpDiv
-	// OpAnd
-	// OpOr
-	// OpInv
-	// OpSll
-	// OpSrl
-	// OpSras
+
+	OpNot
 	OpList
 	OpCons
 	OpDissolve
+
 	OpAnd
 	OpOr
-	OpNot
+	OpInv
+	OpSll
+	OpSrl
+	OpSra
+
 	OpEQ
 	OpNE
 	OpLT

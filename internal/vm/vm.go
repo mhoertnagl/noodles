@@ -125,29 +125,49 @@ func (m *vm) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
-		case OpDissolve:
-			l := m.popVector()
-			for i := len(l) - 1; i >= 0; i-- {
-				m.push(l[i])
-			}
 			// case OpHead:
 			// 	l := m.popVector()
 			// 	m.push(l[0])
 			// case OpTail:
 			// 	l := m.popVector()
 			// 	m.push(l[1:])
-			// case OpSll:
-			// 	r := m.popUInt64()
-			// 	l := m.popUInt64()
-			// 	m.push(l << r)
-			// case OpSrl:
-			// 	r := m.popUInt64()
-			// 	l := m.popUInt64()
-			// 	m.push(l >> r)
-			// case OpSra:
-			// 	r := m.popUInt64()
-			// 	l := m.popInt64()
-			// 	m.push(l >> r)
+		case OpDissolve:
+			l := m.popVector()
+			for i := len(l) - 1; i >= 0; i-- {
+				m.push(l[i])
+			}
+			// (bit-and a1 a2 ...)
+		case OpAnd:
+			a := ^uint64(0)
+			for v := m.popUInt64(); v != end; v = m.popUInt64() {
+				a = a & v
+			}
+			m.push(a)
+			// (bit-or a1 a2 ...)
+		case OpOr:
+			a := uint64(0)
+			for v := m.popUInt64(); v != end; v = m.popUInt64() {
+				a = a | v
+			}
+			m.push(a)
+			// (bit-inv a1 a2 ...)
+		case OpInv:
+			m.push(^m.popUInt64())
+			// (sll a1 a2)
+		case OpSll:
+			r := m.popUInt64()
+			l := m.popUInt64()
+			m.push(l << r)
+			// (srl a1 a2)
+		case OpSrl:
+			r := m.popUInt64()
+			l := m.popUInt64()
+			m.push(l >> r)
+			// (sra a1 a2)
+		case OpSra:
+			r := m.popUInt64()
+			l := m.popInt64()
+			m.push(l >> r)
 		case OpEQ:
 			r := m.pop()
 			l := m.pop()
@@ -155,7 +175,7 @@ func (m *vm) Run(code Ins) {
 		case OpNE:
 			r := m.pop()
 			l := m.pop()
-			m.push(m.eq(l, r) == false)
+			m.push(!m.eq(l, r))
 		case OpLT:
 			r := m.pop()
 			l := m.pop()
