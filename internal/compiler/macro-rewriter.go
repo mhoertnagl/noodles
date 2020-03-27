@@ -9,17 +9,48 @@ type macroDef struct {
 	body Node
 }
 
-type macroRewriter struct {
+type MacroRewriter struct {
 	macros macroDefs
 }
 
-func NewMacroRewriter() *macroRewriter {
-	return &macroRewriter{
+func NewMacroRewriter() *MacroRewriter {
+	return &MacroRewriter{
 		macros: macroDefs{},
 	}
 }
 
-func (r *macroRewriter) addMacro(name Node, pars Node, body Node) {
+func (r *MacroRewriter) Rewrite(n Node) Node {
+	switch x := n.(type) {
+	case *VectorNode:
+		return NewVector(RewriteItems(r, x.Items))
+	case *ListNode:
+		return r.rewriteList(x)
+	default:
+		return n
+	}
+}
+
+func (r *MacroRewriter) rewriteList(n *ListNode) Node {
+	if len(n.Items) == 0 {
+		return n
+	}
+	switch x := n.Items[0].(type) {
+	case *SymbolNode:
+		switch x.Name {
+		case "defmacro":
+			r.addMacro(n.Items[1], n.Items[2], n.Items[3])
+			return nil
+		default:
+			if def, ok := r.macros[x.Name]; ok {
+				rw := NewArgsRewriter(def.pars, n.Items[1:])
+				return r.Rewrite(rw.Rewrite(def.body))
+			}
+		}
+	}
+	return NewList(RewriteItems(r, n.Items))
+}
+
+func (r *MacroRewriter) addMacro(name Node, pars Node, body Node) {
 	if sym, ok := name.(*SymbolNode); ok {
 		if _, found := r.macros[sym.Name]; found {
 			panic(fmt.Sprintf("[defmacro] macro [%s] redefined", sym.Name))
@@ -47,74 +78,4 @@ func getParamNames(parsNode Node) []string {
 		return names
 	}
 	panic(fmt.Sprintf("[defmacro] argument 2 has to be a vector of symbols"))
-}
-
-func (r *macroRewriter) Rewrite(n Node) Node {
-	switch x := n.(type) {
-	case bool:
-		return r.rewriteBoolean(x)
-	case int64:
-		return r.rewriteInteger(x)
-	case string:
-		return r.rewriteString(x)
-	case *SymbolNode:
-		return r.rewriteSymbol(x)
-	case *VectorNode:
-		return r.rewriteVector(x)
-	case *ListNode:
-		return r.rewriteList(x)
-	}
-	panic(fmt.Sprintf("Macro-Rewriter: Unsupported node [%v:%T]", n, n))
-}
-
-func (r *macroRewriter) rewriteBoolean(n bool) Node {
-	return n
-}
-
-func (r *macroRewriter) rewriteInteger(n int64) Node {
-	return n
-}
-
-func (r *macroRewriter) rewriteString(n string) Node {
-	return n
-}
-
-func (r *macroRewriter) rewriteSymbol(n *SymbolNode) Node {
-	return n
-}
-
-func (r *macroRewriter) rewriteVector(n *VectorNode) Node {
-	return n
-}
-
-func (r *macroRewriter) rewriteList(n *ListNode) Node {
-	if len(n.Items) == 0 {
-		return n
-	}
-	switch x := n.Items[0].(type) {
-	case *SymbolNode:
-		switch x.Name {
-		case "defmacro":
-			r.addMacro(n.Items[1], n.Items[2], n.Items[3])
-			return nil
-		default:
-			if def, ok := r.macros[x.Name]; ok {
-				rw := NewArgsRewriter(def.pars, n.Items[1:])
-				return r.Rewrite(rw.Rewrite(def.body))
-			}
-		}
-	}
-	return NewList(r.rewriteItems(n.Items))
-}
-
-func (r *macroRewriter) rewriteItems(ns []Node) []Node {
-	ms := []Node{}
-	for _, n := range ns {
-		// If the list item is a defmacro instruction, rewrite will return nil.
-		m := r.Rewrite(n)
-		if m != nil {
-			ms = append(ms, m)
-		}
-	}
-	return ms
 }

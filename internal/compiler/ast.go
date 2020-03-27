@@ -65,6 +65,13 @@ func IsList(n Node) bool {
 	return ok
 }
 
+func IsCall(n *ListNode, fn string) bool {
+	if x, ok := n.Items[0].(*SymbolNode); ok && x.Name == fn {
+		return true
+	}
+	return false
+}
+
 func NewList(items []Node) *ListNode {
 	return &ListNode{Items: items}
 }
@@ -89,6 +96,7 @@ func Fn(args []Node, body Node) *ListNode {
 	return NewList2(NewSymbol("fn"), NewVector2(args...), body)
 }
 
+// TODO: Wrapper is not required.
 type VectorNode struct {
 	Items []Node
 }
