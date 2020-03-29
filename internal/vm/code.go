@@ -31,6 +31,9 @@ const (
 	OpNot
 	OpList
 	OpCons
+	OpHead
+	OpTail
+	OpLength
 	OpDissolve
 
 	// OpAnd
@@ -95,6 +98,9 @@ var meta = map[Op]*OpMeta{
 	OpDiv:         {"Div", []int{}},
 	OpList:        {"List", []int{}},
 	OpCons:        {"Cons", []int{}},
+	OpHead:        {"Head", []int{}},
+	OpTail:        {"Tail", []int{}},
+	OpLength:      {"Tail", []int{}},
 	OpDissolve:    {"Dissolve", []int{}},
 	// OpAnd:         {"And", []int{}},
 	// OpOr:          {"Or", []int{}},

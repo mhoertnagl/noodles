@@ -62,7 +62,7 @@ func (r *UseRewriter) loadUse(mod string) Node {
 
 func loadModule(dirs []string, mod string) string {
 	for _, dir := range dirs {
-		modBytes, err := ioutil.ReadFile(path.Join(dir, mod))
+		modBytes, err := ioutil.ReadFile(path.Join(dir, mod+".splis"))
 		if err == nil {
 			return string(modBytes)
 		}

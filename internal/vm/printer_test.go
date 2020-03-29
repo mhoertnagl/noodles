@@ -1,10 +1,10 @@
-package compiler_test
+package vm_test
 
 import (
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/compiler"
-	"github.com/mhoertnagl/splis2/internal/print"
+	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
 // func TestPrintError(t *testing.T) {

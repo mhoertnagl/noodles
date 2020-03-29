@@ -5,6 +5,16 @@ import (
 	"fmt"
 )
 
+// TODO: *STDOUT*
+// TODO: write
+// TODO: str -> use printer to turn value into a string.
+// TODO: *STDIN*
+// TODO: read
+// TODO: :::
+// TODO: quot
+// TODO: mod
+// TODO: join (strings)
+
 // TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
 
 // This is a special marker that marks the end of a sequence on the stack.
@@ -125,12 +135,22 @@ func (m *vm) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
-			// case OpHead:
-			// 	l := m.popVector()
-			// 	m.push(l[0])
-			// case OpTail:
-			// 	l := m.popVector()
-			// 	m.push(l[1:])
+		case OpHead:
+			l := m.popVector()
+			// TODO: panic if null?
+			m.push(l[0])
+		case OpTail:
+			l := m.popVector()
+			if len(l) == 0 {
+				// TODO: push fresh empty vector?
+				m.push(l)
+				// m.push(make([]Val, 0))
+			} else {
+				m.push(l[1:])
+			}
+		case OpLength:
+			l := m.popVector()
+			m.push(int64(len(l)))
 		case OpDissolve:
 			l := m.popVector()
 			for i := len(l) - 1; i >= 0; i-- {
@@ -345,3 +365,70 @@ func (m *vm) printStack() {
 func prepend(v Val, l []Val) []Val {
 	return append([]Val{v}, l...)
 }
+
+// func eq(e Evaluator, env data.Env, args []data.Node) data.Node {
+// 	if len(args) != 2 {
+// 		return e.Error("[=] expects 2 arguments.")
+// 	}
+// 	return eq2(e, env, args[0], args[1])
+// }
+
+// func eq2(e Evaluator, env data.Env, a, b data.Node) data.Node {
+// 	if reflect.TypeOf(a) != reflect.TypeOf(b) {
+// 		return false
+// 	}
+// 	switch x := a.(type) {
+// 	case *data.SymbolNode:
+// 		y := b.(*data.SymbolNode)
+// 		return x.Name == y.Name
+// 	case *data.ListNode:
+// 		y := b.(*data.ListNode)
+// 		return eqSeq(e, env, x.Items, y.Items)
+// 	case *data.VectorNode:
+// 		y := b.(*data.VectorNode)
+// 		return eqSeq(e, env, x.Items, y.Items)
+// 	case *data.HashMapNode:
+// 		y := b.(*data.HashMapNode)
+// 		return eqHashMap(e, env, x.Items, y.Items)
+// 	default:
+// 		return a == b
+// 	}
+// }
+
+// func eqSeq(e Evaluator, env data.Env, as, bs []data.Node) data.Node {
+// 	if len(as) != len(bs) {
+// 		return false
+// 	}
+// 	for i := 0; i < len(as); i++ {
+// 		if eq2(e, env, as[i], bs[i]) == false {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
+
+// func eqHashMap(e Evaluator, env data.Env, as, bs data.Map) data.Node {
+// 	if len(as) != len(bs) {
+// 		return false
+// 	}
+// 	for k, va := range as {
+// 		vb, ok := bs[k]
+// 		if !ok {
+// 			return false
+// 		}
+// 		if eq2(e, env, va, vb) == false {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
+
+// func join(e Evaluator, env data.Env, args []data.Node) data.Node {
+// 	var sb strings.Builder
+// 	for _, arg := range args {
+// 		if s, ok := arg.(string); ok {
+// 			sb.WriteString(s)
+// 		}
+// 	}
+// 	return sb.String()
+// }

@@ -553,6 +553,70 @@ func TestRunCreateVector2(t *testing.T) {
 	testVal(t, nil, m.InspectStack(1))
 }
 
+func TestRunVectorHead(t *testing.T) {
+	e := int64(1)
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpHead),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorTail1(t *testing.T) {
+	e := []vm.Val{}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpTail),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorTail2(t *testing.T) {
+	e := []vm.Val{int64(2), int64(3)}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpTail),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorLength1(t *testing.T) {
+	e := int64(0)
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpLength),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorLength2(t *testing.T) {
+	e := int64(3)
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpLength),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
 func TestRunDissolve(t *testing.T) {
 	m := testRun(t,
 		vm.Instr(vm.OpEnd),

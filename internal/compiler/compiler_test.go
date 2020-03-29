@@ -486,6 +486,48 @@ func TestCompileVector2(t *testing.T) {
 	)
 }
 
+func TestCompileHeadVector(t *testing.T) {
+	testc(t, "(head [1 2 3])",
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpHead),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileTailVector(t *testing.T) {
+	testc(t, "(tail [1 2 3])",
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpTail),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileLenVector(t *testing.T) {
+	testc(t, "(len [1 2 3])",
+		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpLength),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
 		vm.Instr(vm.OpRef, 10),
@@ -718,7 +760,7 @@ func TestCompileSpliceQuote2(t *testing.T) {
 	)
 }
 
-// func TestCompileQuote2(t *testing.T) {
+// func TestCompileQuote3(t *testing.T) {
 // 	code := `
 //   (do
 //     (def cube '(* ~n ~n ~n))

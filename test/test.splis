@@ -1,3 +1,0 @@
-;; A pointless function.
-(def plus5 (fn [x]
-  (+ x 5)))

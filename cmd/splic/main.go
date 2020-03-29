@@ -4,39 +4,54 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
-	"github.com/mhoertnagl/splis2/internal/bin"
 	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/util"
 )
-
-// TODO: Load Usings.
-// TODO: Add rewriters (macros)
-// TODO: Feed macros from referenced libs to macro rewriter.
 
 func main() {
 	flag.Parse()
 
+	args := flag.Args()
+
+	if len(args) != 1 {
+		panic("Provide exactly one input file.")
+	}
+
+	srcPath := args[0]
+
+	// The compiler will search for used modules in '$(SPLIS_HOME)/lib' and the
+	// directory that contians the input source file.
+	dirs := []string{
+		util.SplisLibPath(),
+		filepath.Dir(srcPath),
+	}
+
 	rdr := compiler.NewReader()
 	prs := compiler.NewParser()
+	urw := compiler.NewUseRewriter(dirs)
 	qrw := compiler.NewQuoteRewriter()
+	mrw := compiler.NewMacroRewriter()
 	cmp := compiler.NewCompiler()
 
-	for _, inFileName := range flag.Args() {
-		inFileBytes, err := ioutil.ReadFile(inFileName)
-		if err != nil {
-			panic(err)
-		}
-
-		rdr.Load(string(inFileBytes))
-		n := prs.Parse(rdr)
-		n = qrw.Rewrite(n)
-		lib := cmp.CompileLib(n)
-
-		outFile, err := os.Create(inFileName + ".lib")
-		if err != nil {
-			panic(err)
-		}
-
-		bin.WriteLib(lib, outFile)
+	srcBytes, err := ioutil.ReadFile(srcPath)
+	if err != nil {
+		panic(err)
 	}
+
+	rdr.Load(string(srcBytes))
+	n := prs.Parse(rdr)
+	n = urw.Rewrite(n)
+	n = qrw.Rewrite(n)
+	n = mrw.Rewrite(n)
+	code := cmp.Compile(n)
+
+	outPath := util.FilePathWithoutExt(srcPath)
+	outFile, err := os.Create(outPath + ".splin")
+	if err != nil {
+		panic(err)
+	}
+
+	util.WriteStatic(code, outFile)
 }

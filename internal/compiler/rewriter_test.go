@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/util"
 )
 
 func TestRewriteBoolean(t *testing.T) {
@@ -91,6 +92,23 @@ func TestRewriteDefmacroNested(t *testing.T) {
   )`
 	es := `(do (- 2 1))`
 	rw := compiler.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteUse(t *testing.T) {
+	paths := []string{util.SplisHomePath()}
+	is := `(do
+		(use "test/prelude")
+		(inc 41)
+	)`
+	es := `(do
+		(do
+			(def inc (fn [x] (+ x 1)))
+			(def dec (fn [x] (- x 1)))
+		)
+		(inc 41)
+	)`
+	rw := compiler.NewUseRewriter(paths)
 	testRewriter(t, rw, is, es)
 }
 

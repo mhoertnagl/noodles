@@ -11,27 +11,7 @@
   ;; @param sym   name  The name of the function.
   ;; @param (sym) args  The list of arument symbols.
   ;; @param (any) body  The body of the function.
-  ; (defmacro defn [name args body]
-  ;   `(def ~name (fn ~args ~body)) )
-
-  ;; `use` reads, parses and evaluates a splis module.
-  ;;
-  ;; To use the module in the file `<SPLIS_HOME>/lib/core/math.splis` add the
-  ;; following command before the usage of any method in `math.splis`:
-  ;;
-  ;; ```(use "lib/core/math")```
-  ;;
-  ;; All imported modules need to be located in the derectory the environment
-  ;; variable <SPLIS_HOME> points to and the file extension `.splis` must be
-  ;; omitted.
-  ;;
-  ;; @param str module  The module.
-  ; (defn use [module]
-  ;   (eval (parse (read-file (join *SPLIS_HOME* module ".splis")))))
-
-  (def inc (fn [x] (+ x 1)))
-
-  (def dec (fn [x] (- x 1)))
+  (defmacro defn [name args body] (def name (fn args body)))
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
@@ -62,13 +42,17 @@
   ;; to denote the default branch.
   ; (def else true)
 
-  ;; `identity` returns the argument unchanged.
+  ;; `identity` returns the argument itself.
   ;;
   ;; @param  any x  Any argument.
-  ;; @return any    `x` unchanged.
-  ; (defn identity [x] x)
-  ; TODO: This should work in the new implementation.
+  ;; @return any    `x` itself.
+  (defn identity [x] x)
   ; (defmacro identity [x] x)
+
+  ;; `empty?` returns the number of elements in the vector `xs`.
+  ;;
+  ;; @param  (any) xs  A vector of elements.
+  (defn empty? [xs] (= (len xs) 0))
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -79,10 +63,10 @@
   ;; @param  num end    The end number (excluded).
   ;; @param  num step   The increment step size.
   ;; @return (num)      The sequence of numbers from `a` up to `b`.
-  ; (defn range [start end step]
-  ;   (if (>= start end)
-  ;     ()
-  ;     (:: start (range (+ start step) end step))))
+  (defn range [start end step]
+    (if (>= start end)
+      ()
+      (:: start (range (+ start step) end step))))
 
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -91,16 +75,7 @@
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
   ;; @return (num)      The sequence of integers from `a` up to `b`.
-  ; (defn irange [start end] (range start end 1))
-
-  ;; TODO: clojure uses mapv for vectors.
-
-  ; (defmacro apply [f args]
-  ;   `(~f ~@args) )
-
-  ; TODO: Not working.
-  ; (defn all-true [xs] (apply and xs))
-  ; (defn any-true [xs] (apply or xs))
+  (defn irange [start end] (range start end 1))
 
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
@@ -110,10 +85,10 @@
   ;; @param  (T)     xs  A list of elements.
   ;; @return (S)         The list of elements applied to the unary function
   ;;                     individually.
-  ; (defn map [f xs]
-  ;   (if (empty? xs)
-  ;     xs ; Will preserve the type of the sequence.
-  ;     (:: (f (head xs)) (map f (tail xs)))))
+  (defn map [f xs]
+    (if (empty? xs)
+      xs ; Will preserve the type of the sequence.
+      (:: (f (head xs)) (map f (tail xs)))))
 
   ; (defn flat-map [p xs]
   ;   (if (empty? xs)
@@ -130,20 +105,20 @@
   ;; @param  (S)       xs  A list of elements.
   ;; @return T             The left-associative reduction of `xs` into a single
   ;;                       element.
-  ; (defn reduce [f b xs]
-  ;   (if (empty? xs)
-  ;     b
-  ;     (reduce f (f b (head xs)) (tail xs))))
+  (defn reduce [f b xs]
+    (if (empty? xs)
+      b
+      (reduce f (f b (head xs)) (tail xs))))
 
   ; (defn reduce-right [f b xs]
   ;   (if (empty? xs)
   ;     b
   ;     (f b (reduce f (head xs) (tail xs)))))
 
-  ; (defn fold [f xs]
-  ;   (if (empty? xs)
-  ;     nil ; TODO: Throw error.
-  ;     (reduce f (head xs) (tail xs)) ))
+  (defn fold [f xs]
+    (if (empty? xs)
+      nil ; TODO: Throw error.
+      (reduce f (head xs) (tail xs)) ))
 
   ; (defn filter [p xs]
   ;   (cond (empty? xs) xs
@@ -161,7 +136,6 @@
   ;   (cond (empty? xs) false
   ;         (p (head xs)) true
   ;         else (any p (tail xs)) ))
-
   ;; (defn reverse [xs])
 
   ; (defn drop [n xs]
@@ -197,6 +171,6 @@
   ;     (:: v (repeat (- n 1) v)) ))
 
   ;; (defn flatten [xs])
-  ; (use "lib/core/math")
-  ; (use "lib/core/io")
+  (use "core/math")
+  ; (use "core/io")
 )
