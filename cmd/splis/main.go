@@ -10,18 +10,6 @@ import (
 )
 
 func main() {
-
-	// interactive := flag.Bool("i", false, "interactive mode")
-
-	// flag.Parse()
-
-	// args := repl.Args{
-	// 	Interactive: *interactive,
-	// 	Files:       flag.Args(),
-	// }
-	//
-	// repl.Start(os.Stdin, os.Stdout, os.Stderr, args)
-
 	flag.Parse()
 
 	vm := vm.New(1024, 512, 256, 128)
