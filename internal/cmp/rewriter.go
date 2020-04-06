@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 type Rewriter interface {
 	Rewrite(n Node) Node

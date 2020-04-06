@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import (
 	"reflect"
@@ -18,18 +18,13 @@ func (r *QuoteRewriter) Rewrite(n Node) Node {
 
 func (r *QuoteRewriter) rewrite(n Node) ([]Node, Node) {
 	switch x := n.(type) {
-	case *VectorNode:
-		return r.rewriteVector(x)
+	case []Node:
+		return r.rewriteItems(x)
 	case *ListNode:
 		return r.rewriteList(x)
 	default:
 		return r.empty(), n
 	}
-}
-
-func (r *QuoteRewriter) rewriteVector(n *VectorNode) ([]Node, Node) {
-	s, m := r.rewriteItems(n.Items)
-	return s, NewVector(m)
 }
 
 func (r *QuoteRewriter) rewriteList(n *ListNode) ([]Node, Node) {

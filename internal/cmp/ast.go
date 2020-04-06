@@ -1,4 +1,6 @@
-package compiler
+package cmp
+
+import "fmt"
 
 // TODO: Move to separate namespace?
 
@@ -14,9 +16,8 @@ func IsError(n Node) bool {
 	return ok
 }
 
-// TODO: Make it a varargs version with fmt.
-func NewError(msg string) *ErrorNode {
-	return &ErrorNode{Msg: msg}
+func NewError(format string, args ...interface{}) *ErrorNode {
+	return &ErrorNode{Msg: fmt.Sprintf(format, args...)}
 }
 
 func IsNil(n Node) bool {
@@ -60,6 +61,22 @@ type ListNode struct {
 	Items []Node
 }
 
+func (l *ListNode) Empty() bool {
+	return len(l.Items) == 0
+}
+
+func (l *ListNode) Len() int {
+	return len(l.Items)
+}
+
+func (l *ListNode) First() Node {
+	return l.Items[0]
+}
+
+func (l *ListNode) Rest() []Node {
+	return l.Items[1:]
+}
+
 func IsList(n Node) bool {
 	_, ok := n.(*ListNode)
 	return ok
@@ -93,43 +110,7 @@ func Dissolve(n Node) *ListNode {
 }
 
 func Fn(args []Node, body Node) *ListNode {
-	return NewList2(NewSymbol("fn"), NewVector2(args...), body)
-}
-
-// TODO: Wrapper is not required.
-type VectorNode struct {
-	Items []Node
-}
-
-func IsVector(n Node) bool {
-	_, ok := n.(*VectorNode)
-	return ok
-}
-
-func NewVector(items []Node) *VectorNode {
-	return &VectorNode{Items: items}
-}
-
-func NewVector2(items ...Node) *VectorNode {
-	return &VectorNode{Items: items}
+	return NewList2(NewSymbol("fn"), args, body)
 }
 
 type Map map[string]Node
-
-// TODO: Wrapper is not required.
-type HashMapNode struct {
-	Items Map
-}
-
-func IsHashMap(n Node) bool {
-	_, ok := n.(*HashMapNode)
-	return ok
-}
-
-func NewHashMap(items Map) *HashMapNode {
-	return &HashMapNode{Items: items}
-}
-
-func NewEmptyHashMap() *HashMapNode {
-	return NewHashMap(make(Map))
-}

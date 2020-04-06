@@ -1,9 +1,9 @@
-package compiler_test
+package cmp_test
 
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/cmp"
 )
 
 func TestIgnoreWhitespace(t *testing.T) {
@@ -72,7 +72,7 @@ func TestProg(t *testing.T) {
 }
 
 func testr(t *testing.T, i string, es ...string) {
-	r := compiler.NewReader()
+	r := cmp.NewReader()
 	r.Load(i)
 	for idx, e := range es {
 		tok := r.Next()

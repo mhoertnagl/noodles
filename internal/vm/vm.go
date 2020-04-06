@@ -135,11 +135,11 @@ func (m *vm) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
-		case OpHead:
+		case OpFst:
 			l := m.popVector()
 			// TODO: panic if null?
 			m.push(l[0])
-		case OpTail:
+		case OpRest:
 			l := m.popVector()
 			if len(l) == 0 {
 				// TODO: push fresh empty vector?

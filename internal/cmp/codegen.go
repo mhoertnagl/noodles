@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import (
 	"encoding/binary"

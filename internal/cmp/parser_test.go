@@ -1,9 +1,9 @@
-package compiler_test
+package cmp_test
 
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/cmp"
 )
 
 func TestParseNil(t *testing.T) {
@@ -104,12 +104,11 @@ func TestParseQuoteSpliceUnquote(t *testing.T) {
 }
 
 func testpw(t *testing.T, i string, e string) {
-	r := compiler.NewReader()
+	r := cmp.NewReader()
 	r.Load(i)
-	p := compiler.NewParser()
+	p := cmp.NewParser()
 	n := p.Parse(r)
-	w := compiler.NewPrinter()
-	a := w.Print(n)
+	a := cmp.PrintAst(n)
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)
 	}

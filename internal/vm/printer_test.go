@@ -3,8 +3,7 @@ package vm_test
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/compiler"
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/splis2/internal/cmp"
 )
 
 // func TestPrintError(t *testing.T) {
@@ -60,7 +59,7 @@ import (
 // 	// test(t, m, `{x 1 y "42"}`)
 // }
 
-func testPrint(t *testing.T, n compiler.Node, e string) {
+func testPrint(t *testing.T, n cmp.Node, e string) {
 	t.Helper()
 	p := print.NewPrinter()
 	a := p.Print(n)

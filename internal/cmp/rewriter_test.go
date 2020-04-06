@@ -1,54 +1,54 @@
-package compiler_test
+package cmp_test
 
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/cmp"
 	"github.com/mhoertnagl/splis2/internal/util"
 )
 
 func TestRewriteBoolean(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `true`, `true`)
 }
 
 func TestRewriteInteger(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `1`, `1`)
 }
 
 func TestRewriteSymbol(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `a`, `a`)
 }
 
 func TestRewriteVector(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `[1 2 3]`, `[1 2 3]`)
 }
 
 func TestRewriteList(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `(1 2 3)`, `(1 2 3)`)
 }
 
 func TestRewriteSimpleQuote(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ 1 1)`, `(fn [] (+ 1 1))`)
 }
 
 func TestRewriteReplacementQuote(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ ~a ~b)`, `(fn [a b] (+ a b))`)
 }
 
 func TestRewriteSpliceQuote(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
 }
 
 func TestRewriteNestedQuote(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw,
 		`'(+ ~a ('(+ ~a ~b) a 1))`,
 		`(fn [a] (+ a ((fn [a b] (+ a b)) a 1)))`,
@@ -56,21 +56,21 @@ func TestRewriteNestedQuote(t *testing.T) {
 }
 
 func TestRewriteQuoteWithMultiOccuranceOfSingelVariable(t *testing.T) {
-	rw := compiler.NewQuoteRewriter()
+	rw := cmp.NewQuoteRewriter()
 	testRewriter(t, rw, `'(* ~n ~n ~n)`, `(fn [n] (* n n n))`)
 }
 
 func TestRewriteArgsSimple(t *testing.T) {
 	pars := []string{"a"}
-	args := []compiler.Node{parse("(+ 1 1)")}
-	rw := compiler.NewArgsRewriter(pars, args)
+	args := []cmp.Node{parse("(+ 1 1)")}
+	rw := cmp.NewArgsRewriter(pars, args)
 	testRewriter(t, rw, `(* a a)`, `(* (+ 1 1) (+ 1 1))`)
 }
 
 func TestRewriteArgsDeep(t *testing.T) {
 	pars := []string{"a", "b"}
-	args := []compiler.Node{parse("(+ 1 1)"), parse("(- 2)")}
-	rw := compiler.NewArgsRewriter(pars, args)
+	args := []cmp.Node{parse("(+ 1 1)"), parse("(- 2)")}
+	rw := cmp.NewArgsRewriter(pars, args)
 	testRewriter(t, rw, `(* (* a b) a)`, `(* (* (+ 1 1) (- 2)) (+ 1 1))`)
 }
 
@@ -80,7 +80,7 @@ func TestRewriteDefmacroSimple(t *testing.T) {
     (defn inc [x] (+ x 1))
   )`
 	es := `(do (def inc (fn [x] (+ x 1))))`
-	rw := compiler.NewMacroRewriter()
+	rw := cmp.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
 
@@ -91,7 +91,7 @@ func TestRewriteDefmacroNested(t *testing.T) {
     (m1 1 2)
   )`
 	es := `(do (- 2 1))`
-	rw := compiler.NewMacroRewriter()
+	rw := cmp.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
 
@@ -108,31 +108,30 @@ func TestRewriteUse(t *testing.T) {
 		)
 		(inc 41)
 	)`
-	rw := compiler.NewUseRewriter(paths)
+	rw := cmp.NewUseRewriter(paths)
 	testRewriter(t, rw, is, es)
 }
 
-func testRewriter(t *testing.T, rw compiler.Rewriter, i string, e string) {
+func testRewriter(t *testing.T, rw cmp.Rewriter, i string, e string) {
 	t.Helper()
 	in := parse(i)
 	en := parse(e)
 	an := rw.Rewrite(in)
-	pr := compiler.NewPrinter()
-	as := pr.Print(an)
-	es := pr.Print(en)
+	as := cmp.PrintAst(an)
+	es := cmp.PrintAst(en)
 	if equalNode(an, en) == false {
 		t.Errorf("Mismatch Expecting \n  [%s]\n but got \n  [%s].", es, as)
 	}
 }
 
-func parse(i string) compiler.Node {
-	r := compiler.NewReader()
-	p := compiler.NewParser()
+func parse(i string) cmp.Node {
+	r := cmp.NewReader()
+	p := cmp.NewParser()
 	r.Load(i)
 	return p.Parse(r)
 }
 
-func equalNode(l compiler.Node, r compiler.Node) bool {
+func equalNode(l cmp.Node, r cmp.Node) bool {
 	switch lx := l.(type) {
 	case bool:
 		if rx, ok := r.(bool); ok {
@@ -142,23 +141,23 @@ func equalNode(l compiler.Node, r compiler.Node) bool {
 		if rx, ok := r.(int64); ok {
 			return lx == rx
 		}
-	case *compiler.SymbolNode:
-		if rx, ok := r.(*compiler.SymbolNode); ok {
+	case *cmp.SymbolNode:
+		if rx, ok := r.(*cmp.SymbolNode); ok {
 			return lx.Name == rx.Name
 		}
-	case *compiler.VectorNode:
-		if rx, ok := r.(*compiler.VectorNode); ok {
-			return equalList(lx.Items, rx.Items)
+	case []cmp.Node:
+		if rx, ok := r.([]cmp.Node); ok {
+			return equalList(lx, rx)
 		}
-	case *compiler.ListNode:
-		if rx, ok := r.(*compiler.ListNode); ok {
+	case *cmp.ListNode:
+		if rx, ok := r.(*cmp.ListNode); ok {
 			return equalList(lx.Items, rx.Items)
 		}
 	}
 	return false
 }
 
-func equalList(l []compiler.Node, r []compiler.Node) bool {
+func equalList(l []cmp.Node, r []cmp.Node) bool {
 	if len(l) != len(r) {
 		return false
 	}

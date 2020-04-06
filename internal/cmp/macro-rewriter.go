@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import "fmt"
 
@@ -21,8 +21,8 @@ func NewMacroRewriter() *MacroRewriter {
 
 func (r *MacroRewriter) Rewrite(n Node) Node {
 	switch x := n.(type) {
-	case *VectorNode:
-		return NewVector(RewriteItems(r, x.Items))
+	case []Node:
+		return RewriteItems(r, x)
 	case *ListNode:
 		return r.rewriteList(x)
 	default:
@@ -65,9 +65,9 @@ func (r *MacroRewriter) addMacro(name Node, pars Node, body Node) {
 }
 
 func getParamNames(parsNode Node) []string {
-	if pars, ok := parsNode.(*VectorNode); ok {
-		names := make([]string, len(pars.Items))
-		for i, par := range pars.Items {
+	if pars, ok := parsNode.([]Node); ok {
+		names := make([]string, len(pars))
+		for i, par := range pars {
 			switch sym := par.(type) {
 			case *SymbolNode:
 				names[i] = sym.Name

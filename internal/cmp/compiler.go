@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import (
 	"fmt"
@@ -8,24 +8,48 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-type Compiler interface {
-	Compile(node Node) vm.Ins
-}
-
 type fnDef struct {
 	addr uint64
 	code vm.Ins
 }
 
-type compiler struct {
-	hg  hash.Hash64
-	fns []*fnDef
+type primDef struct {
+	op    vm.Op
+	nargs int
+	rev   bool
 }
 
-func NewCompiler() Compiler {
-	return &compiler{
-		hg:  fnv.New64(),
-		fns: make([]*fnDef, 0),
+type primDefs map[string]primDef
+
+func (d primDefs) add(name string, op vm.Op, nargs int, rev bool) {
+	d[name] = primDef{op: op, nargs: nargs, rev: rev}
+}
+
+type Compiler struct {
+	hg    hash.Hash64
+	prims primDefs
+	fns   []*fnDef
+}
+
+func NewCompiler() *Compiler {
+	prims := primDefs{}
+	prims.add("fst", vm.OpFst, 1, false)
+	prims.add("rest", vm.OpRest, 1, false)
+	prims.add("len", vm.OpLength, 1, false)
+	prims.add("<", vm.OpLT, 2, false)
+	prims.add("<=", vm.OpLE, 2, false)
+	prims.add(">", vm.OpLT, 2, true)
+	prims.add(">=", vm.OpLE, 2, true)
+	prims.add("=", vm.OpEQ, 2, false)
+	prims.add("!=", vm.OpNE, 2, false)
+	prims.add("not", vm.OpNot, 1, false)
+	prims.add("::", vm.OpCons, 2, true)
+	prims.add("dissolve", vm.OpDissolve, 1, false)
+
+	return &Compiler{
+		hg:    fnv.New64(),
+		prims: prims,
+		fns:   make([]*fnDef, 0),
 	}
 }
 
@@ -37,7 +61,7 @@ func NewCompiler() Compiler {
 // TODO: Closure
 // TODO: static scoping?
 
-func (c *compiler) Compile(node Node) vm.Ins {
+func (c *Compiler) Compile(node Node) vm.Ins {
 	code := NewCodeGen()
 	code.Append(c.compile(node))
 	// Marks the end of non-function code. This will halt the CPU. Code beyond
@@ -48,17 +72,17 @@ func (c *compiler) Compile(node Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compile(node Node) vm.Ins {
+func (c *Compiler) compile(node Node) vm.Ins {
 	switch n := node.(type) {
 	case bool:
 		return c.compileBooleanLiteral(n)
 	case int64:
-		return c.compileIntegerLiteral(n)
+		return vm.Instr(vm.OpConst, uint64(n))
 	case string:
-		return c.compileStringLiteral(n)
+		return vm.Str(n)
 	case *SymbolNode:
 		return c.compileSymbol(n)
-	case *VectorNode:
+	case []Node:
 		return c.compileVector(n)
 	case *ListNode:
 		return c.compileList(n)
@@ -66,95 +90,86 @@ func (c *compiler) compile(node Node) vm.Ins {
 	panic(fmt.Sprintf("Compiler: Unsupported node [%v:%T]", node, node))
 }
 
-func (c *compiler) compileBooleanLiteral(n bool) vm.Ins {
+func (c *Compiler) compileBooleanLiteral(n bool) vm.Ins {
 	if n {
 		return vm.Instr(vm.OpTrue)
 	}
 	return vm.Instr(vm.OpFalse)
 }
 
-func (c *compiler) compileIntegerLiteral(n int64) vm.Ins {
-	return vm.Instr(vm.OpConst, uint64(n))
-}
-
-func (c *compiler) compileStringLiteral(n string) vm.Ins {
-	return vm.Str(n)
-}
-
-func (c *compiler) compileSymbol(n *SymbolNode) vm.Ins {
+func (c *Compiler) compileSymbol(n *SymbolNode) vm.Ins {
 	return vm.Instr(vm.OpGetLocal, c.hashSymbol(n))
 }
 
-func (c *compiler) compileVector(n *VectorNode) vm.Ins {
+func (c *Compiler) compileVector(n []Node) vm.Ins {
 	code := NewCodeGen()
 	code.Instr(vm.OpEmptyVector)
-	for i := len(n.Items) - 1; i >= 0; i-- {
-		code.Append(c.compile(n.Items[i]))
+	for i := len(n) - 1; i >= 0; i-- {
+		code.Append(c.compile(n[i]))
 		code.Instr(vm.OpCons)
 	}
 	return code.Emit()
 }
 
-func (c *compiler) compileList(n *ListNode) vm.Ins {
-	items := n.Items
-	if len(items) == 0 {
+func (c *Compiler) compileList(n *ListNode) vm.Ins {
+	if n.Empty() {
 		panic("Empty list")
 	}
-	args := items[1:]
-	switch x := items[0].(type) {
+	switch x := n.First().(type) {
 	case *SymbolNode:
+		// Special forms.
 		switch x.Name {
 		case "+":
-			return c.compileAdd(args)
+			return c.compileAdd(n.Rest())
 		case "-":
-			return c.compileSub(args)
+			return c.compileSub(n.Rest())
 		case "*":
-			return c.compileMul(args)
+			return c.compileMul(n.Rest())
 		case "/":
-			return c.compileDiv(args)
-		case "<":
-			return c.compileLT(args)
-		case "<=":
-			return c.compileLE(args)
-		case ">":
-			return c.compileGT(args)
-		case ">=":
-			return c.compileGE(args)
-		case "=":
-			return c.compileEQ(args)
-		case "!=":
-			return c.compileNE(args)
+			return c.compileDiv(n.Rest())
 		case "let":
-			return c.compileLet(args)
+			return c.compileLet(n.Rest())
 		case "def":
-			return c.compileDef(args)
+			return c.compileDef(n.Rest())
 		case "if":
-			return c.compileIf(args)
+			return c.compileIf(n.Rest())
 		case "do":
-			return c.compileDo(args)
+			return c.compileDo(n.Rest())
 		case "fn":
-			return c.compileFn(args)
-		case "::":
-			return c.compileCons(args)
-		case "not":
-			return c.compileNot(args)
+			return c.compileFn(n.Rest())
 		case "and":
-			return c.compileAnd(args)
+			return c.compileAnd(n.Rest())
 		case "or":
-			return c.compileOr(args)
-		case "dissolve":
-			return c.compileDissolve(args)
-		default:
-			return c.compileCall(x, args)
+			return c.compileOr(n.Rest())
 		}
+		// Primitive functions follow the same pattern: first compile all the
+		// arguments, then append a single VM instruction.
+		if prim, ok := c.prims[x.Name]; ok {
+			return c.compilePrim(x.Name, prim, n.Rest())
+		}
+		return c.compileCall(x, n.Rest())
 	case *ListNode:
-		return c.compileListCall(x, args)
+		return c.compileListCall(x, n.Rest())
 	default:
 		panic(fmt.Sprintf("Cannot compile list head [%v]", x))
 	}
 }
 
-func (c *compiler) compileAdd(args []Node) vm.Ins {
+func (c *Compiler) compilePrim(name string, prim primDef, args []Node) vm.Ins {
+	if len(args) != prim.nargs {
+		panic(fmt.Sprintf("[%s] requires exactly [%d] arguments", name, prim.nargs))
+	}
+	code := NewCodeGen()
+	if prim.rev {
+		c.compileNodesReverse(code, args)
+	} else {
+		c.compileNodes(code, args)
+	}
+	code.Instr(prim.op)
+	return code.Emit()
+}
+
+func (c *Compiler) compileAdd(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty sum (+) yields 0.
@@ -180,7 +195,7 @@ func (c *compiler) compileAdd(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileSub(args []Node) vm.Ins {
+func (c *Compiler) compileSub(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty difference (-) yields 0.
@@ -207,7 +222,7 @@ func (c *compiler) compileSub(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileMul(args []Node) vm.Ins {
+func (c *Compiler) compileMul(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty product (*) yields 1.
@@ -233,7 +248,7 @@ func (c *compiler) compileMul(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileDiv(args []Node) vm.Ins {
+func (c *Compiler) compileDiv(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty division (/) yields 1.
@@ -260,83 +275,7 @@ func (c *compiler) compileDiv(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileEQ(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[=] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Append(c.compile(args[1]))
-	code.Instr(vm.OpEQ)
-	return code.Emit()
-}
-
-func (c *compiler) compileNE(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[!=] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Append(c.compile(args[1]))
-	code.Instr(vm.OpNE)
-	return code.Emit()
-}
-
-func (c *compiler) compileLT(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[<] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Append(c.compile(args[1]))
-	code.Instr(vm.OpLT)
-	return code.Emit()
-}
-
-func (c *compiler) compileLE(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[<=] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Append(c.compile(args[1]))
-	code.Instr(vm.OpLE)
-	return code.Emit()
-}
-
-func (c *compiler) compileGT(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[>] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[1]))
-	code.Append(c.compile(args[0]))
-	code.Instr(vm.OpLT)
-	return code.Emit()
-}
-
-func (c *compiler) compileGE(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[>=] requires exactly two arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[1]))
-	code.Append(c.compile(args[0]))
-	code.Instr(vm.OpLE)
-	return code.Emit()
-}
-
-func (c *compiler) compileNot(args []Node) vm.Ins {
-	if len(args) != 1 {
-		panic("[not] requires exactly one arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Instr(vm.OpNot)
-	return code.Emit()
-}
-
-func (c *compiler) compileAnd(args []Node) vm.Ins {
+func (c *Compiler) compileAnd(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty and (and) yields true.
@@ -381,7 +320,7 @@ func (c *compiler) compileAnd(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileOr(args []Node) vm.Ins {
+func (c *Compiler) compileOr(args []Node) vm.Ins {
 	switch len(args) {
 	case 0:
 		// Empty or (or) yields false.
@@ -403,7 +342,7 @@ func (c *compiler) compileOr(args []Node) vm.Ins {
 	}
 }
 
-func (c *compiler) compileLet(args []Node) vm.Ins {
+func (c *Compiler) compileLet(args []Node) vm.Ins {
 	if len(args) != 2 {
 		panic("[let] requires exactly two arguments")
 	}
@@ -438,7 +377,7 @@ func (c *compiler) compileLet(args []Node) vm.Ins {
 //        <y>
 //        OpSetGlobal #x
 //
-func (c *compiler) compileDef(args []Node) vm.Ins {
+func (c *Compiler) compileDef(args []Node) vm.Ins {
 	if len(args) != 2 {
 		panic("[def] requires exactly two arguments")
 	}
@@ -452,7 +391,7 @@ func (c *compiler) compileDef(args []Node) vm.Ins {
 	panic("[def] requires first argument to be a symbol")
 }
 
-func (c *compiler) compileIf(args []Node) vm.Ins {
+func (c *Compiler) compileIf(args []Node) vm.Ins {
 	if len(args) != 2 && len(args) != 3 {
 		panic("[if] requires either two or three arguments")
 	}
@@ -484,13 +423,13 @@ func (c *compiler) compileIf(args []Node) vm.Ins {
 //
 // }
 
-func (c *compiler) compileDo(args []Node) vm.Ins {
+func (c *Compiler) compileDo(args []Node) vm.Ins {
 	code := NewCodeGen()
 	c.compileNodes(code, args)
 	return code.Emit()
 }
 
-func (c *compiler) compileFn(args []Node) vm.Ins {
+func (c *Compiler) compileFn(args []Node) vm.Ins {
 	if len(args) != 2 {
 		panic("[fn] expects exactly 2 arguments")
 	}
@@ -498,8 +437,8 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	switch x := args[0].(type) {
 	case *ListNode:
 		fd.code = c.compileFnBody(x.Items, args[1])
-	case *VectorNode:
-		fd.code = c.compileFnBody(x.Items, args[1])
+	case []Node:
+		fd.code = c.compileFnBody(x, args[1])
 	default:
 		panic("[fn] first argument must be a list or vector")
 	}
@@ -508,7 +447,7 @@ func (c *compiler) compileFn(args []Node) vm.Ins {
 	return vm.Instr(vm.OpRef, uint64(id))
 }
 
-func (c *compiler) compileFnBody(params []Node, body Node) vm.Ins {
+func (c *Compiler) compileFnBody(params []Node, body Node) vm.Ins {
 	code := NewCodeGen()
 	switch len(params) {
 	case 0:
@@ -527,7 +466,7 @@ func (c *compiler) compileFnBody(params []Node, body Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileFnParams(code CodeGen, params []Node) {
+func (c *Compiler) compileFnParams(code CodeGen, params []Node) {
 	for pos, param := range params {
 		switch sym := param.(type) {
 		case *SymbolNode:
@@ -538,7 +477,7 @@ func (c *compiler) compileFnParams(code CodeGen, params []Node) {
 	}
 }
 
-func (c *compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
+func (c *Compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
 	switch sym.Name {
 	case "&":
 		code.Instr(vm.OpList)
@@ -547,28 +486,7 @@ func (c *compiler) compileFnParam(code CodeGen, sym *SymbolNode) {
 	}
 }
 
-func (c *compiler) compileCons(args []Node) vm.Ins {
-	if len(args) != 2 {
-		panic("[::] expects exactly 2 arguments")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[1]))
-	code.Append(c.compile(args[0]))
-	code.Instr(vm.OpCons)
-	return code.Emit()
-}
-
-func (c *compiler) compileDissolve(args []Node) vm.Ins {
-	if len(args) != 1 {
-		panic("[@] expects exactly 1 argument")
-	}
-	code := NewCodeGen()
-	code.Append(c.compile(args[0]))
-	code.Instr(vm.OpDissolve)
-	return code.Emit()
-}
-
-func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
+func (c *Compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 	code := NewCodeGen()
 	code.Instr(vm.OpEnd)
 	c.compileNodesReverse(code, args)
@@ -577,7 +495,7 @@ func (c *compiler) compileCall(sym *SymbolNode, args []Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
+func (c *Compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 	code := NewCodeGen()
 	code.Instr(vm.OpEnd)
 	c.compileNodesReverse(code, args)
@@ -586,19 +504,19 @@ func (c *compiler) compileListCall(lst *ListNode, args []Node) vm.Ins {
 	return code.Emit()
 }
 
-func (c *compiler) compileNodes(code CodeGen, nodes []Node) {
+func (c *Compiler) compileNodes(code CodeGen, nodes []Node) {
 	for _, node := range nodes {
 		code.Append(c.compile(node))
 	}
 }
 
-func (c *compiler) compileNodesReverse(code CodeGen, nodes []Node) {
+func (c *Compiler) compileNodesReverse(code CodeGen, nodes []Node) {
 	for i := len(nodes) - 1; i >= 0; i-- {
 		code.Append(c.compile(nodes[i]))
 	}
 }
 
-func (c *compiler) hashSymbol(sym *SymbolNode) uint64 {
+func (c *Compiler) hashSymbol(sym *SymbolNode) uint64 {
 	c.hg.Reset()
 	c.hg.Write([]byte(sym.Name))
 	return c.hg.Sum64()

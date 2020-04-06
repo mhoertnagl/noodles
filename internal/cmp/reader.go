@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import (
 	"bytes"
@@ -7,28 +7,21 @@ import (
 
 // Reader tokenizes the input string and provides methods to enumerate the
 // tokens sequentially.
-type Reader interface {
-	Load(input string)
-	Next() string
-	Peek() string
-	Pos() int
-}
-
-type reader struct {
+type Reader struct {
 	re     *regexp.Regexp
 	tokens []string
 	pos    int
 }
 
 // NewReader creates a new Reader instance.
-func NewReader() Reader {
-	r := &reader{}
+func NewReader() *Reader {
+	r := &Reader{}
 	pat := buildPattern()
 	r.re = regexp.MustCompile(pat)
 	return r
 }
 
-func (r *reader) Load(input string) {
+func (r *Reader) Load(input string) {
 	mm := r.re.FindAllStringSubmatch(input, -1)
 	r.tokens = []string{}
 	for _, m := range mm {
@@ -39,20 +32,20 @@ func (r *reader) Load(input string) {
 	r.pos = 0
 }
 
-func (r *reader) Next() string {
+func (r *Reader) Next() string {
 	t := r.Peek()
 	r.pos++
 	return t
 }
 
-func (r *reader) Peek() string {
+func (r *Reader) Peek() string {
 	if r.pos < len(r.tokens) {
 		return r.tokens[r.pos]
 	}
 	return ""
 }
 
-func (r *reader) Pos() int {
+func (r *Reader) Pos() int {
 	// Positions visible to the user start at 1.
 	return r.pos + 1
 }

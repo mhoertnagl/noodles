@@ -1,44 +1,36 @@
-package compiler
+package cmp
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
 
-type Parser interface {
-	Parse(r Reader) Node
-	Errors() []*ErrorNode
-}
-
-// TODO: Create a type Module this will contain the ast, errors and other infos.
-
-type parser struct {
-	rd  Reader
+type Parser struct {
+	rd  *Reader
 	tok string
 	err []*ErrorNode
 }
 
-func NewParser() Parser {
-	return &parser{}
+func NewParser() *Parser {
+	return &Parser{}
 }
 
-func (p *parser) Parse(r Reader) Node {
+func (p *Parser) Parse(r *Reader) Node {
 	p.rd = r
 	p.err = []*ErrorNode{}
 	p.next()
 	return p.parse()
 }
 
-func (p *parser) Errors() []*ErrorNode {
+func (p *Parser) Errors() []*ErrorNode {
 	return p.err
 }
 
-func (p *parser) next() {
+func (p *Parser) next() {
 	p.tok = p.rd.Next()
 }
 
-func (p *parser) consume(exp string) {
+func (p *Parser) consume(exp string) {
 	if p.tok == exp {
 		p.next()
 	} else {
@@ -46,14 +38,14 @@ func (p *parser) consume(exp string) {
 	}
 }
 
-func (p *parser) error(format string, args ...interface{}) Node {
-	e := NewError(fmt.Sprintf(format, args...))
+func (p *Parser) error(format string, args ...interface{}) Node {
+	e := NewError(format, args...)
 	p.err = append(p.err, e)
 	p.next() // Ignore the malign token and move on.
 	return e
 }
 
-func (p *parser) parse() Node {
+func (p *Parser) parse() Node {
 	switch {
 	case p.tok == ")":
 		return p.error("Unexpected [)].\n")
@@ -62,7 +54,7 @@ func (p *parser) parse() Node {
 	case p.tok == "]":
 		return p.error("Unexpected []].\n")
 	case p.tok == "[":
-		return p.parseVector()
+		return p.parseArgs("[", "]")
 	case p.tok == "}":
 		return p.error("Unexpected [}].\n")
 	case p.tok == "{":
@@ -81,23 +73,19 @@ func (p *parser) parse() Node {
 	}
 }
 
-func (p *parser) parseList() Node {
+func (p *Parser) parseList() Node {
 	return NewList(p.parseArgs("(", ")"))
 }
 
-func (p *parser) parseVector() Node {
-	return NewVector(p.parseArgs("[", "]"))
-}
-
-func (p *parser) parseHashMap() Node {
-	n := NewEmptyHashMap()
+func (p *Parser) parseHashMap() Node {
+	n := Map{}
 	p.consume("{")
 	// TODO: parse first and check if the count is even.
 	for p.tok != "}" && p.tok != "" {
 		key := p.parse()
 		if k, ok := key.(string); ok {
 			v := p.parse()
-			n.Items[k] = v
+			n[k] = v
 		}
 	}
 	p.consume("}")
@@ -105,7 +93,7 @@ func (p *parser) parseHashMap() Node {
 }
 
 // TODO: link to parent node to provide more context for errorNodes.
-func (p *parser) parseArgs(start string, end string) []Node {
+func (p *Parser) parseArgs(start string, end string) []Node {
 	args := []Node{}
 	p.consume(start)
 	for p.tok != end && p.tok != "" {
@@ -116,7 +104,7 @@ func (p *parser) parseArgs(start string, end string) []Node {
 	return args
 }
 
-func (p *parser) parseAtom() Node {
+func (p *Parser) parseAtom() Node {
 	var n Node
 	switch {
 	case strings.HasPrefix(p.tok, `"`):
@@ -136,7 +124,7 @@ func (p *parser) parseAtom() Node {
 	return n
 }
 
-func (p *parser) parseString() Node {
+func (p *Parser) parseString() Node {
 	if strings.HasSuffix(p.tok, `"`) {
 		// TODO: Create a constant for the empty string.
 		return normalizeString(p.tok)
@@ -150,7 +138,7 @@ func normalizeString(val string) string {
 	return val
 }
 
-func (p *parser) parseNumber() Node {
+func (p *Parser) parseNumber() Node {
 	if v, err := strconv.ParseInt(p.tok, 10, 64); err == nil {
 		// if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
 		// TODO: Create a constant pool for the numbers [-32, 31]?
@@ -165,6 +153,6 @@ func isNumber(tok string) bool {
 
 // TODO: Keywords :<x> <-> ʞ<x>
 
-func (p *parser) parseSymbol() Node {
+func (p *Parser) parseSymbol() Node {
 	return NewSymbol(p.tok)
 }

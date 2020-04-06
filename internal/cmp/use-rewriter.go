@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ type usingsSet map[string]bool
 type UseRewriter struct {
 	paths  []string
 	usings usingsSet
-	rdr    Reader
-	prs    Parser
+	rdr    *Reader
+	prs    *Parser
 }
 
 func NewUseRewriter(paths []string) *UseRewriter {
@@ -26,8 +26,8 @@ func NewUseRewriter(paths []string) *UseRewriter {
 
 func (r *UseRewriter) Rewrite(n Node) Node {
 	switch x := n.(type) {
-	case *VectorNode:
-		return NewVector(RewriteItems(r, x.Items))
+	case []Node:
+		return RewriteItems(r, x)
 	case *ListNode:
 		return r.rewriteList(x)
 	default:

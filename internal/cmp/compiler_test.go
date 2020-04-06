@@ -1,11 +1,11 @@
-package compiler_test
+package cmp_test
 
 import (
 	"bytes"
 	"hash/fnv"
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/compiler"
+	"github.com/mhoertnagl/splis2/internal/cmp"
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
@@ -486,8 +486,8 @@ func TestCompileVector2(t *testing.T) {
 	)
 }
 
-func TestCompileHeadVector(t *testing.T) {
-	testc(t, "(head [1 2 3])",
+func TestCompileFirstVector(t *testing.T) {
+	testc(t, "(fst [1 2 3])",
 		vm.Instr(vm.OpEmptyVector),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpCons),
@@ -495,13 +495,13 @@ func TestCompileHeadVector(t *testing.T) {
 		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpCons),
-		vm.Instr(vm.OpHead),
+		vm.Instr(vm.OpFst),
 		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestCompileTailVector(t *testing.T) {
-	testc(t, "(tail [1 2 3])",
+func TestCompileRestVector(t *testing.T) {
+	testc(t, "(rest [1 2 3])",
 		vm.Instr(vm.OpEmptyVector),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpCons),
@@ -509,7 +509,7 @@ func TestCompileTailVector(t *testing.T) {
 		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpCons),
-		vm.Instr(vm.OpTail),
+		vm.Instr(vm.OpRest),
 		vm.Instr(vm.OpHalt),
 	)
 }
@@ -787,10 +787,10 @@ func TestCompileSpliceQuote2(t *testing.T) {
 
 func testc(t *testing.T, i string, e ...vm.Ins) {
 	t.Helper()
-	r := compiler.NewReader()
-	p := compiler.NewParser()
-	c := compiler.NewCompiler()
-	w := compiler.NewQuoteRewriter()
+	r := cmp.NewReader()
+	p := cmp.NewParser()
+	c := cmp.NewCompiler()
+	w := cmp.NewQuoteRewriter()
 	r.Load(i)
 	n := p.Parse(r)
 	n = w.Rewrite(n)

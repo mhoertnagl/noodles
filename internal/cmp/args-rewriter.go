@@ -1,4 +1,4 @@
-package compiler
+package cmp
 
 type argsMap map[string]Node
 
@@ -23,8 +23,8 @@ func (r *ArgsRewriter) Rewrite(n Node) Node {
 			return a
 		}
 		return x
-	case *VectorNode:
-		return NewVector(RewriteItems(r, x.Items))
+	case []Node:
+		return RewriteItems(r, x)
 	case *ListNode:
 		return NewList(RewriteItems(r, x.Items))
 	default:
