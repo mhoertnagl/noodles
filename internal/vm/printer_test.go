@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
 // func TestPrintError(t *testing.T) {
@@ -61,7 +62,7 @@ import (
 
 func testPrint(t *testing.T, n cmp.Node, e string) {
 	t.Helper()
-	p := print.NewPrinter()
+	p := vm.NewPrinter()
 	a := p.Print(n)
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)

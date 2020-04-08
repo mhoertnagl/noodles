@@ -561,7 +561,7 @@ func TestRunVectorHead(t *testing.T) {
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpHead),
+		vm.Instr(vm.OpFst),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
@@ -572,7 +572,7 @@ func TestRunVectorTail1(t *testing.T) {
 	m := testRun(t,
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpTail),
+		vm.Instr(vm.OpRest),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
@@ -586,7 +586,7 @@ func TestRunVectorTail2(t *testing.T) {
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpTail),
+		vm.Instr(vm.OpRest),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
@@ -866,9 +866,9 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 
 // testRun executes a new VM instance with the code provided and returns the
 // VM thereafter.
-func testRun(t *testing.T, c ...vm.Ins) vm.VM {
+func testRun(t *testing.T, c ...vm.Ins) *vm.VM {
 	t.Helper()
-	m := vm.New(1024, 512, 256, 128)
+	m := vm.New(1024, 512, 512)
 	m.Run(vm.Concat(c))
 	return m
 }

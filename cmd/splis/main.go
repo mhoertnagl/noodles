@@ -13,7 +13,7 @@ func main() {
 	flag.Parse()
 
 	pr := vm.NewPrinter()
-	vm := vm.New(1024, 512, 256, 128)
+	vm := vm.New(1024, 512, 512)
 
 	for _, inFileName := range flag.Args() {
 		inFile, err := os.Open(inFileName)

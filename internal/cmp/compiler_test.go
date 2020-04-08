@@ -462,13 +462,11 @@ func TestCompileDo(t *testing.T) {
 
 func TestCompileVector1(t *testing.T) {
 	testc(t, "[1 2 3]",
-		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpHalt),
 	)
 }
@@ -488,13 +486,11 @@ func TestCompileVector2(t *testing.T) {
 
 func TestCompileFirstVector(t *testing.T) {
 	testc(t, "(fst [1 2 3])",
-		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpFst),
 		vm.Instr(vm.OpHalt),
 	)
@@ -502,13 +498,11 @@ func TestCompileFirstVector(t *testing.T) {
 
 func TestCompileRestVector(t *testing.T) {
 	testc(t, "(rest [1 2 3])",
-		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpRest),
 		vm.Instr(vm.OpHalt),
 	)
@@ -516,13 +510,11 @@ func TestCompileRestVector(t *testing.T) {
 
 func TestCompileLenVector(t *testing.T) {
 	testc(t, "(len [1 2 3])",
-		vm.Instr(vm.OpEmptyVector),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpCons),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpCons),
+		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpLength),
 		vm.Instr(vm.OpHalt),
 	)

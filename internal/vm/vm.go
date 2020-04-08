@@ -23,45 +23,39 @@ import (
 // to provide varargs support.
 var end Val = nil
 
-type VM interface {
-	Run(code Ins)
-	InspectStack(offset int64) Val
-	// InspectLocals(offset int64) Val
-	InspectEnvs(offset int64) Env
-	StackSize() int64
-}
-
-type vm struct {
+type VM struct {
 	ip     int64
 	sp     int64
 	ep     int64
 	fp     int64
+	fsp    int64
 	stack  []Val
 	envs   []Env
-	frames []int64
+	frames []Val
 	code   Ins
 }
 
 func New(
 	stackSize int64,
-	localsSize int64,
 	envStackSize int64,
-	frameStackSize int64) VM {
-	m := &vm{
-		ip:     0,
-		sp:     0,
-		ep:     0,
-		fp:     0,
-		stack:  make([]Val, stackSize),
+	frameStackSize int64) *VM {
+	m := &VM{
+		ip:    0,
+		sp:    0,
+		ep:    0,
+		fp:    0,
+		fsp:   0,
+		stack: make([]Val, stackSize),
+		// TODO: We only need a single global environment in the future.
 		envs:   make([]Env, envStackSize),
-		frames: make([]int64, frameStackSize),
+		frames: make([]Val, frameStackSize),
 	}
 	// Create the outermost environment.
 	m.newEnv()
 	return m
 }
 
-func (m *vm) InspectStack(offset int64) Val {
+func (m *VM) InspectStack(offset int64) Val {
 	a := m.sp - offset - 1
 	if a >= 0 {
 		return m.stack[a]
@@ -69,19 +63,27 @@ func (m *vm) InspectStack(offset int64) Val {
 	return nil
 }
 
-func (m *vm) StackSize() int64 {
+func (m *VM) StackSize() int64 {
 	return m.sp
 }
 
-func (m *vm) InspectEnvs(offset int64) Env {
+func (m *VM) InspectEnvs(offset int64) Env {
 	return m.envs[offset]
 }
 
-func (m *vm) InspectFrames(offset int64) int64 {
-	return m.frames[offset]
+func (m *VM) InspectFrames(offset int64) Val {
+	a := m.fsp - offset - 1
+	if a >= 0 {
+		return m.frames[a]
+	}
+	return nil
 }
 
-func (m *vm) Run(code Ins) {
+func (m *VM) FramesSize() int64 {
+	return m.fsp
+}
+
+func (m *VM) Run(code Ins) {
 	m.ip = 0
 	m.code = code
 	ln := int64(len(code))
@@ -210,25 +212,45 @@ func (m *vm) Run(code Ins) {
 			if m.popBool() == false {
 				m.ip += d
 			}
+
+			// TODO: Deprecated.
 		case OpNewEnv:
 			m.newEnv()
+			// TODO: Deprecated.
 		case OpPopEnv:
 			m.ep--
+			// TODO: Deprecated.
 		case OpSetLocal:
 			m.bindEnv(m.ep-1, m.readInt64(), m.pop())
+			// TODO: Deprecated.
 		case OpGetLocal:
 			m.push(m.lookupEnv(m.ep-1, m.readInt64()))
+			// ----------------
+
+		case OpPushArgs:
+			// Pops n arguments from the stack and pushes them onto the frames stack.
+			// This will reverse the order of the arguments.
+			n := m.readInt64()
+			for ; n > 0; n-- {
+				m.pushFrame(m.pop())
+			}
+		case OpGetArg:
+			// The first argument is at FRAMES[FP], the nth at FRAMES[FP + n].
+			a := m.fp + m.readInt64()
+			m.push(m.frames[a])
 		case OpSetGlobal:
 			m.bindEnv(0, m.readInt64(), m.pop())
 		case OpGetGlobal:
 			m.push(m.lookupEnv(0, m.readInt64()))
 		case OpCall:
-			m.frames[m.fp] = m.ip
-			m.fp++
-			m.ip = m.popInt64()
+			m.pushFrame(m.ip)   // Push IP.
+			m.pushFrame(m.fp)   // Push pointer to previous frame.
+			m.fp = m.fsp        // Set pointer to new frame.
+			m.ip = m.popInt64() // Call function.
 		case OpReturn:
-			m.fp--
-			m.ip = m.frames[m.fp]
+			m.fsp = m.fp             // Drop arguments.
+			m.fp = m.popFrameInt64() // Restore pointer to previous frame.
+			m.ip = m.popFrameInt64() // Restore IP.
 		case OpEnd:
 			m.push(end)
 		case OpHalt:
@@ -245,7 +267,7 @@ func (m *vm) Run(code Ins) {
 	}
 }
 
-func (m *vm) push(v Val) {
+func (m *VM) push(v Val) {
 	m.stack[m.sp] = v
 	m.sp++
 }
@@ -254,57 +276,71 @@ func (m *vm) push(v Val) {
 // 	return m.stack[m.sp-1]
 // }
 
-func (m *vm) pop() Val {
+func (m *VM) pop() Val {
 	m.sp--
 	return m.stack[m.sp]
 }
 
-func (m *vm) popBool() bool {
+func (m *VM) popBool() bool {
 	return m.pop().(bool)
 }
 
-func (m *vm) popInt64() int64 {
+func (m *VM) popInt64() int64 {
 	return m.pop().(int64)
 }
 
-func (m *vm) popUInt64() uint64 {
+func (m *VM) popUInt64() uint64 {
 	return m.pop().(uint64)
 }
 
-func (m *vm) popVector() []Val {
+func (m *VM) popVector() []Val {
 	return m.pop().([]Val)
 }
 
-func (m *vm) readOp() Op {
+func (m *VM) pushFrame(v Val) {
+	m.frames[m.fsp] = v
+	m.fsp++
+}
+
+func (m *VM) popFrame() Val {
+	m.fsp--
+	return m.frames[m.fsp]
+}
+
+func (m *VM) popFrameInt64() int64 {
+	return m.popFrame().(int64)
+}
+
+func (m *VM) readOp() Op {
 	op := m.code[m.ip]
 	m.ip++
 	return op
 }
 
-func (m *vm) readUint64() uint64 {
+func (m *VM) readUint64() uint64 {
 	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
 	m.ip += 8
 	return v
 }
 
-func (m *vm) readInt64() int64 {
+func (m *VM) readInt64() int64 {
 	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
 	m.ip += 8
 	return int64(v)
 }
 
-func (m *vm) readString(l int64) string {
+func (m *VM) readString(l int64) string {
 	s := string(m.code[m.ip : m.ip+l])
 	m.ip += l
 	return s
 }
 
-func (m *vm) newEnv() {
+func (m *VM) newEnv() {
 	m.envs[m.ep] = make(Env)
 	m.ep++
 }
 
-func (m *vm) bindEnv(ep int64, a int64, v Val) {
+func (m *VM) bindEnv(ep int64, a int64, v Val) {
 	env := m.envs[ep]
 	if x, ok := env[a]; ok {
 		panic(fmt.Sprintf("Symbol [%d] already bound to [%v]", a, x))
@@ -312,7 +348,7 @@ func (m *vm) bindEnv(ep int64, a int64, v Val) {
 	env[a] = v
 }
 
-func (m *vm) lookupEnv(ep int64, a int64) Val {
+func (m *VM) lookupEnv(ep int64, a int64) Val {
 	for i := ep; i >= 0; i-- {
 		if v, ok := m.envs[i][a]; ok {
 			return v
@@ -321,7 +357,7 @@ func (m *vm) lookupEnv(ep int64, a int64) Val {
 	panic(fmt.Sprintf("Unbound symbol [%d]", a))
 }
 
-func (m *vm) eq(l Val, r Val) bool {
+func (m *VM) eq(l Val, r Val) bool {
 	switch ll := l.(type) {
 	case int64:
 		switch rr := r.(type) {
@@ -332,7 +368,7 @@ func (m *vm) eq(l Val, r Val) bool {
 	return false
 }
 
-func (m *vm) lt(l Val, r Val) bool {
+func (m *VM) lt(l Val, r Val) bool {
 	switch ll := l.(type) {
 	case int64:
 		switch rr := r.(type) {
@@ -343,7 +379,7 @@ func (m *vm) lt(l Val, r Val) bool {
 	return false
 }
 
-func (m *vm) le(l Val, r Val) bool {
+func (m *VM) le(l Val, r Val) bool {
 	switch ll := l.(type) {
 	case int64:
 		switch rr := r.(type) {
@@ -354,7 +390,7 @@ func (m *vm) le(l Val, r Val) bool {
 	return false
 }
 
-func (m *vm) printStack() {
+func (m *VM) printStack() {
 	fmt.Print("-|")
 	for i := int64(0); i < m.sp; i++ {
 		fmt.Printf(" %v", m.stack[i])

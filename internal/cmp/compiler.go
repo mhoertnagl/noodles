@@ -53,13 +53,9 @@ func NewCompiler() *Compiler {
 	}
 }
 
-// TODO: Alternative scheme
-//       OpCallNew - generates a new environment.
-//       OpCall    - does not generate an environment.
-//       With this we can implement leaf functions and tail calls.
-// TODO: Variadic +, *, do, and, or, vector, list, ...
-// TODO: Closure
 // TODO: static scoping?
+// TODO: Variadic +, *, list, ...
+// TODO: Closure
 
 func (c *Compiler) Compile(node Node) vm.Ins {
 	code := NewCodeGen()
@@ -97,18 +93,30 @@ func (c *Compiler) compileBooleanLiteral(n bool) vm.Ins {
 	return vm.Instr(vm.OpFalse)
 }
 
+// TODO: Hier muss unterschieden werden, ob wir eine lokale Variable oder ein
+//       globales Symbol kompilieren.
+//       Dafür benötigen wir einen Symboltable-Tree
+
+// vm.Instr(vm.OpGetArg, sym.indexOf(n.Name))
+// vm.Instr(vm.OpGetGlobal, c.hashSymbol(n))
+
 func (c *Compiler) compileSymbol(n *SymbolNode) vm.Ins {
 	return vm.Instr(vm.OpGetLocal, c.hashSymbol(n))
 }
 
 func (c *Compiler) compileVector(n []Node) vm.Ins {
-	code := NewCodeGen()
-	code.Instr(vm.OpEmptyVector)
-	for i := len(n) - 1; i >= 0; i-- {
-		code.Append(c.compile(n[i]))
-		code.Instr(vm.OpCons)
+	switch len(n) {
+	case 0:
+		return vm.Instr(vm.OpEmptyVector)
+	default:
+		code := NewCodeGen()
+		code.Instr(vm.OpEnd)
+		for i := len(n) - 1; i >= 0; i-- {
+			code.Append(c.compile(n[i]))
+		}
+		code.Instr(vm.OpList)
+		return code.Emit()
 	}
-	return code.Emit()
 }
 
 func (c *Compiler) compileList(n *ListNode) vm.Ins {
@@ -117,6 +125,7 @@ func (c *Compiler) compileList(n *ListNode) vm.Ins {
 	}
 	switch x := n.First().(type) {
 	case *SymbolNode:
+		// TODO: map[string]func([]Node)vm.Ins of special forms.
 		// Special forms.
 		switch x.Name {
 		case "+":
@@ -342,6 +351,9 @@ func (c *Compiler) compileOr(args []Node) vm.Ins {
 	}
 }
 
+// TODO: Let binding appends to frames new arguments.
+//       We then need to drop them again when the scope is left.
+
 func (c *Compiler) compileLet(args []Node) vm.Ins {
 	if len(args) != 2 {
 		panic("[let] requires exactly two arguments")
@@ -465,6 +477,15 @@ func (c *Compiler) compileFnBody(params []Node, body Node) vm.Ins {
 	code.Instr(vm.OpReturn)
 	return code.Emit()
 }
+
+// TODO: Überprüfen ob alle symbole sind.
+//       Anzahl args bis & ermitteln.
+//       Wenn & dann noch vararg compilen.
+
+// code.Instr(vm.OpPushArgs, uint64(n))
+// code.Instr(vm.OpList)
+// code.Instr(vm.OpPushArgs, uint64(1))
+// code.Instr(vm.OpPop)
 
 func (c *Compiler) compileFnParams(code CodeGen, params []Node) {
 	for pos, param := range params {

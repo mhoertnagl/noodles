@@ -52,10 +52,15 @@ const (
 	OpJumpIf
 	OpJumpIfNot
 
+	// TODO: Deprecated.
 	OpNewEnv
 	OpPopEnv
 	OpSetLocal
 	OpGetLocal
+	// -----------------
+
+	OpPushArgs
+	OpGetArg
 	OpSetGlobal
 	OpGetGlobal
 
@@ -116,10 +121,16 @@ var meta = map[Op]*OpMeta{
 	OpJump:      {"Jump", []int{8}},
 	OpJumpIf:    {"JumpIf", []int{8}},
 	OpJumpIfNot: {"JumpIfNot", []int{8}},
-	OpNewEnv:    {"NewEnv", []int{}},
-	OpPopEnv:    {"PopEnv", []int{}},
-	OpSetLocal:  {"SetLocal", []int{8}},
-	OpGetLocal:  {"GetLocal", []int{8}},
+
+	// TODO: Deprecated.
+	OpNewEnv:   {"NewEnv", []int{}},
+	OpPopEnv:   {"PopEnv", []int{}},
+	OpSetLocal: {"SetLocal", []int{8}},
+	OpGetLocal: {"GetLocal", []int{8}},
+	// -----------------
+
+	OpPushArgs:  {"PushArgs", []int{8}},
+	OpGetArg:    {"GetArg", []int{8}},
 	OpSetGlobal: {"SetGlobal", []int{8}},
 	OpGetGlobal: {"GetGlobal", []int{8}},
 	OpRef:       {"Ref", []int{8}},
