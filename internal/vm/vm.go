@@ -234,6 +234,8 @@ func (m *VM) Run(code Ins) {
 			for ; n > 0; n-- {
 				m.pushFrame(m.pop())
 			}
+		case OpDropArgs:
+			m.fsp -= m.readInt64()
 		case OpGetArg:
 			// The first argument is at FRAMES[FP], the nth at FRAMES[FP + n].
 			a := m.fp + m.readInt64()

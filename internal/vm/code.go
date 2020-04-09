@@ -21,14 +21,12 @@ const (
 	OpEmptyList
 	OpEmptyVector
 	OpStr
-	OpPop
-	// OpDup
+
 	OpAdd
 	OpSub
 	OpMul
 	OpDiv
 
-	OpNot
 	OpList
 	OpCons
 	OpFst
@@ -43,6 +41,7 @@ const (
 	// OpSrl
 	// OpSra
 
+	OpNot
 	OpEQ
 	OpNE
 	OpLT
@@ -59,10 +58,15 @@ const (
 	OpGetLocal
 	// -----------------
 
-	OpPushArgs
-	OpGetArg
+	OpPop
+	// OpDup
+
 	OpSetGlobal
 	OpGetGlobal
+
+	OpPushArgs
+	OpDropArgs
+	OpGetArg
 
 	OpRef
 	OpCall
@@ -96,17 +100,18 @@ var meta = map[Op]*OpMeta{
 	OpEmptyList:   {"EmptyList", []int{}},
 	OpEmptyVector: {"EmptyVector", []int{}},
 	OpStr:         {"String", []int{8}},
-	OpPop:         {"Pop", []int{}},
-	OpAdd:         {"Add", []int{}},
-	OpSub:         {"Sub", []int{}},
-	OpMul:         {"Mul", []int{}},
-	OpDiv:         {"Div", []int{}},
-	OpList:        {"List", []int{}},
-	OpCons:        {"Cons", []int{}},
-	OpFst:         {"Fst", []int{}},
-	OpRest:        {"Rest", []int{}},
-	OpLength:      {"Tail", []int{}},
-	OpDissolve:    {"Dissolve", []int{}},
+
+	OpAdd: {"Add", []int{}},
+	OpSub: {"Sub", []int{}},
+	OpMul: {"Mul", []int{}},
+	OpDiv: {"Div", []int{}},
+
+	OpList:     {"List", []int{}},
+	OpCons:     {"Cons", []int{}},
+	OpFst:      {"Fst", []int{}},
+	OpRest:     {"Rest", []int{}},
+	OpLength:   {"Tail", []int{}},
+	OpDissolve: {"Dissolve", []int{}},
 	// OpAnd:         {"And", []int{}},
 	// OpOr:          {"Or", []int{}},
 	// OpInv:         {"Inv", []int{}},
@@ -129,16 +134,21 @@ var meta = map[Op]*OpMeta{
 	OpGetLocal: {"GetLocal", []int{8}},
 	// -----------------
 
-	OpPushArgs:  {"PushArgs", []int{8}},
-	OpGetArg:    {"GetArg", []int{8}},
+	OpPop: {"Pop", []int{}},
+
 	OpSetGlobal: {"SetGlobal", []int{8}},
 	OpGetGlobal: {"GetGlobal", []int{8}},
-	OpRef:       {"Ref", []int{8}},
-	OpCall:      {"Call", []int{}},
-	OpReturn:    {"Return", []int{}},
-	OpEnd:       {"End", []int{}},
-	OpHalt:      {"Halt", []int{}},
-	OpDebug:     {"Debug", []int{8}},
+
+	OpPushArgs: {"PushArgs", []int{8}},
+	OpDropArgs: {"DropArgs", []int{8}},
+	OpGetArg:   {"GetArg", []int{8}},
+
+	OpRef:    {"Ref", []int{8}},
+	OpCall:   {"Call", []int{}},
+	OpReturn: {"Return", []int{}},
+	OpEnd:    {"End", []int{}},
+	OpHalt:   {"Halt", []int{}},
+	OpDebug:  {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
@@ -192,7 +202,13 @@ func Instr(op Op, args ...uint64) Ins {
 	return ins
 }
 
-// TODO: ~> bin?
+func Bool(n bool) Ins {
+	if n {
+		return Instr(OpTrue)
+	}
+	return Instr(OpFalse)
+}
+
 func Str(s string) Ins {
 	b := []byte(s)
 	ln := len(b)
@@ -204,13 +220,11 @@ func Str(s string) Ins {
 	return ins
 }
 
-// TODO: ~> bin?
 // Concat joins an array of instructions.
 func Concat(is []Ins) Ins {
 	return bytes.Join(is, []byte{})
 }
 
-// TODO: ~> bin?
 // ConcatVar joins a variable number of instructions.
 func ConcatVar(is ...Ins) Ins {
 	return Concat(is)
