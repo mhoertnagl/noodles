@@ -13,13 +13,16 @@ import (
 //       Fix Indexof to account for this fact.
 // TODO: Define a function that return the special forms for (+, *) and (-, /)
 // TODO: Variadic +, *, list, ...
+// TODO: context
 // TODO: TR
 // TODO: TCO
 // TODO: Closure
 
-// TODO: Funzt nicht für beliebige Funktionsaufrufe.
+// TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
+//       unterschiedliche Größe haben kann.
 
 // TODO: *STDOUT*
+// TODO: (error *STDERR* args...)
 // TODO: write
 // TODO: str -> use printer to turn value into a string.
 // TODO: *STDIN*

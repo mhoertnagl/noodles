@@ -65,7 +65,7 @@
   ;; @return (num)      The sequence of numbers from `a` up to `b`.
   (defn range [start end step]
     (if (>= start end)
-      ()
+      []
       (:: start (range (+ start step) end step))))
 
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
@@ -87,7 +87,7 @@
   ;;                     individually.
   (defn map [f xs]
     (if (empty? xs)
-      xs ; Will preserve the type of the sequence.
+      []
       (:: (f (head xs)) (map f (tail xs)))))
 
   ; (defn flat-map [p xs]

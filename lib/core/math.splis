@@ -45,28 +45,28 @@
   ;;
   ;; @param  (num) xs  A list of numbers.
   ;; @return num       The sum of all values in `xs`.
-  (defn sum [xs] (reduce + 0 xs))
-
-  (defn sumv [& xs] (sum xs))
+  ; (defn sum [xs] (reduce + 0 xs))
+  ;
+  ; (defn sumv [& xs] (sum xs))
 
   ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
   ;; the empty list.
   ;;
   ;; @param  (num) xs  A list of numbers.
   ;; @return num       The product of all values in `xs`.
-  (defn prodv [xs] (reduce * 1 xs))
-
-  (defn prod [& xs] (prodv xs))
-
-  (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
-
-  (defn minimum [& xs] (minimumv xs))
-
-  (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
-
-  (defn maximum [& xs] (maximumv xs))
-
-  (defn averagev [xs] (/ (sum xs) (count xs)))
-
-  (defn average [& xs] (averagev xs))
+  ; (defn prodv [xs] (reduce * 1 xs))
+  ;
+  ; (defn prod [& xs] (prodv xs))
+  ;
+  ; (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
+  ;
+  ; (defn minimum [& xs] (minimumv xs))
+  ;
+  ; (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
+  ;
+  ; (defn maximum [& xs] (maximumv xs))
+  ;
+  ; (defn averagev [xs] (/ (sum xs) (len xs)))
+  ;
+  ; (defn average [& xs] (averagev xs))
 )

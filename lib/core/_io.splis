@@ -6,10 +6,6 @@
   ;; TODO: Doc.
   (defmacro printsln [& args] (write *STDOUT* @args "\n"))
 
-  ;; TODO: Why do I need to evaluate x before feeding it to str?
-  ;; TODO: Is this the right name for it?
-  ; (defn to-str [x] (if (string? x) x (str (eval x))))
-
   (defmacro print [& args] (prints @(map str args)))
 
   (defmacro println [& args] (printsln @(map str args)))
