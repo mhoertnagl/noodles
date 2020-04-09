@@ -17,6 +17,8 @@ import (
 // TODO: TCO
 // TODO: Closure
 
+// TODO: Funzt nicht für beliebige Funktionsaufrufe.
+
 // TODO: *STDOUT*
 // TODO: write
 // TODO: str -> use printer to turn value into a string.

@@ -380,7 +380,6 @@ func (m *VM) printStack() {
 }
 
 func (m *VM) printFrames() {
-	// TODO: Funzt nicht für beliebige Funktionsaufrufe.
 	w := m.fsp - m.fp + 2
 	fmt.Print("FRAME ⫣")
 	for i := int64(0); i < m.fsp; i++ {
