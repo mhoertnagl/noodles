@@ -429,70 +429,89 @@ func TestRunNE3(t *testing.T) {
 
 // TODO: Environments,locals.
 
-func TestLocals1(t *testing.T) {
-	m := testRun(t,
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpMul),
-		vm.Instr(vm.OpPopEnv),
-	)
-	testVal(t, int64(4), m.InspectStack(0))
-}
-
-func TestLocals2(t *testing.T) {
-	m := testRun(t,
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpSetLocal, 1),
-		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpSetLocal, 2),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 1),
-		vm.Instr(vm.OpGetLocal, 2),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
-		vm.Instr(vm.OpPopEnv),
-	)
-	testVal(t, int64(6), m.InspectStack(0))
-}
-
-func TestLocals3(t *testing.T) {
-	m := testRun(t,
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
-		vm.Instr(vm.OpPopEnv),
-	)
-	testVal(t, int64(6), m.InspectStack(0))
-}
-
 func TestRunLet1(t *testing.T) {
 	m := testRun(t,
-		vm.Instr(vm.OpNewEnv),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpGetLocal, 0),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpDropArgs, 1),
+		vm.Instr(vm.OpHalt),
 	)
 	testVal(t, int64(4), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
+}
+
+func TestRunLet2(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpDropArgs, 2),
+		vm.Instr(vm.OpHalt),
+	)
+	testVal(t, int64(3), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
+}
+
+func TestRunLet31(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpHalt),
+	)
+	testVal(t, int64(1), m.InspectFrames(0))
+	testVal(t, int64(2), m.InspectFrames(1))
+	testVal(t, int64(1), m.InspectStack(0))
+	testVal(t, int64(2), m.InspectStack(1))
+}
+
+func TestRunLet3(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpDropArgs, 2),
+		vm.Instr(vm.OpHalt),
+	)
+	testVal(t, int64(1), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
+}
+
+func TestRunLet4(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpDropArgs, 1),
+		vm.Instr(vm.OpDropArgs, 1),
+		vm.Instr(vm.OpHalt),
+	)
+	testVal(t, int64(3), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
 
 func TestRunDef1(t *testing.T) {
@@ -525,7 +544,34 @@ func TestRunIf2(t *testing.T) {
 	)
 }
 
+func TestRunIf3(t *testing.T) {
+	testToS(t, int64(21),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 42),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 21),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunIf4(t *testing.T) {
+	testToS(t, int64(42),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 42),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 21),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 // TODO: Locals with shadowing.
+//       Does not work for the current implementation of let bindings.
 
 func TestRunCreateVector1(t *testing.T) {
 	e := []vm.Val{int64(1), int64(2), int64(3)}
@@ -640,43 +686,8 @@ func TestRunHalt(t *testing.T) {
 	)
 }
 
-func TestRunFunCall(t *testing.T) {
-	testToS(t, int64(3),
-		vm.Instr(vm.OpConst, 1),
-		// vm.Instr(vm.OpDebug, 1),
-		// -| 1
-		vm.Instr(vm.OpConst, 39),
-		// vm.Instr(vm.OpDebug, 1),
-		// -| 1 @30
-		// call fn (1) => 1 + 1
-		vm.Instr(vm.OpCall),
-		// -| 2
-		// -| 2 1
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpAdd),
-		// -| 3
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x x))
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpNewEnv),
-		// Stack contains arguments in reverse order.
-		vm.Instr(vm.OpSetLocal, 0),
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpGetLocal, 0),
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpDebug, vm.DbgStack),
-		vm.Instr(vm.OpPopEnv),
-		// -| 2*x
-		vm.Instr(vm.OpReturn),
-	)
-}
-
-func TestCallAnonymousFun2(t *testing.T) {
-	testToS(t, int64(2),
+func TestRunAnonymousFun2(t *testing.T) {
+	m := testRun(t,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
@@ -684,19 +695,20 @@ func TestCallAnonymousFun2(t *testing.T) {
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 	)
+	testVal(t, int64(2), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestCallAnonymousFun3(t *testing.T) {
-	testToS(t, int64(3),
+func TestRunAnonymousFun3(t *testing.T) {
+	m := testRun(t,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
@@ -707,47 +719,49 @@ func TestCallAnonymousFun3(t *testing.T) {
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 	)
+	testVal(t, int64(3), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestCallAnonymousFun4(t *testing.T) {
-	testToS(t, int64(2),
+func TestRunAnonymousFun4(t *testing.T) {
+	m := testRun(t,
 		// (((fn ...)) 1)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpRef, 55),
+		vm.Instr(vm.OpRef, 53),
 		// Call the 0-adic function that returns the 1-adic function.
 		vm.Instr(vm.OpCall),
 		// Call the 1-adic function.
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 		// (fn [] ...)
 		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpRef, 23),
 		vm.Instr(vm.OpReturn),
 	)
+	testVal(t, int64(2), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestCallLeafFunDef(t *testing.T) {
-	testToS(t, int64(3),
+func TestRunLeafFunDef(t *testing.T) {
+	m := testRun(t,
 		// (def inc (fn ...))
 		vm.Instr(vm.OpRef, 49),
 		vm.Instr(vm.OpSetGlobal, hash("inc")),
@@ -761,19 +775,21 @@ func TestCallLeafFunDef(t *testing.T) {
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpHalt),
 		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
 		vm.Instr(vm.OpReturn),
 	)
+	testVal(t, int64(3), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestCallVariadicFun(t *testing.T) {
-	testToS(t, []vm.Val{int64(1), int64(2), int64(3), int64(4)},
+func TestRunVariadicFun(t *testing.T) {
+	e := []vm.Val{int64(1), int64(2), int64(3), int64(4)}
+	m := testRun(t,
 		// ((fn ...) 1 2 3 4)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 4),
@@ -784,18 +800,173 @@ func TestCallVariadicFun(t *testing.T) {
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpHalt),
 		// (fn [x & xs] (:: x xs))
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpSetLocal, hash("xs")),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("xs")),
-		vm.Instr(vm.OpGetLocal, hash("x")),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpCons),
-		vm.Instr(vm.OpPopEnv),
+		vm.Instr(vm.OpReturn),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
+}
+
+func TestRunFac5(t *testing.T) {
+	testToS(t, int64(120),
+		vm.Instr(vm.OpRef, 57),
+		vm.Instr(vm.OpSetGlobal, hash("fac")),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 40),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpMul),
 		vm.Instr(vm.OpReturn),
 	)
 }
+
+// func TestCallAnonymousFun2(t *testing.T) {
+// 	testToS(t, int64(2),
+// 		// ((fn ...) 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 21),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
+
+// func TestCallAnonymousFun3(t *testing.T) {
+// 	testToS(t, int64(3),
+// 		// ((fn ...) 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 31),
+// 		vm.Instr(vm.OpCall),
+// 		// (+ ((fn ...) 1) 1)
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
+
+// func TestCallAnonymousFun4(t *testing.T) {
+// 	testToS(t, int64(2),
+// 		// (((fn ...)) 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpRef, 55),
+// 		// Call the 0-adic function that returns the 1-adic function.
+// 		vm.Instr(vm.OpCall),
+// 		// Call the 1-adic function.
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 		// (fn [] ...)
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpRef, 23),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
+
+// func TestCallLeafFunDef(t *testing.T) {
+// 	testToS(t, int64(3),
+// 		// (def inc (fn ...))
+// 		vm.Instr(vm.OpRef, 49),
+// 		vm.Instr(vm.OpSetGlobal, hash("inc")),
+// 		// (inc 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpGetGlobal, hash("inc")),
+// 		vm.Instr(vm.OpCall),
+// 		// (+ (inc ...) 1)
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
+
+// func TestCallVariadicFun(t *testing.T) {
+// 	testToS(t, []vm.Val{int64(1), int64(2), int64(3), int64(4)},
+// 		// ((fn ...) 1 2 3 4)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 4),
+// 		vm.Instr(vm.OpConst, 3),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 48),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x & xs] (:: x xs))
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpList),
+// 		vm.Instr(vm.OpSetLocal, hash("xs")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("xs")),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpCons),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
 
 func TestRunStringConst(t *testing.T) {
 	testToS(t, "Hello, World!",
@@ -817,39 +988,39 @@ func TestRunTest0Bin(t *testing.T) {
 	)
 }
 
-func TestRunTestLinkBin(t *testing.T) {
-	testToS(t, int64(6),
-		vm.Instr(vm.OpJump, 64),
-
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpPopEnv),
-		vm.Instr(vm.OpReturn),
-
-		vm.Instr(vm.OpNewEnv),
-		vm.Instr(vm.OpSetLocal, hash("x")),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetLocal, hash("x")),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpMul),
-		vm.Instr(vm.OpPopEnv),
-		vm.Instr(vm.OpReturn),
-
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 9),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpRef, 41),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpAdd),
-	)
-}
+// func TestRunTestLinkBin(t *testing.T) {
+// 	testToS(t, int64(6),
+// 		vm.Instr(vm.OpJump, 64),
+//
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+//
+// 		vm.Instr(vm.OpNewEnv),
+// 		vm.Instr(vm.OpSetLocal, hash("x")),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetLocal, hash("x")),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpMul),
+// 		vm.Instr(vm.OpPopEnv),
+// 		vm.Instr(vm.OpReturn),
+//
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 9),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpRef, 41),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpAdd),
+// 	)
+// }
 
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the

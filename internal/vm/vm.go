@@ -5,18 +5,6 @@ import (
 	"fmt"
 )
 
-// TODO: *STDOUT*
-// TODO: write
-// TODO: str -> use printer to turn value into a string.
-// TODO: *STDIN*
-// TODO: read
-// TODO: :::
-// TODO: quot
-// TODO: mod
-// TODO: join (strings)
-
-// TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
-
 // This is a special marker that marks the end of a sequence on the stack.
 // For instance an end is pushed onto the stack before the arguments to a
 // function invocation are pushed. The virtual machine can leverage this marker
@@ -72,8 +60,9 @@ func (m *VM) InspectEnvs(offset int64) Env {
 }
 
 func (m *VM) InspectFrames(offset int64) Val {
-	a := m.fsp - offset - 1
-	if a >= 0 {
+	a := m.fp + offset
+	// Adresses above the FSP are invalid.
+	if a >= 0 && a < m.fsp {
 		return m.frames[a]
 	}
 	return nil
@@ -84,10 +73,9 @@ func (m *VM) FramesSize() int64 {
 }
 
 func (m *VM) Run(code Ins) {
-	m.ip = 0
 	m.code = code
 	ln := int64(len(code))
-	for m.ip < ln {
+	for m.ip = 0; m.ip < ln; {
 		switch m.readOp() {
 		case OpConst:
 			m.push(m.readInt64())
@@ -213,20 +201,6 @@ func (m *VM) Run(code Ins) {
 				m.ip += d
 			}
 
-			// TODO: Deprecated.
-		case OpNewEnv:
-			m.newEnv()
-			// TODO: Deprecated.
-		case OpPopEnv:
-			m.ep--
-			// TODO: Deprecated.
-		case OpSetLocal:
-			m.bindEnv(m.ep-1, m.readInt64(), m.pop())
-			// TODO: Deprecated.
-		case OpGetLocal:
-			m.push(m.lookupEnv(m.ep-1, m.readInt64()))
-			// ----------------
-
 		case OpPushArgs:
 			// Pops n arguments from the stack and pushes them onto the frames stack.
 			// This will reverse the order of the arguments.
@@ -260,9 +234,14 @@ func (m *VM) Run(code Ins) {
 		case OpDebug:
 			mode := m.readUint64()
 			// Bit 0 show stack.
-			if mode&DbgStack == 1 {
+			if mode&DbgStack > 0 {
 				m.printStack()
 			}
+			// Bit 1 show frames stack.
+			if mode&DbgFrames > 0 {
+				m.printFrames()
+			}
+			fmt.Print("\n")
 		default:
 			panic("Unsupported operation.")
 		}
@@ -393,9 +372,23 @@ func (m *VM) le(l Val, r Val) bool {
 }
 
 func (m *VM) printStack() {
-	fmt.Print("-|")
+	fmt.Print("STACK ⫣")
 	for i := int64(0); i < m.sp; i++ {
-		fmt.Printf(" %v", m.stack[i])
+		fmt.Printf(" %v │", m.stack[i])
+	}
+	fmt.Print("\n")
+}
+
+func (m *VM) printFrames() {
+	// TODO: Funzt nicht für beliebige Funktionsaufrufe.
+	w := m.fsp - m.fp + 2
+	fmt.Print("FRAME ⫣")
+	for i := int64(0); i < m.fsp; i++ {
+		if i > 0 && i%w == w-1 {
+			fmt.Printf(" %v │", m.frames[i])
+		} else {
+			fmt.Printf(" %v ⏐", m.frames[i])
+		}
 	}
 	fmt.Print("\n")
 }

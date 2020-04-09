@@ -51,13 +51,6 @@ const (
 	OpJumpIf
 	OpJumpIfNot
 
-	// TODO: Deprecated.
-	OpNewEnv
-	OpPopEnv
-	OpSetLocal
-	OpGetLocal
-	// -----------------
-
 	OpPop
 	// OpDup
 
@@ -82,7 +75,9 @@ const (
 // Arguments to OpDebug.
 const (
 	// DbgStack prints the stack.
-	DbgStack = uint64(1)
+	DbgStack = uint64(1 << 0)
+	// DbgFrames prints the frames stack.
+	DbgFrames = uint64(1 << 1)
 )
 
 // OpMeta contains the human-readable name of the operation and the length in
@@ -126,13 +121,6 @@ var meta = map[Op]*OpMeta{
 	OpJump:      {"Jump", []int{8}},
 	OpJumpIf:    {"JumpIf", []int{8}},
 	OpJumpIfNot: {"JumpIfNot", []int{8}},
-
-	// TODO: Deprecated.
-	OpNewEnv:   {"NewEnv", []int{}},
-	OpPopEnv:   {"PopEnv", []int{}},
-	OpSetLocal: {"SetLocal", []int{8}},
-	OpGetLocal: {"GetLocal", []int{8}},
-	// -----------------
 
 	OpPop: {"Pop", []int{}},
 

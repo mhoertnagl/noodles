@@ -9,6 +9,26 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
+// TODO: let bindings should have their own symbol table.
+//       Fix Indexof to account for this fact.
+// TODO: Define a function that return the special forms for (+, *) and (-, /)
+// TODO: Variadic +, *, list, ...
+// TODO: TR
+// TODO: TCO
+// TODO: Closure
+
+// TODO: *STDOUT*
+// TODO: write
+// TODO: str -> use printer to turn value into a string.
+// TODO: *STDIN*
+// TODO: read
+// TODO: :::
+// TODO: quot
+// TODO: mod
+// TODO: join (strings)
+
+// TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
+
 type fnDef struct {
 	addr uint64
 	code vm.Ins
@@ -79,10 +99,6 @@ func NewCompiler() *Compiler {
 	return c
 }
 
-// TODO: static scoping?
-// TODO: Variadic +, *, list, ...
-// TODO: Closure
-
 func (c *Compiler) Compile(node Node) vm.Ins {
 	sym := NewSymTable()
 	code := NewCodeGen()
@@ -113,18 +129,11 @@ func (c *Compiler) compile(node Node, sym *SymTable) vm.Ins {
 	panic(fmt.Sprintf("Compiler: Unsupported node [%v:%T]", node, node))
 }
 
-// TODO: Hier muss unterschieden werden, ob wir eine lokale Variable oder ein
-//       globales Symbol kompilieren.
-//       Dafür benötigen wir einen Symboltable-Tree
-
-// vm.Instr(vm.OpGetArg, sym.indexOf(n.Name))
-// vm.Instr(vm.OpGetGlobal, c.hashSymbol(n))
-
 func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable) vm.Ins {
 	if idx, ok := sym.IndexOf(n.Name); ok {
 		return vm.Instr(vm.OpGetArg, uint64(idx))
 	}
-	return vm.Instr(vm.OpGetLocal, c.hashSymbol(n))
+	return vm.Instr(vm.OpGetGlobal, c.hashSymbol(n))
 }
 
 func (c *Compiler) compileVector(n []Node, sym *SymTable) vm.Ins {
@@ -148,17 +157,26 @@ func (c *Compiler) compileList(n *ListNode, sym *SymTable) vm.Ins {
 	}
 	switch x := n.First().(type) {
 	case *SymbolNode:
-		// Special forms.
+		if x.Name == "debug" {
+			mode := n.Rest()[0].(int64)
+			return vm.Instr(vm.OpDebug, uint64(mode))
+		}
+		// Special forms handle their arguments in various ways. The arguments
+		// may not get compiled in sequence.
 		if spec, ok := c.specs[x.Name]; ok {
 			return spec(n.Rest(), sym)
 		}
 		// Primitive functions follow the same pattern: first compile all the
-		// arguments, then append a single VM instruction.
+		// arguments (either ascending or descending), then append a single VM
+		// instruction.
 		if prim, ok := c.prims[x.Name]; ok {
 			return c.compilePrim(x.Name, prim, n.Rest(), sym)
 		}
+		// Compile a call to the global function.
 		return c.compileCall(x, n.Rest(), sym)
 	case *ListNode:
+		// Compile the list. We expect the result of the computation to be a
+		// REF value which we can then call.
 		return c.compileListCall(x, n.Rest(), sym)
 	default:
 		panic(fmt.Sprintf("Cannot compile list head [%v]", x))
@@ -366,27 +384,27 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
 		// TODO: Problem when shadowing a variable.
 		locals := make([]string, 0)
 		for i := 0; i < len(bs.Items); i += 2 {
+			// for i := len(bs.Items) - 1; i >= 0; i -= 2 {
 			if s, ok2 := bs.Items[i].(*SymbolNode); ok2 {
 				// Keep track of the let bindings. We will remove them when we fall
 				// out of scope.
 				locals = append(locals, s.Name)
-				// Add the local binding. Subsequent bindings will be able to access
-				// the privously defined let bindings.
+				// Add the local binding to the symbol table.
 				sym.AddVar(s.Name)
 
 				code.Append(c.compile(bs.Items[i+1], sym))
+				// Add the let bindings ont at a time so that subsequent bindings
+				// will be able to access the privously defined let bindings.
+				code.Instr(vm.OpPushArgs, 1)
 			} else {
 				panic(fmt.Sprintf("[let] cannot bind to [%v]", s))
 			}
 		}
 
-		llen := uint64(len(locals))
-		// Push the compiled arguments to the frames stack.
-		code.Instr(vm.OpPushArgs, llen)
 		code.Append(c.compile(args[1], sym))
 		// A let binding does not posess a separate frame. We need to drop all
 		// introduced let bindings before we continue.
-		code.Instr(vm.OpDropArgs, llen)
+		code.Instr(vm.OpDropArgs, uint64(len(locals)))
 
 		// Remove the let bindings from the symbol table as well.
 		sym.Remove(locals)

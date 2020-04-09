@@ -2,6 +2,7 @@ package cmp_test
 
 import (
 	"bytes"
+	"fmt"
 	"hash/fnv"
 	"testing"
 
@@ -269,8 +270,9 @@ func TestCompileLet1(t *testing.T) {
 func TestCompileLet2(t *testing.T) {
 	testc(t, "(let (a 1 b 2) (+ a b))",
 		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpGetArg, 1),
 		vm.Instr(vm.OpAdd),
@@ -279,21 +281,40 @@ func TestCompileLet2(t *testing.T) {
 	)
 }
 
-func TestCompileDef1(t *testing.T) {
-	testc(t, "(def b (+ 1 1))",
+func TestCompileLet3(t *testing.T) {
+	testc(t, "(let (a 1 b 2) (- b a))",
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpSetGlobal, hash("b")),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpDropArgs, 2),
 		vm.Instr(vm.OpHalt),
 	)
 }
 
-// TODO: Müssen wir das unterstützen? Ich glaube nicht. Es genügt wenn wir
-//       den Macro-Rewriter zum Compiler hinzufügen.
-func TestCompileDef2(t *testing.T) {
-	t.SkipNow()
-	testc(t, "(def (fn [] b) (+ 1 1))",
+func TestCompileLet4(t *testing.T) {
+	testc(t, `
+    (let (a 2)
+      (let (b 6)
+        (/ b a)))`,
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpDropArgs, 1),
+		vm.Instr(vm.OpDropArgs, 1),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileDef1(t *testing.T) {
+	testc(t, "(def b (+ 1 1))",
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -318,6 +339,32 @@ func TestCompileIf2(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpJump, 9),
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileIf3(t *testing.T) {
+	testc(t, "(if (= 1 0) 42 21)",
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 42),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 21),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestCompileIf4(t *testing.T) {
+	testc(t, "(if (= 0 0) 42 21)",
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 42),
+		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpConst, 21),
 		vm.Instr(vm.OpHalt),
 	)
 }
@@ -450,8 +497,8 @@ func TestCompileDo(t *testing.T) {
 		vm.Instr(vm.OpSetGlobal, hash("a")),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpSetGlobal, hash("b")),
-		vm.Instr(vm.OpGetLocal, hash("a")),
-		vm.Instr(vm.OpGetLocal, hash("b")),
+		vm.Instr(vm.OpGetGlobal, hash("a")),
+		vm.Instr(vm.OpGetGlobal, hash("b")),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpHalt),
 	)
@@ -751,7 +798,55 @@ func TestCompileSpliceQuote2(t *testing.T) {
 // 	)
 // }
 
-func testc(t *testing.T, i string, e ...vm.Ins) {
+func TestCompileFac(t *testing.T) {
+	testc(t, `
+    (do
+      (def fac
+        (fn [n]
+          (do
+            (debug 3)
+            (if (= n 0)
+              1
+              (* n (fac (- n 1)))
+            )
+          )
+        )
+      )
+      (debug 3)
+      (fac 5)
+      (debug 3)
+    )`,
+		vm.Instr(vm.OpRef, 57),
+		vm.Instr(vm.OpSetGlobal, hash("fac")),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 40),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func testc(t *testing.T, i string, es ...vm.Ins) {
 	t.Helper()
 	r := cmp.NewReader()
 	p := cmp.NewParser()
@@ -761,10 +856,38 @@ func testc(t *testing.T, i string, e ...vm.Ins) {
 	n := p.Parse(r)
 	n = w.Rewrite(n)
 	s := c.Compile(n)
-	ee := vm.Concat(e)
-	x := bytes.Compare(s, ee)
-	if x != 0 {
-		t.Errorf("Mismatch [%d] Expecting \n  %v\n but got \n  %v.", x, ee, s)
+	e := vm.Concat(es)
+	compareAssembly(t, s, e)
+}
+
+func compareAssembly(t *testing.T, a []byte, e []byte) {
+	t.Helper()
+	if bytes.Compare(a, e) != 0 {
+		t.Errorf("Expecting \n  %v\n but got \n  %v", e, a)
+		d := vm.NewDisassembler()
+		da := d.Disassemble(a)
+		de := d.Disassemble(e)
+		la := len(da)
+		le := len(de)
+		lm := la
+		if le > la {
+			lm = le
+		}
+		var buf bytes.Buffer
+		buf.WriteString(fmt.Sprintf("     %-40s%s\n", "Actual", "Expecting"))
+		buf.WriteString(fmt.Sprintf("     %-40s%s\n", "------", "---------"))
+		for i := 0; i < lm; i++ {
+			sa := ""
+			if i < la {
+				sa = da[i]
+			}
+			se := ""
+			if i < le {
+				se = de[i]
+			}
+			buf.WriteString(fmt.Sprintf("%3d: %-40s%s\n", i, sa, se))
+		}
+		t.Errorf("\n%s", buf.String())
 	}
 }
 
