@@ -475,7 +475,7 @@ func TestCompileOr3(t *testing.T) {
 // 	testc(t, "(bit-shift-right 8 2)",
 // 		vm.Instr(vm.OpConst, 8),
 // 		vm.Instr(vm.OpConst, 2),
-// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpSrl),
 // 		vm.Instr(vm.OpHalt),
 // 	)
 // }
@@ -485,7 +485,7 @@ func TestCompileOr3(t *testing.T) {
 // 		vm.Instr(vm.OpConst, 8),
 // 		vm.Instr(vm.OpSub),
 // 		vm.Instr(vm.OpConst, 2),
-// 		vm.Instr(vm.OpSll),
+// 		vm.Instr(vm.OpSra),
 // 		vm.Instr(vm.OpHalt),
 // 	)
 // }
@@ -845,6 +845,66 @@ func TestCompileFac(t *testing.T) {
 	)
 }
 
+func TestCompileTailFac(t *testing.T) {
+	testc(t, `
+    (do
+      (def _fac
+        (fn [n acc]
+          (do
+            (debug 3)
+            (if (= n 0)
+              acc
+              (_fac (- n 1) (* n acc))
+            )
+          )
+				)
+			)
+			(def fac (fn [n] (_fac n 1) ))
+      (debug 3)
+      (fac 5)
+      (debug 3)
+    )`,
+		vm.Instr(vm.OpRef, 75),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpRef, 190),
+		vm.Instr(vm.OpSetGlobal, 1),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpGetGlobal, 1),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpJump, 49),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
 func testc(t *testing.T, i string, es ...vm.Ins) {
 	t.Helper()
 	r := cmp.NewReader()
@@ -873,8 +933,8 @@ func compareAssembly(t *testing.T, a []byte, e []byte) {
 			lm = le
 		}
 		var buf bytes.Buffer
-		buf.WriteString(fmt.Sprintf("     %-40s%s\n", "Actual", "Expecting"))
-		buf.WriteString(fmt.Sprintf("     %-40s%s\n", "------", "---------"))
+		buf.WriteString(fmt.Sprintf("     %-20s%s\n", "Actual", "Expecting"))
+		buf.WriteString(fmt.Sprintf("     %-20s%s\n", "------", "---------"))
 		for i := 0; i < lm; i++ {
 			sa := ""
 			if i < la {
@@ -884,7 +944,7 @@ func compareAssembly(t *testing.T, a []byte, e []byte) {
 			if i < le {
 				se = de[i]
 			}
-			buf.WriteString(fmt.Sprintf("%3d: %-40s%s\n", i, sa, se))
+			buf.WriteString(fmt.Sprintf("%3d: %-20s%s\n", i, sa, se))
 		}
 		t.Errorf("\n%s", buf.String())
 	}

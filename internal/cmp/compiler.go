@@ -9,7 +9,7 @@ import (
 
 // TODO: let bindings should have their own symbol table.
 //       Fix Indexof to account for this fact.
-// TODO: Define a function that return the special forms for (+, *) and (-, /)
+// TODO: Define functions that return the special forms for (+, *) and (-, /)
 // TODO: Variadic +, *, list, ...
 // TODO: Special functions +, -, *, / as well as primitives need implementations
 //       as ordinary functions. This way they can be passed around as args.
@@ -27,12 +27,14 @@ import (
 // TODO: str -> use printer to turn value into a string.
 // TODO: *STDIN*
 // TODO: read
+
 // TODO: :::
 // TODO: quot
 // TODO: mod
 // TODO: join (strings)
 
-// TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
+// TODO: Feed global names to disassembler and any place where they make sense.
+// TODO: Optional parameter for macro definitions.
 
 type Compiler struct {
 	specs specDefs
@@ -78,6 +80,7 @@ func NewCompiler() *Compiler {
 }
 
 // AddGlobal registers a name with the global definitions.
+// NOTE: Every definition has to be registerd in the VM as well.
 func (c *Compiler) AddGlobal(name string) uint64 {
 	return c.defs.add(name)
 }
@@ -166,7 +169,7 @@ func (c *Compiler) compileList(n *ListNode, sym *SymTable) vm.Ins {
 		// REF value which we can then call.
 		return c.compileListCall(x, n.Rest(), sym)
 	default:
-		panic(fmt.Sprintf("Cannot compile list head [%v]", x))
+		panic(fmt.Sprintf("Cannot compile list head [%v:%T]", x, x))
 	}
 }
 

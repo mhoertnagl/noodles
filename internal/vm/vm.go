@@ -34,6 +34,12 @@ func NewVM(stackSize int64, envStackSize int64, frameStackSize int64) *VM {
 	}
 }
 
+// AddGlobal assigns a value to an ID in the global definitions.
+// NOTE: Every definition has to be registerd in the compiler as well.
+func (m *VM) AddGlobal(id uint64, val Val) {
+	m.defs[id] = val
+}
+
 func (m *VM) InspectStack(offset int64) Val {
 	a := m.sp - offset - 1
 	if a >= 0 {

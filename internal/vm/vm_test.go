@@ -813,7 +813,7 @@ func TestRunVariadicFun(t *testing.T) {
 	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestRunFac5(t *testing.T) {
+func TestRunFac(t *testing.T) {
 	testToS(t, int64(120),
 		vm.Instr(vm.OpRef, 57),
 		vm.Instr(vm.OpSetGlobal, 0),
@@ -841,6 +841,49 @@ func TestRunFac5(t *testing.T) {
 		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpReturn),
+	)
+}
+
+func TestRunTailFac(t *testing.T) {
+	testToS(t, int64(120),
+		vm.Instr(vm.OpRef, 75),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpRef, 190),
+		vm.Instr(vm.OpSetGlobal, 1),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpGetGlobal, 1),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpDebug, 3),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpJump, 49),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpReturn),
 	)
 }
