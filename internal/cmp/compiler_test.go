@@ -3,7 +3,6 @@ package cmp_test
 import (
 	"bytes"
 	"fmt"
-	"hash/fnv"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/cmp"
@@ -318,7 +317,7 @@ func TestCompileDef1(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpSetGlobal, hash("b")),
+		vm.Instr(vm.OpSetGlobal, 0),
 		vm.Instr(vm.OpHalt),
 	)
 }
@@ -494,11 +493,11 @@ func TestCompileOr3(t *testing.T) {
 func TestCompileDo(t *testing.T) {
 	testc(t, "(do (def a 1) (def b 2) (+ a b))",
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpSetGlobal, hash("a")),
+		vm.Instr(vm.OpSetGlobal, 0),
 		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpSetGlobal, hash("b")),
-		vm.Instr(vm.OpGetGlobal, hash("a")),
-		vm.Instr(vm.OpGetGlobal, hash("b")),
+		vm.Instr(vm.OpSetGlobal, 1),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpGetGlobal, 1),
 		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpHalt),
 	)
@@ -670,11 +669,11 @@ func TestCompileLeafFunDef(t *testing.T) {
     )`,
 		// (def inc (fn ...))
 		vm.Instr(vm.OpRef, 49),
-		vm.Instr(vm.OpSetGlobal, hash("inc")),
+		vm.Instr(vm.OpSetGlobal, 0),
 		// (inc 1)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpGetGlobal, hash("inc")),
+		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 		// (+ (inc ...) 1)
 		vm.Instr(vm.OpConst, 1),
@@ -817,11 +816,11 @@ func TestCompileFac(t *testing.T) {
       (debug 3)
     )`,
 		vm.Instr(vm.OpRef, 57),
-		vm.Instr(vm.OpSetGlobal, hash("fac")),
+		vm.Instr(vm.OpSetGlobal, 0),
 		vm.Instr(vm.OpDebug, 3),
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 5),
-		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpDebug, 3),
 		vm.Instr(vm.OpHalt),
@@ -839,7 +838,7 @@ func TestCompileFac(t *testing.T) {
 		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpSub),
-		vm.Instr(vm.OpGetGlobal, hash("fac")),
+		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpMul),
 		vm.Instr(vm.OpReturn),
@@ -889,11 +888,4 @@ func compareAssembly(t *testing.T, a []byte, e []byte) {
 		}
 		t.Errorf("\n%s", buf.String())
 	}
-}
-
-func hash(sym string) uint64 {
-	hg := fnv.New64()
-	hg.Reset()
-	hg.Write([]byte(sym))
-	return hg.Sum64()
 }

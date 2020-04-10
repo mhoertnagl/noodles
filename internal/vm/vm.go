@@ -14,33 +14,24 @@ var end Val = nil
 type VM struct {
 	ip     int64
 	sp     int64
-	ep     int64
 	fp     int64
 	fsp    int64
+	defs   []Val
 	stack  []Val
-	envs   []Env
 	frames []Val
 	code   Ins
 }
 
-func New(
-	stackSize int64,
-	envStackSize int64,
-	frameStackSize int64) *VM {
-	m := &VM{
-		ip:    0,
-		sp:    0,
-		ep:    0,
-		fp:    0,
-		fsp:   0,
-		stack: make([]Val, stackSize),
-		// TODO: We only need a single global environment in the future.
-		envs:   make([]Env, envStackSize),
+func NewVM(stackSize int64, envStackSize int64, frameStackSize int64) *VM {
+	return &VM{
+		ip:     0,
+		sp:     0,
+		fp:     0,
+		fsp:    0,
+		defs:   make([]Val, envStackSize),
+		stack:  make([]Val, stackSize),
 		frames: make([]Val, frameStackSize),
 	}
-	// Create the outermost environment.
-	m.newEnv()
-	return m
 }
 
 func (m *VM) InspectStack(offset int64) Val {
@@ -53,10 +44,6 @@ func (m *VM) InspectStack(offset int64) Val {
 
 func (m *VM) StackSize() int64 {
 	return m.sp
-}
-
-func (m *VM) InspectEnvs(offset int64) Env {
-	return m.envs[offset]
 }
 
 func (m *VM) InspectFrames(offset int64) Val {
@@ -215,9 +202,9 @@ func (m *VM) Run(code Ins) {
 			a := m.fp + m.readInt64()
 			m.push(m.frames[a])
 		case OpSetGlobal:
-			m.bindEnv(0, m.readInt64(), m.pop())
+			m.defs[m.readInt64()] = m.pop()
 		case OpGetGlobal:
-			m.push(m.lookupEnv(0, m.readInt64()))
+			m.push(m.defs[m.readInt64()])
 		case OpCall:
 			m.pushFrame(m.ip)   // Push IP.
 			m.pushFrame(m.fp)   // Push pointer to previous frame.
@@ -314,28 +301,6 @@ func (m *VM) readString(l int64) string {
 	s := string(m.code[m.ip : m.ip+l])
 	m.ip += l
 	return s
-}
-
-func (m *VM) newEnv() {
-	m.envs[m.ep] = make(Env)
-	m.ep++
-}
-
-func (m *VM) bindEnv(ep int64, a int64, v Val) {
-	env := m.envs[ep]
-	if x, ok := env[a]; ok {
-		panic(fmt.Sprintf("Symbol [%d] already bound to [%v]", a, x))
-	}
-	env[a] = v
-}
-
-func (m *VM) lookupEnv(ep int64, a int64) Val {
-	for i := ep; i >= 0; i-- {
-		if v, ok := m.envs[i][a]; ok {
-			return v
-		}
-	}
-	panic(fmt.Sprintf("Unbound symbol [%d]", a))
 }
 
 func (m *VM) eq(l Val, r Val) bool {

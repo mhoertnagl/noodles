@@ -2,8 +2,6 @@ package cmp
 
 import (
 	"fmt"
-	"hash"
-	"hash/fnv"
 
 	"github.com/mhoertnagl/splis2/internal/util"
 	"github.com/mhoertnagl/splis2/internal/vm"
@@ -13,6 +11,8 @@ import (
 //       Fix Indexof to account for this fact.
 // TODO: Define a function that return the special forms for (+, *) and (-, /)
 // TODO: Variadic +, *, list, ...
+// TODO: Special functions +, -, *, / as well as primitives need implementations
+//       as ordinary functions. This way they can be passed around as args.
 // TODO: context
 // TODO: TR
 // TODO: TCO
@@ -34,44 +34,17 @@ import (
 
 // TODO: https://yourbasic.org/golang/bitwise-operator-cheat-sheet/
 
-type fnDef struct {
-	addr uint64
-	code vm.Ins
-}
-
-type specFun func([]Node, *SymTable) vm.Ins
-
-type specDefs map[string]specFun
-
-func (d specDefs) add(name string, fn specFun) {
-	d[name] = fn
-}
-
-type primDef struct {
-	op    vm.Op
-	nargs int
-	rev   bool
-}
-
-type primDefs map[string]primDef
-
-func (d primDefs) add(name string, op vm.Op, nargs int, rev bool) {
-	d[name] = primDef{op: op, nargs: nargs, rev: rev}
-}
-
 type Compiler struct {
-	hg    hash.Hash64
 	specs specDefs
 	prims primDefs
-	fns   []*fnDef
-	//sym   *SymTable
+	fns   fnDefs
+	defs  *defMap
 }
 
 func NewCompiler() *Compiler {
 	c := &Compiler{
-		hg:  fnv.New64(),
-		fns: make([]*fnDef, 0),
-		//sym:   NewSymTable(),
+		fns:  make(fnDefs, 0),
+		defs: newDefMap(),
 	}
 
 	c.specs = specDefs{}
@@ -104,6 +77,11 @@ func NewCompiler() *Compiler {
 	return c
 }
 
+// AddGlobal registers a name with the global definitions.
+func (c *Compiler) AddGlobal(name string) uint64 {
+	return c.defs.add(name)
+}
+
 func (c *Compiler) Compile(node Node) vm.Ins {
 	sym := NewSymTable()
 	code := NewCodeGen()
@@ -131,14 +109,20 @@ func (c *Compiler) compile(node Node, sym *SymTable) vm.Ins {
 	case *ListNode:
 		return c.compileList(n, sym)
 	}
-	panic(fmt.Sprintf("Compiler: Unsupported node [%v:%T]", node, node))
+	panic(fmt.Sprintf("unsupported node [%v:%T]", node, node))
 }
 
 func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable) vm.Ins {
 	if idx, ok := sym.IndexOf(n.Name); ok {
 		return vm.Instr(vm.OpGetArg, uint64(idx))
 	}
-	return vm.Instr(vm.OpGetGlobal, c.hashSymbol(n))
+
+	id, ok := c.defs.get(n.Name)
+	if !ok {
+		panic(fmt.Sprintf("unknown global [%s]", n.Name))
+	}
+
+	return vm.Instr(vm.OpGetGlobal, id)
 }
 
 func (c *Compiler) compileVector(n []Node, sym *SymTable) vm.Ins {
@@ -148,9 +132,7 @@ func (c *Compiler) compileVector(n []Node, sym *SymTable) vm.Ins {
 	default:
 		code := NewCodeGen()
 		code.Instr(vm.OpEnd)
-		for i := len(n) - 1; i >= 0; i-- {
-			code.Append(c.compile(n[i], sym))
-		}
+		c.compileNodesReverse(code, n, sym)
 		code.Instr(vm.OpList)
 		return code.Emit()
 	}
@@ -158,7 +140,7 @@ func (c *Compiler) compileVector(n []Node, sym *SymTable) vm.Ins {
 
 func (c *Compiler) compileList(n *ListNode, sym *SymTable) vm.Ins {
 	if n.Empty() {
-		panic("Empty list")
+		panic("empty list")
 	}
 	switch x := n.First().(type) {
 	case *SymbolNode:
@@ -379,44 +361,46 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
 	if len(args) != 2 {
 		panic("[let] requires exactly two arguments")
 	}
-	if bs, ok := args[0].(*ListNode); ok {
-		if len(bs.Items)%2 == 1 {
-			panic("[let] reqires an even number of bindings")
-		}
-		code := NewCodeGen()
 
-		// TODO: separate symbol table would be better.
-		// TODO: Problem when shadowing a variable.
-		locals := make([]string, 0)
-		for i := 0; i < len(bs.Items); i += 2 {
-			// for i := len(bs.Items) - 1; i >= 0; i -= 2 {
-			if s, ok2 := bs.Items[i].(*SymbolNode); ok2 {
-				// Keep track of the let bindings. We will remove them when we fall
-				// out of scope.
-				locals = append(locals, s.Name)
-				// Add the local binding to the symbol table.
-				sym.AddVar(s.Name)
-
-				code.Append(c.compile(bs.Items[i+1], sym))
-				// Add the let bindings ont at a time so that subsequent bindings
-				// will be able to access the privously defined let bindings.
-				code.Instr(vm.OpPushArgs, 1)
-			} else {
-				panic(fmt.Sprintf("[let] cannot bind to [%v]", s))
-			}
-		}
-
-		code.Append(c.compile(args[1], sym))
-		// A let binding does not posess a separate frame. We need to drop all
-		// introduced let bindings before we continue.
-		code.Instr(vm.OpDropArgs, uint64(len(locals)))
-
-		// Remove the let bindings from the symbol table as well.
-		sym.Remove(locals)
-
-		return code.Emit()
+	bs, ok := args[0].(*ListNode)
+	if !ok {
+		panic("[let] requires first argument to be a list of bindings")
 	}
-	panic("[let] requires first argument to be a list of bindings")
+	if len(bs.Items)%2 == 1 {
+		panic("[let] reqires an even number of bindings")
+	}
+
+	code := NewCodeGen()
+
+	// TODO: separate symbol table would be better.
+	// TODO: Problem when shadowing a variable.
+	locals := make([]string, 0)
+	for i := 0; i < len(bs.Items); i += 2 {
+		s, ok := bs.Items[i].(*SymbolNode)
+		if !ok {
+			panic(fmt.Sprintf("[let] cannot bind to [%v]", s))
+		}
+		// Keep track of the let bindings. We will remove them when we fall
+		// out of scope.
+		locals = append(locals, s.Name)
+		// Add the local binding to the symbol table.
+		sym.AddVar(s.Name)
+
+		code.Append(c.compile(bs.Items[i+1], sym))
+		// Add the let bindings ont at a time so that subsequent bindings
+		// will be able to access the privously defined let bindings.
+		code.Instr(vm.OpPushArgs, 1)
+	}
+
+	code.Append(c.compile(args[1], sym))
+	// A let binding does not posess a separate frame. We need to drop all
+	// introduced let bindings before we continue.
+	code.Instr(vm.OpDropArgs, uint64(len(locals)))
+
+	// Remove the let bindings from the symbol table as well.
+	sym.Remove(locals)
+
+	return code.Emit()
 }
 
 // compileDef compiles a global definition. Global definitions will be bound in
@@ -431,14 +415,20 @@ func (c *Compiler) compileDef(args []Node, sym *SymTable) vm.Ins {
 	if len(args) != 2 {
 		panic("[def] requires exactly two arguments")
 	}
-	if s, ok := args[0].(*SymbolNode); ok {
-		code := NewCodeGen()
-		code.Append(c.compile(args[1], sym))
-		hsh := c.hashSymbol(s)
-		code.Instr(vm.OpSetGlobal, hsh)
-		return code.Emit()
+
+	s, ok := args[0].(*SymbolNode)
+	if !ok {
+		panic("[def] requires first argument to be a symbol")
 	}
-	panic("[def] requires first argument to be a symbol")
+	// Assing a new ID to the definition name. It's required to do this before
+	// compiling the body of the definition in order to make the symbol available
+	// to recursive function calls.
+	id := c.defs.getOrAdd(s.Name)
+
+	code := NewCodeGen()
+	code.Append(c.compile(args[1], sym))
+	code.Instr(vm.OpSetGlobal, id)
+	return code.Emit()
 }
 
 func (c *Compiler) compileIf(args []Node, sym *SymTable) vm.Ins {
@@ -535,10 +525,10 @@ func (c *Compiler) compileParams(params []Node) ([]string, string) {
 		return names, ""
 	}
 	if len(names) == pos+1 {
-		panic(fmt.Sprintf("[fn] missing optional parameter"))
+		panic("[fn] missing optional parameter")
 	}
 	if len(names) > pos+2 {
-		panic(fmt.Sprintf("[fn] excess optional parameter"))
+		panic("[fn] excess optional parameter")
 	}
 	return names[:pos], names[pos+1]
 }
@@ -564,7 +554,9 @@ func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable) vm.Ins
 	code := NewCodeGen()
 	code.Instr(vm.OpEnd)
 	c.compileNodesReverse(code, args, sym)
-	code.Instr(vm.OpGetGlobal, c.hashSymbol(s))
+	// The calling function can be implemented either as a global definintion
+	// or passed as a local argument.
+	code.Append(c.compileSymbol(s, sym))
 	code.Instr(vm.OpCall)
 	return code.Emit()
 }
@@ -588,10 +580,4 @@ func (c *Compiler) compileNodesReverse(code CodeGen, nodes []Node, sym *SymTable
 	for i := len(nodes) - 1; i >= 0; i-- {
 		code.Append(c.compile(nodes[i], sym))
 	}
-}
-
-func (c *Compiler) hashSymbol(sym *SymbolNode) uint64 {
-	c.hg.Reset()
-	c.hg.Write([]byte(sym.Name))
-	return c.hg.Sum64()
 }

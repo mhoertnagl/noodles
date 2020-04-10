@@ -66,7 +66,7 @@ func (m *Disassembler) writeInstr(op Op) {
 		case OpStr:
 			slen := int64(m.readArg(meta.Args[0]))
 			str := m.readString(slen)
-			m.write("%s %s '%s'", meta.Name, slen, str)
+			m.write("%s '%s'", meta.Name, str)
 		default:
 			var buf bytes.Buffer
 			buf.WriteString(meta.Name)
