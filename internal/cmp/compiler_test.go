@@ -772,30 +772,31 @@ func TestCompileSpliceQuote2(t *testing.T) {
 	)
 }
 
-// func TestCompileQuote3(t *testing.T) {
-// 	code := `
-//   (do
-//     (def cube '(* ~n ~n ~n))
-//     (cube 3)
-//   )
-//   `
-// 	testc(t, code,
-// 		vm.Instr(vm.OpRef, 10),
-// 		vm.Instr(vm.OpHalt),
-// 		// (fn [a b] (+ @a @b))
-// 		vm.Instr(vm.OpNewEnv),
-// 		vm.Instr(vm.OpSetLocal, hash("a")),
-// 		vm.Instr(vm.OpSetLocal, hash("b")),
-// 		vm.Instr(vm.OpPop),
-// 		vm.Instr(vm.OpGetLocal, hash("a")),
-// 		vm.Instr(vm.OpDissolve),
-// 		vm.Instr(vm.OpGetLocal, hash("b")),
-// 		vm.Instr(vm.OpDissolve),
-// 		vm.Instr(vm.OpAdd),
-// 		vm.Instr(vm.OpPopEnv),
-// 		vm.Instr(vm.OpReturn),
-// 	)
-// }
+func TestCompileQuote3(t *testing.T) {
+	code := `
+  (do
+    (def cube '(* ~n ~n ~n))
+    (cube 3)
+  )
+  `
+	testc(t, code,
+		vm.Instr(vm.OpRef, 39),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpMul),
+		vm.Instr(vm.OpReturn),
+	)
+}
 
 func TestCompileFac(t *testing.T) {
 	testc(t, `
