@@ -11,4 +11,4 @@ build:
 .PHONY: clean
 
 clean:
-	rm -f bin/splic bin/splil bin/splis
+	rm -f $(SPLIC) $(SPLIS)
