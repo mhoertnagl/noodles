@@ -82,9 +82,19 @@ func IsList(n Node) bool {
 	return ok
 }
 
+func IsCallN(n Node, fn string) bool {
+	if x, ok := n.(*ListNode); ok {
+		return IsCall(x, fn)
+	}
+	return false
+}
+
 func IsCall(n *ListNode, fn string) bool {
-	if x, ok := n.Items[0].(*SymbolNode); ok && x.Name == fn {
-		return true
+	if len(n.Items) == 0 {
+		return false
+	}
+	if x, ok := n.Items[0].(*SymbolNode); ok {
+		return x.Name == fn
 	}
 	return false
 }

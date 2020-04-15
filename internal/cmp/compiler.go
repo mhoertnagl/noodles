@@ -3,6 +3,7 @@ package cmp
 import (
 	"fmt"
 
+	"github.com/mhoertnagl/splis2/internal/asm"
 	"github.com/mhoertnagl/splis2/internal/util"
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
@@ -41,15 +42,19 @@ type Compiler struct {
 	prims primDefs
 	fns   fnDefs
 	defs  *defMap
+	code  asm.AsmCode
+	lblId int
 }
 
 func NewCompiler() *Compiler {
 	c := &Compiler{
-		fns:  make(fnDefs, 0),
-		defs: newDefMap(),
+		fns:   make(fnDefs, 0),
+		defs:  newDefMap(),
+		lblId: 0,
 	}
 
 	c.specs = specDefs{}
+	c.specs.add("debug", c.compileDebug)
 	c.specs.add("+", c.compileAdd)
 	c.specs.add("-", c.compileSub)
 	c.specs.add("*", c.compileMul)
@@ -57,7 +62,7 @@ func NewCompiler() *Compiler {
 	c.specs.add("let", c.compileLet)
 	c.specs.add("def", c.compileDef)
 	c.specs.add("if", c.compileIf)
-	c.specs.add("do", c.compileDo)
+	c.specs.add("do", c.compileNodes)
 	c.specs.add("fn", c.compileFn)
 	c.specs.add("and", c.compileAnd)
 	c.specs.add("or", c.compileOr)
@@ -85,116 +90,118 @@ func (c *Compiler) AddGlobal(name string) uint64 {
 	return c.defs.add(name)
 }
 
-func (c *Compiler) Compile(node Node) vm.Ins {
+func (c *Compiler) Compile(node Node) asm.AsmCode {
 	sym := NewSymTable()
-	code := NewCodeGen()
-	code.Append(c.compile(node, sym))
-	// Marks the end of non-function code. This will halt the CPU. Code beyond
-	// that point contains function definitions only.
-	code.Instr(vm.OpHalt)
-	code.AppendFunctions(c.fns)
-	code.CorrectFunctionCalls(c.fns)
-	return code.Emit()
+	ctx := NewCtx()
+	c.code = make(asm.AsmCode, 0)
+	c.compile(node, sym, ctx)
+	return c.code
 }
 
-func (c *Compiler) compile(node Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 	switch n := node.(type) {
 	case bool:
-		return vm.Bool(n)
+		if n {
+			c.instr(vm.OpTrue)
+		} else {
+			c.instr(vm.OpFalse)
+		}
 	case int64:
-		return vm.Instr(vm.OpConst, uint64(n))
+		c.instr(vm.OpConst, uint64(n))
 	case string:
-		return vm.Str(n)
+		c.str(n)
 	case *SymbolNode:
-		return c.compileSymbol(n, sym)
+		c.compileSymbol(n, sym, ctx)
 	case []Node:
-		return c.compileVector(n, sym)
+		c.compileVector(n, sym, ctx)
 	case *ListNode:
-		return c.compileList(n, sym)
+		c.compileList(n, sym, ctx)
+	default:
+		panic(fmt.Sprintf("unsupported node [%v:%T]", node, node))
 	}
-	panic(fmt.Sprintf("unsupported node [%v:%T]", node, node))
 }
 
-func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable) vm.Ins {
+func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
+	// The symbol is locally bound. Load the bound value from the FRAMES stack.
 	if idx, ok := sym.IndexOf(n.Name); ok {
-		return vm.Instr(vm.OpGetArg, uint64(idx))
+		c.instr(vm.OpGetArg, uint64(idx))
+		return
 	}
-
-	id, ok := c.defs.get(n.Name)
-	if !ok {
-		panic(fmt.Sprintf("unknown global [%s]", n.Name))
+	// The symbol refers to a globally defined value. Load the value from the
+	// DEFS stack.
+	if id, ok := c.defs.get(n.Name); ok {
+		c.instr(vm.OpGetGlobal, id)
+		return
 	}
-
-	return vm.Instr(vm.OpGetGlobal, id)
+	// The symbol is neither a local argument nor a global value.
+	panic(fmt.Sprintf("unknown symbol [%s]", n.Name))
 }
 
-func (c *Compiler) compileVector(n []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileVector(n []Node, sym *SymTable, ctx *Ctx) {
 	switch len(n) {
 	case 0:
-		return vm.Instr(vm.OpEmptyVector)
+		c.instr(vm.OpEmptyVector)
 	default:
-		code := NewCodeGen()
-		code.Instr(vm.OpEnd)
-		c.compileNodesReverse(code, n, sym)
-		code.Instr(vm.OpList)
-		return code.Emit()
+		c.instr(vm.OpEnd)
+		c.compileNodesReverse(n, sym, ctx)
+		c.instr(vm.OpList)
 	}
 }
 
-func (c *Compiler) compileList(n *ListNode, sym *SymTable) vm.Ins {
+func (c *Compiler) compileList(n *ListNode, sym *SymTable, ctx *Ctx) {
 	if n.Empty() {
 		panic("empty list")
 	}
 	switch x := n.First().(type) {
 	case *SymbolNode:
-		if x.Name == "debug" {
-			mode := n.Rest()[0].(int64)
-			return vm.Instr(vm.OpDebug, uint64(mode))
-		}
 		// Special forms handle their arguments in various ways. The arguments
 		// may not get compiled in sequence.
 		if spec, ok := c.specs[x.Name]; ok {
-			return spec(n.Rest(), sym)
+			spec(n.Rest(), sym, ctx)
+			return
 		}
 		// Primitive functions follow the same pattern: first compile all the
 		// arguments (either ascending or descending), then append a single VM
 		// instruction.
 		if prim, ok := c.prims[x.Name]; ok {
-			return c.compilePrim(x.Name, prim, n.Rest(), sym)
+			c.compilePrim(prim, n.Rest(), sym, ctx)
+			return
 		}
 		// Compile a call to the global function.
-		return c.compileCall(x, n.Rest(), sym)
+		c.compileCall(x, n.Rest(), sym, ctx)
 	case *ListNode:
 		// Compile the list. We expect the result of the computation to be a
 		// REF value which we can then call.
-		return c.compileListCall(x, n.Rest(), sym)
+		c.compileListCall(x, n.Rest(), sym, ctx)
 	default:
 		panic(fmt.Sprintf("Cannot compile list head [%v:%T]", x, x))
 	}
 }
 
-func (c *Compiler) compilePrim(name string, prim primDef, args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != prim.nargs {
-		panic(fmt.Sprintf("[%s] requires exactly [%d] arguments", name, prim.nargs))
+		panic(fmt.Sprintf("[%s] requires exactly [%d] arguments", prim.name, prim.nargs))
 	}
-	code := NewCodeGen()
 	if prim.rev {
-		c.compileNodesReverse(code, args, sym)
+		c.compileNodesReverse(args, sym, ctx)
 	} else {
-		c.compileNodes(code, args, sym)
+		c.compileNodes(args, sym, ctx)
 	}
-	code.Instr(prim.op)
-	return code.Emit()
+	c.instr(prim.op)
 }
 
-func (c *Compiler) compileAdd(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileDebug(args []Node, sym *SymTable, ctx *Ctx) {
+	c.instr(vm.OpDebug, uint64(args[0].(int64)))
+}
+
+func (c *Compiler) compileAdd(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty sum (+) yields 0.
-		return vm.Instr(vm.OpConst, 0)
+		c.instr(vm.OpConst, 0)
 	case 1:
 		// Singleton sum (+ x) yields x.
-		return c.compile(args[0], sym)
+		c.compile(args[0], sym, ctx)
 	default:
 		// Will compile this expression to a sequence of compiled subexpressions and
 		// addition operations except for the first pair. The resulting sequence of
@@ -203,51 +210,45 @@ func (c *Compiler) compileAdd(args []Node, sym *SymTable) vm.Ins {
 		//   <(+ x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpAdd, <x3>, OpAdd, <x4>, OpAdd, ...
 		//
-		code := NewCodeGen()
-		code.Append(c.compile(args[0], sym))
+		c.compile(args[0], sym, ctx)
 		for _, arg := range args[1:] {
-			code.Append(c.compile(arg, sym))
-			code.Instr(vm.OpAdd)
+			c.compile(arg, sym, ctx)
+			c.instr(vm.OpAdd)
 		}
-		return code.Emit()
 	}
 }
 
-func (c *Compiler) compileSub(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileSub(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty difference (-) yields 0.
-		return vm.Instr(vm.OpConst, 0)
+		c.instr(vm.OpConst, 0)
 	case 1:
 		// Singleton difference (- x) yields (- 0 x) which if effectively -x.
-		code := NewCodeGen()
-		code.Instr(vm.OpConst, 0)
-		code.Append(c.compile(args[0], sym))
-		code.Instr(vm.OpSub)
-		return code.Emit()
+		c.instr(vm.OpConst, 0)
+		c.compile(args[0], sym, ctx)
+		c.instr(vm.OpSub)
 	case 2:
 		// Only supports at most two operands and computes their difference.
 		//
 		//   <(- x1 x2)> := <x1>, <x2>, OpSub
 		//
-		code := NewCodeGen()
-		code.Append(c.compile(args[0], sym))
-		code.Append(c.compile(args[1], sym))
-		code.Instr(vm.OpSub)
-		return code.Emit()
+		c.compile(args[0], sym, ctx)
+		c.compile(args[1], sym, ctx)
+		c.instr(vm.OpSub)
 	default:
 		panic("[-] Too many arguments")
 	}
 }
 
-func (c *Compiler) compileMul(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileMul(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty product (*) yields 1.
-		return vm.Instr(vm.OpConst, 1)
+		c.instr(vm.OpConst, 1)
 	case 1:
 		// Singleton product (* x) yields x.
-		return c.compile(args[0], sym)
+		c.compile(args[0], sym, ctx)
 	default:
 		// Will compile this expression to a sequence of compiled subexpressions and
 		// multiplication operations except for the first pair. The resulting
@@ -256,111 +257,95 @@ func (c *Compiler) compileMul(args []Node, sym *SymTable) vm.Ins {
 		//   <(* x1 x2 x3 x4 ...)> :=
 		//     <x1>, <x2>, OpMul, <x3>, OpMul, <x4>, OpMul, ...
 		//
-		code := NewCodeGen()
-		code.Append(c.compile(args[0], sym))
+		c.compile(args[0], sym, ctx)
 		for _, arg := range args[1:] {
-			code.Append(c.compile(arg, sym))
-			code.Instr(vm.OpMul)
+			c.compile(arg, sym, ctx)
+			c.instr(vm.OpMul)
 		}
-		return code.Emit()
 	}
 }
 
-func (c *Compiler) compileDiv(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileDiv(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty division (/) yields 1.
-		return vm.Instr(vm.OpConst, 1)
+		c.instr(vm.OpConst, 1)
 	case 1:
 		// Singleton difference (/ x) yields (/ 1 x) which if effectively 1/x.
-		code := NewCodeGen()
-		code.Instr(vm.OpConst, 1)
-		code.Append(c.compile(args[0], sym))
-		code.Instr(vm.OpDiv)
-		return code.Emit()
+		c.instr(vm.OpConst, 1)
+		c.compile(args[0], sym, ctx)
+		c.instr(vm.OpDiv)
 	case 2:
 		// Only supports at most two operands and computes their quotient.
 		//
 		//   <(/ x1 x2)> := <x1>, <x2>, OpDiv
 		//
-		code := NewCodeGen()
-		code.Append(c.compile(args[0], sym))
-		code.Append(c.compile(args[1], sym))
-		code.Instr(vm.OpDiv)
-		return code.Emit()
+		c.compile(args[0], sym, ctx)
+		c.compile(args[1], sym, ctx)
+		c.instr(vm.OpDiv)
 	default:
 		panic("[/] Too many arguments")
 	}
 }
 
-func (c *Compiler) compileAnd(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileAnd(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty and (and) yields true.
-		return vm.Instr(vm.OpTrue)
+		c.instr(vm.OpTrue)
 	case 1:
 		// Singleton and (and x) yields x.
-		return c.compile(args[0], sym)
+		c.compile(args[0], sym, ctx)
 	default:
-		// Compiles an and expressh at least two aguments. The expression is
-		// compiled in reverse. This way, we can tell the distance for the jumps at
-		// after each agrument evaluation if it yields False.
-		//
 		//   <(and x1 x2 ... xn)> :=
 		//        <x1>
-		//        OpJumpIfNot @A
+		//        OpJumpIfNot L0
 		//        <x2>
-		//        OpJumpIfNot @A
+		//        OpJumpIfNot L0
 		//        ...
 		//        <xn>
-		//        OpJump 1
-		//     A: OpFalse
+		//        OpJump L1
+		//    L0: OpFalse
+		//    L1:
 		//
-		code := NewCodeGen()
-		// Compile the second to last instruction that jumps over the False
-		// constant. If all arguments evaluated to True then there will be True on
-		// the stack. If the last argument evaluated to False then the expression is
-		// False and False is on the stack.
-		code.Instr(vm.OpJump, 1)
-		// Prepend all but the first argument in reverse. The length of the code
-		// in each iteration equals the distance to jump if evaluation of a argument
-		// yields False.
-		for i := len(args) - 1; i > 0; i-- {
-			code.Prepend(c.compile(args[i], sym))
-			code.PrependInstr(vm.OpJumpIfNot, code.Len())
+		lbl := c.newLbl()
+		end := c.newLbl()
+		for i := 0; i < len(args)-1; i++ {
+			c.compile(args[i], sym, ctx)
+			c.labeled(vm.OpJumpIfNot, lbl)
 		}
-		// Preprend the first argument.
-		code.Prepend(c.compile(args[0], sym))
-		// Each evaluation except for the last one that yielded False will jump to
-		// this istruction that puts False on the stack.
-		code.Instr(vm.OpFalse)
-		return code.Emit()
+		c.compile(args[len(args)-1], sym, ctx)
+		c.labeled(vm.OpJump, end)
+		c.label(lbl)
+		c.instr(vm.OpFalse)
+		c.label(end)
 	}
 }
 
-func (c *Compiler) compileOr(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileOr(args []Node, sym *SymTable, ctx *Ctx) {
 	switch len(args) {
 	case 0:
 		// Empty or (or) yields false.
-		return vm.Instr(vm.OpFalse)
+		c.instr(vm.OpFalse)
 	case 1:
 		// Singleton and (or x) yields x.
-		return c.compile(args[0], sym)
+		c.compile(args[0], sym, ctx)
 	default:
-		// Analogous to and compilation
-		code := NewCodeGen()
-		code.Instr(vm.OpJump, 1)
-		for i := len(args) - 1; i > 0; i-- {
-			code.Prepend(c.compile(args[i], sym))
-			code.PrependInstr(vm.OpJumpIf, code.Len())
+		lbl := c.newLbl()
+		end := c.newLbl()
+		for i := 0; i < len(args)-1; i++ {
+			c.compile(args[i], sym, ctx)
+			c.labeled(vm.OpJumpIf, lbl)
 		}
-		code.Prepend(c.compile(args[0], sym))
-		code.Instr(vm.OpTrue)
-		return code.Emit()
+		c.compile(args[len(args)-1], sym, ctx)
+		c.labeled(vm.OpJump, end)
+		c.label(lbl)
+		c.instr(vm.OpTrue)
+		c.label(end)
 	}
 }
 
-func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
 		panic("[let] requires exactly two arguments")
 	}
@@ -372,8 +357,6 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
 	if len(bs.Items)%2 == 1 {
 		panic("[let] reqires an even number of bindings")
 	}
-
-	code := NewCodeGen()
 
 	// TODO: separate symbol table would be better.
 	// TODO: Problem when shadowing a variable.
@@ -389,21 +372,19 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
 		// Add the local binding to the symbol table.
 		sym.AddVar(s.Name)
 
-		code.Append(c.compile(bs.Items[i+1], sym))
+		c.compile(bs.Items[i+1], sym, ctx)
 		// Add the let bindings ont at a time so that subsequent bindings
 		// will be able to access the privously defined let bindings.
-		code.Instr(vm.OpPushArgs, 1)
+		c.instr(vm.OpPushArgs, 1)
 	}
 
-	code.Append(c.compile(args[1], sym))
+	c.compile(args[1], sym, ctx)
 	// A let binding does not posess a separate frame. We need to drop all
 	// introduced let bindings before we continue.
-	code.Instr(vm.OpDropArgs, uint64(len(locals)))
+	c.instr(vm.OpDropArgs, uint64(len(locals)))
 
 	// Remove the let bindings from the symbol table as well.
 	sym.Remove(locals)
-
-	return code.Emit()
 }
 
 // compileDef compiles a global definition. Global definitions will be bound in
@@ -414,7 +395,7 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable) vm.Ins {
 //        <y>
 //        OpSetGlobal #x
 //
-func (c *Compiler) compileDef(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
 		panic("[def] requires exactly two arguments")
 	}
@@ -427,98 +408,95 @@ func (c *Compiler) compileDef(args []Node, sym *SymTable) vm.Ins {
 	// compiling the body of the definition in order to make the symbol available
 	// to recursive function calls.
 	id := c.defs.getOrAdd(s.Name)
-
-	code := NewCodeGen()
-	code.Append(c.compile(args[1], sym))
-	code.Instr(vm.OpSetGlobal, id)
-	return code.Emit()
+	// Make the definition name avialable in the body through the context.
+	// code.Append(c.compile(args[1], sym, ctx.NewDefCtx(s.Name)))
+	// if IsCallN(args[1], "fn") {
+	// 	subCtx := NewCtx()
+	// 	subCtx.FnName = s.Name
+	// 	c.compile(args[1], sym, subCtx)
+	// } else {
+	// 	c.compile(args[1], sym, ctx)
+	// }
+	c.compile(args[1], sym, ctx)
+	c.instr(vm.OpSetGlobal, id)
 }
 
-func (c *Compiler) compileIf(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 && len(args) != 3 {
 		panic("[if] requires either two or three arguments")
 	}
-	code := NewCodeGen()
 	switch len(args) {
 	case 2:
-		cnd := c.compile(args[0], sym)
-		cns := c.compile(args[1], sym)
-		cnsLen := uint64(len(cns))
-		code.Append(cnd)
-		code.Instr(vm.OpJumpIfNot, cnsLen)
-		code.Append(cns)
+		end := c.newLbl()
+		c.compile(args[0], sym, ctx)
+		c.labeled(vm.OpJumpIfNot, end)
+		c.compile(args[1], sym, ctx)
+		c.label(end)
 	case 3:
-		cnd := c.compile(args[0], sym)
-		cns := c.compile(args[1], sym)
-		alt := c.compile(args[2], sym)
-		cnsLen := uint64(len(cns)) + 9 // Add the length of the jmp instruction.
-		altLen := uint64(len(alt))
-		code.Append(cnd)
-		code.Instr(vm.OpJumpIfNot, cnsLen)
-		code.Append(cns)
-		code.Instr(vm.OpJump, altLen)
-		code.Append(alt)
+		alt := c.newLbl()
+		end := c.newLbl()
+		c.compile(args[0], sym, ctx)
+		c.labeled(vm.OpJumpIfNot, alt)
+		c.compile(args[1], sym, ctx)
+		c.labeled(vm.OpJump, end)
+		c.label(alt)
+		c.compile(args[2], sym, ctx)
+		c.label(end)
 	}
-	return code.Emit()
 }
 
 // func (c *compiler) compileCond(args []Node) vm.Ins {
 //
 // }
 
-func (c *Compiler) compileDo(args []Node, sym *SymTable) vm.Ins {
-	code := NewCodeGen()
-	c.compileNodes(code, args, sym)
-	return code.Emit()
-}
-
-func (c *Compiler) compileFn(args []Node, sym *SymTable) vm.Ins {
+func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
 		panic("[fn] expects exactly 2 arguments")
 	}
-	fd := &fnDef{}
+	skp := c.newLbl()
+	fnn := c.newLbl()
+	sub := sym.NewSymTable()
+	// Compiles the code in-place. Jump over the function implementation.
+	c.labeled(vm.OpJump, skp)
+	c.label(fnn)
 	switch x := args[0].(type) {
 	case *ListNode:
-		fd.code = c.compileFnBody(x.Items, args[1], sym)
+		c.compileFnBody(x.Items, args[1], sub, ctx)
 	case []Node:
-		fd.code = c.compileFnBody(x, args[1], sym)
+		c.compileFnBody(x, args[1], sub, ctx)
 	default:
 		panic("[fn] first argument must be a list or vector")
 	}
-	id := len(c.fns)
-	c.fns = append(c.fns, fd)
-	return vm.Instr(vm.OpRef, uint64(id))
+	c.label(skp)
+	c.labeled(vm.OpRef, fnn)
 }
 
-func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable) vm.Ins {
-	sub := sym.NewSymTable()
-	code := NewCodeGen()
+func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *Ctx) {
 	switch len(params) {
 	case 0:
 		// Removes the function argument's end marker from the stack.
-		code.Instr(vm.OpPop)
-		code.Append(c.compile(body, sub))
+		c.instr(vm.OpPop)
+		c.compile(body, sym, ctx)
 	default:
 		man, opt := c.compileParams(params)
 		// Add the mandatory arguments to the local symbol table.
-		sub.Add(man)
+		sym.Add(man)
 		// Push the mandatory arguments to the frames stack.
-		code.Instr(vm.OpPushArgs, uint64(len(man)))
+		c.instr(vm.OpPushArgs, uint64(len(man)))
 		// Check for an optional argument.
 		if opt != "" {
 			// Add the optional argument to the local symbol table.
-			sub.AddVar(opt)
+			sym.AddVar(opt)
 			// The LIST operation will append all remaining arguments to a vector.
-			code.Instr(vm.OpList)
+			c.instr(vm.OpList)
 			// Then push the vector to the frames stack as well.
-			code.Instr(vm.OpPushArgs, 1)
+			c.instr(vm.OpPushArgs, 1)
 		}
 		// Removes the function argument's end marker from the stack.
-		code.Instr(vm.OpPop)
-		code.Append(c.compile(body, sub))
+		c.instr(vm.OpPop)
+		c.compile(body, sym, ctx)
 	}
-	code.Instr(vm.OpReturn)
-	return code.Emit()
+	c.instr(vm.OpReturn)
 }
 
 func (c *Compiler) compileParams(params []Node) ([]string, string) {
@@ -553,34 +531,57 @@ func (c *Compiler) verifyParam(param Node, pos int) string {
 	}
 }
 
-func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable) vm.Ins {
-	code := NewCodeGen()
-	code.Instr(vm.OpEnd)
-	c.compileNodesReverse(code, args, sym)
+func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable, ctx *Ctx) {
+	c.instr(vm.OpEnd)
+	c.compileNodesReverse(args, sym, ctx)
 	// The calling function can be implemented either as a global definintion
-	// or passed as a local argument.
-	code.Append(c.compileSymbol(s, sym))
-	code.Instr(vm.OpCall)
-	return code.Emit()
+	// or passed as a local argument from a let binding.
+	c.compileSymbol(s, sym, ctx)
+	// if ctx.FnName == s.Name {
+	// 	c.instr(vm.OpRecCall)
+	// } else {
+	// 	c.instr(vm.OpCall)
+	// }
+	c.instr(vm.OpCall)
 }
 
-func (c *Compiler) compileListCall(lst *ListNode, args []Node, sym *SymTable) vm.Ins {
-	code := NewCodeGen()
-	code.Instr(vm.OpEnd)
-	c.compileNodesReverse(code, args, sym)
-	code.Append(c.compileList(lst, sym))
-	code.Instr(vm.OpCall)
-	return code.Emit()
+func (c *Compiler) compileListCall(lst *ListNode, args []Node, sym *SymTable, ctx *Ctx) {
+	c.instr(vm.OpEnd)
+	c.compileNodesReverse(args, sym, ctx)
+	c.compileList(lst, sym, ctx)
+	c.instr(vm.OpCall)
 }
 
-func (c *Compiler) compileNodes(code CodeGen, nodes []Node, sym *SymTable) {
+func (c *Compiler) compileNodes(nodes []Node, sym *SymTable, ctx *Ctx) {
 	for _, node := range nodes {
-		code.Append(c.compile(node, sym))
+		c.compile(node, sym, ctx)
 	}
 }
 
-func (c *Compiler) compileNodesReverse(code CodeGen, nodes []Node, sym *SymTable) {
+func (c *Compiler) compileNodesReverse(nodes []Node, sym *SymTable, ctx *Ctx) {
 	for i := len(nodes) - 1; i >= 0; i-- {
-		code.Append(c.compile(nodes[i], sym))
+		c.compile(nodes[i], sym, ctx)
 	}
+}
+
+func (c *Compiler) label(name string) {
+	c.code = append(c.code, asm.Label(name))
+}
+
+func (c *Compiler) labeled(op vm.Op, name string) {
+	c.code = append(c.code, asm.Labeled(op, name))
+}
+
+func (c *Compiler) instr(op vm.Op, args ...uint64) {
+	c.code = append(c.code, asm.Instr(op, args...))
+}
+
+func (c *Compiler) str(str string) {
+	c.code = append(c.code, asm.Str(str))
+}
+
+func (c *Compiler) newLbl() string {
+	lbl := fmt.Sprintf("L%d", c.lblId)
+	c.lblId++
+	return lbl
 }

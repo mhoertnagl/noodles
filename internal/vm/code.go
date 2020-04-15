@@ -63,6 +63,7 @@ const (
 
 	OpRef
 	OpCall
+	OpRecCall
 	// OpTailCall
 	OpReturn
 	OpEnd
@@ -131,12 +132,13 @@ var meta = map[Op]*OpMeta{
 	OpDropArgs: {"DropArgs", []int{8}},
 	OpGetArg:   {"GetArg", []int{8}},
 
-	OpRef:    {"Ref", []int{8}},
-	OpCall:   {"Call", []int{}},
-	OpReturn: {"Return", []int{}},
-	OpEnd:    {"End", []int{}},
-	OpHalt:   {"Halt", []int{}},
-	OpDebug:  {"Debug", []int{8}},
+	OpRef:     {"Ref", []int{8}},
+	OpCall:    {"Call", []int{}},
+	OpRecCall: {"RecCall", []int{}},
+	OpReturn:  {"Return", []int{}},
+	OpEnd:     {"End", []int{}},
+	OpHalt:    {"Halt", []int{}},
+	OpDebug:   {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
@@ -158,19 +160,19 @@ func LookupMeta(op Op) (*OpMeta, error) {
 	return nil, fmt.Errorf("opcode [%d] undefined", op)
 }
 
-// TODO: ~> bin?
-func Correct(code Ins, pos int, new uint64) {
-	for i := 0; i < 8; i++ {
-		code[pos+7-i] = byte(new >> uint64(8*i))
-	}
-}
+// // TODO: ~> bin?
+// func Correct(code []byte, pos int, new uint64) {
+// 	for i := 0; i < 8; i++ {
+// 		code[pos+7-i] = byte(new >> uint64(8*i))
+// 	}
+// }
 
 // Instr creates a new instruction from an opcode and a variable number of
 // arguments.
-func Instr(op Op, args ...uint64) Ins {
+func Instr(op Op, args ...uint64) []byte {
 	m := meta[op]
 	sz := 1 + m.Size()
-	ins := make(Ins, sz)
+	ins := make([]byte, sz)
 	pos := 1
 
 	ins[0] = op
@@ -190,18 +192,18 @@ func Instr(op Op, args ...uint64) Ins {
 	return ins
 }
 
-func Bool(n bool) Ins {
+func Bool(n bool) []byte {
 	if n {
 		return Instr(OpTrue)
 	}
 	return Instr(OpFalse)
 }
 
-func Str(s string) Ins {
+func Str(s string) []byte {
 	b := []byte(s)
 	ln := len(b)
 	sz := 9 + ln
-	ins := make(Ins, sz)
+	ins := make([]byte, sz)
 	ins[0] = OpStr
 	binary.BigEndian.PutUint64(ins[1:9], uint64(ln))
 	copy(ins[9:sz], b)
@@ -209,11 +211,11 @@ func Str(s string) Ins {
 }
 
 // Concat joins an array of instructions.
-func Concat(is []Ins) Ins {
+func Concat(is [][]byte) []byte {
 	return bytes.Join(is, []byte{})
 }
 
 // ConcatVar joins a variable number of instructions.
-func ConcatVar(is ...Ins) Ins {
+func ConcatVar(is ...[]byte) []byte {
 	return Concat(is)
 }

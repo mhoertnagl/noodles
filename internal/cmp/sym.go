@@ -7,6 +7,7 @@ type SymEntry struct {
 type symMap map[string]*SymEntry
 
 type SymTable struct {
+	// Name    string
 	parent  *SymTable
 	entries symMap
 }

@@ -11,7 +11,7 @@ type fnDef struct {
 
 type fnDefs []*fnDef
 
-type specFun func([]Node, *SymTable) vm.Ins
+type specFun func([]Node, *SymTable, *Ctx)
 
 type specDefs map[string]specFun
 
@@ -20,6 +20,7 @@ func (d specDefs) add(name string, fn specFun) {
 }
 
 type primDef struct {
+	name  string
 	op    vm.Op
 	nargs int
 	rev   bool
@@ -28,7 +29,7 @@ type primDef struct {
 type primDefs map[string]primDef
 
 func (d primDefs) add(name string, op vm.Op, nargs int, rev bool) {
-	d[name] = primDef{op: op, nargs: nargs, rev: rev}
+	d[name] = primDef{name: name, op: op, nargs: nargs, rev: rev}
 }
 
 type defMap struct {
