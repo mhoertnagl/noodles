@@ -26,25 +26,21 @@ func (a *Assembler) locateLabelPositions(code AsmCode) {
 		case *AsmLabel:
 			a.lbls[x.Name] = ip
 		case *AsmLabeled:
-			mt, err := vm.LookupMeta(x.Op)
-			if err != nil {
-				panic(err)
-			}
-			ip += 1 + uint64(mt.Size())
+			ip += a.insInc(x.Op)
 		case *AsmIns:
-			mt, err := vm.LookupMeta(x.Op)
-			if err != nil {
-				panic(err)
-			}
-			ip += 1 + uint64(mt.Size())
+			ip += a.insInc(x.Op)
 		case *AsmStr:
-			mt, err := vm.LookupMeta(vm.OpStr)
-			if err != nil {
-				panic(err)
-			}
-			ip += 1 + uint64(mt.Size()) + uint64(len(x.Str))
+			ip += a.insInc(vm.OpStr) + uint64(len(x.Str))
 		}
 	}
+}
+
+func (a *Assembler) insInc(op vm.Op) uint64 {
+	mt, err := vm.LookupMeta(op)
+	if err != nil {
+		panic(err)
+	}
+	return 1 + uint64(mt.Size())
 }
 
 func (a *Assembler) assemble(code AsmCode) []byte {
