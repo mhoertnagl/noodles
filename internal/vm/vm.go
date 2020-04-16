@@ -182,16 +182,16 @@ func (m *VM) Run(code Ins) {
 			l := m.pop()
 			m.push(m.le(l, r))
 		case OpJump:
-			m.ip += m.readInt64()
+			m.ip = m.readInt64()
 		case OpJumpIf:
-			d := m.readInt64()
+			ip := m.readInt64()
 			if m.popBool() {
-				m.ip += d
+				m.ip = ip
 			}
 		case OpJumpIfNot:
-			d := m.readInt64()
+			ip := m.readInt64()
 			if m.popBool() == false {
-				m.ip += d
+				m.ip = ip
 			}
 
 		case OpPushArgs:

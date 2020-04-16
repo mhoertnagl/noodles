@@ -1,54 +1,55 @@
-package cmp_test
+package rwr_test
 
 import (
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/splis2/internal/rwr"
 	"github.com/mhoertnagl/splis2/internal/util"
 )
 
 func TestRewriteBoolean(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `true`, `true`)
 }
 
 func TestRewriteInteger(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `1`, `1`)
 }
 
 func TestRewriteSymbol(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `a`, `a`)
 }
 
 func TestRewriteVector(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `[1 2 3]`, `[1 2 3]`)
 }
 
 func TestRewriteList(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `(1 2 3)`, `(1 2 3)`)
 }
 
 func TestRewriteSimpleQuote(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ 1 1)`, `(fn [] (+ 1 1))`)
 }
 
 func TestRewriteReplacementQuote(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ ~a ~b)`, `(fn [a b] (+ a b))`)
 }
 
 func TestRewriteSpliceQuote(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `'(+ ~a ~@b)`, `(fn [a b] (+ a @b))`)
 }
 
 func TestRewriteNestedQuote(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw,
 		`'(+ ~a ('(+ ~a ~b) a 1))`,
 		`(fn [a] (+ a ((fn [a b] (+ a b)) a 1)))`,
@@ -56,21 +57,21 @@ func TestRewriteNestedQuote(t *testing.T) {
 }
 
 func TestRewriteQuoteWithMultiOccuranceOfSingelVariable(t *testing.T) {
-	rw := cmp.NewQuoteRewriter()
+	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `'(* ~n ~n ~n)`, `(fn [n] (* n n n))`)
 }
 
 func TestRewriteArgsSimple(t *testing.T) {
 	pars := []string{"a"}
 	args := []cmp.Node{parse("(+ 1 1)")}
-	rw := cmp.NewArgsRewriter(pars, args)
+	rw := rwr.NewArgsRewriter(pars, args)
 	testRewriter(t, rw, `(* a a)`, `(* (+ 1 1) (+ 1 1))`)
 }
 
 func TestRewriteArgsDeep(t *testing.T) {
 	pars := []string{"a", "b"}
 	args := []cmp.Node{parse("(+ 1 1)"), parse("(- 2)")}
-	rw := cmp.NewArgsRewriter(pars, args)
+	rw := rwr.NewArgsRewriter(pars, args)
 	testRewriter(t, rw, `(* (* a b) a)`, `(* (* (+ 1 1) (- 2)) (+ 1 1))`)
 }
 
@@ -80,7 +81,7 @@ func TestRewriteDefmacroSimple(t *testing.T) {
     (defn inc [x] (+ x 1))
   )`
 	es := `(do (def inc (fn [x] (+ x 1))))`
-	rw := cmp.NewMacroRewriter()
+	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
 
@@ -91,7 +92,7 @@ func TestRewriteDefmacroNested(t *testing.T) {
     (m1 1 2)
   )`
 	es := `(do (- 2 1))`
-	rw := cmp.NewMacroRewriter()
+	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
 
@@ -108,11 +109,11 @@ func TestRewriteUse(t *testing.T) {
 		)
 		(inc 41)
 	)`
-	rw := cmp.NewUseRewriter(paths)
+	rw := rwr.NewUseRewriter(paths)
 	testRewriter(t, rw, is, es)
 }
 
-func testRewriter(t *testing.T, rw cmp.Rewriter, i string, e string) {
+func testRewriter(t *testing.T, rw rwr.Rewriter, i string, e string) {
 	t.Helper()
 	in := parse(i)
 	en := parse(e)

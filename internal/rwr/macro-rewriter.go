@@ -1,12 +1,16 @@
-package cmp
+package rwr
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mhoertnagl/splis2/internal/cmp"
+)
 
 type macroDefs map[string]*macroDef
 
 type macroDef struct {
 	pars []string
-	body Node
+	body cmp.Node
 }
 
 type MacroRewriter struct {
@@ -19,23 +23,23 @@ func NewMacroRewriter() *MacroRewriter {
 	}
 }
 
-func (r *MacroRewriter) Rewrite(n Node) Node {
+func (r *MacroRewriter) Rewrite(n cmp.Node) cmp.Node {
 	switch x := n.(type) {
-	case []Node:
+	case []cmp.Node:
 		return RewriteItems(r, x)
-	case *ListNode:
+	case *cmp.ListNode:
 		return r.rewriteList(x)
 	default:
 		return n
 	}
 }
 
-func (r *MacroRewriter) rewriteList(n *ListNode) Node {
+func (r *MacroRewriter) rewriteList(n *cmp.ListNode) cmp.Node {
 	if len(n.Items) == 0 {
 		return n
 	}
 	switch x := n.Items[0].(type) {
-	case *SymbolNode:
+	case *cmp.SymbolNode:
 		switch x.Name {
 		case "defmacro":
 			r.addMacro(n.Items[1], n.Items[2], n.Items[3])
@@ -47,11 +51,11 @@ func (r *MacroRewriter) rewriteList(n *ListNode) Node {
 			}
 		}
 	}
-	return NewList(RewriteItems(r, n.Items))
+	return cmp.NewList(RewriteItems(r, n.Items))
 }
 
-func (r *MacroRewriter) addMacro(name Node, pars Node, body Node) {
-	if sym, ok := name.(*SymbolNode); ok {
+func (r *MacroRewriter) addMacro(name cmp.Node, pars cmp.Node, body cmp.Node) {
+	if sym, ok := name.(*cmp.SymbolNode); ok {
 		if _, found := r.macros[sym.Name]; found {
 			panic(fmt.Sprintf("[defmacro] macro [%s] redefined", sym.Name))
 		}
@@ -64,12 +68,12 @@ func (r *MacroRewriter) addMacro(name Node, pars Node, body Node) {
 	}
 }
 
-func getParamNames(parsNode Node) []string {
-	if pars, ok := parsNode.([]Node); ok {
+func getParamNames(parsNode cmp.Node) []string {
+	if pars, ok := parsNode.([]cmp.Node); ok {
 		names := make([]string, len(pars))
 		for i, par := range pars {
 			switch sym := par.(type) {
-			case *SymbolNode:
+			case *cmp.SymbolNode:
 				names[i] = sym.Name
 			default:
 				panic(fmt.Sprintf("[defmacro] parameter [%d] is not a symbol", i))

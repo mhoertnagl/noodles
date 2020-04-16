@@ -1,9 +1,11 @@
-package cmp
+package rwr
 
 import (
 	"fmt"
 	"io/ioutil"
 	"path"
+
+	"github.com/mhoertnagl/splis2/internal/cmp"
 )
 
 type usingsSet map[string]bool
@@ -11,36 +13,36 @@ type usingsSet map[string]bool
 type UseRewriter struct {
 	paths  []string
 	usings usingsSet
-	rdr    *Reader
-	prs    *Parser
+	rdr    *cmp.Reader
+	prs    *cmp.Parser
 }
 
 func NewUseRewriter(paths []string) *UseRewriter {
 	return &UseRewriter{
 		paths:  paths,
 		usings: usingsSet{},
-		rdr:    NewReader(),
-		prs:    NewParser(),
+		rdr:    cmp.NewReader(),
+		prs:    cmp.NewParser(),
 	}
 }
 
-func (r *UseRewriter) Rewrite(n Node) Node {
+func (r *UseRewriter) Rewrite(n cmp.Node) cmp.Node {
 	switch x := n.(type) {
-	case []Node:
+	case []cmp.Node:
 		return RewriteItems(r, x)
-	case *ListNode:
+	case *cmp.ListNode:
 		return r.rewriteList(x)
 	default:
 		return n
 	}
 }
 
-func (r *UseRewriter) rewriteList(n *ListNode) Node {
+func (r *UseRewriter) rewriteList(n *cmp.ListNode) cmp.Node {
 	if len(n.Items) == 0 {
 		return n
 	}
 	// TODO: Length of items should be 2 (use "...")
-	if IsCall(n, "use") {
+	if cmp.IsCall(n, "use") {
 		if mod, ok := n.Items[1].(string); ok {
 			if r.usings[mod] {
 				// File has already been included. Skip.
@@ -50,10 +52,10 @@ func (r *UseRewriter) rewriteList(n *ListNode) Node {
 			return r.loadUse(mod)
 		}
 	}
-	return NewList(RewriteItems(r, n.Items))
+	return cmp.NewList(RewriteItems(r, n.Items))
 }
 
-func (r *UseRewriter) loadUse(mod string) Node {
+func (r *UseRewriter) loadUse(mod string) cmp.Node {
 	s := loadModule(r.paths, mod)
 	r.rdr.Load(s)
 	c := r.prs.Parse(r.rdr)

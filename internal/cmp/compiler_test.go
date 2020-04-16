@@ -284,6 +284,8 @@ func TestCompileDef1(t *testing.T) {
 	)
 }
 
+// --- IF ---
+
 func TestCompileIf1(t *testing.T) {
 	testc(t, "(if true 1)",
 		asm.Instr(vm.OpTrue),
@@ -333,6 +335,8 @@ func TestCompileIf4(t *testing.T) {
 	)
 }
 
+// --- AND ---
+
 func TestCompileAnd0(t *testing.T) {
 	testc(t, "(and)",
 		asm.Instr(vm.OpTrue),
@@ -370,6 +374,8 @@ func TestCompileAnd3(t *testing.T) {
 		asm.Label("L1"),
 	)
 }
+
+// --- OR ---
 
 func TestCompileOr0(t *testing.T) {
 	testc(t, "(or)",
@@ -885,10 +891,8 @@ func testc(t *testing.T, i string, e ...asm.AsmCmd) {
 	r := cmp.NewReader()
 	p := cmp.NewParser()
 	c := cmp.NewCompiler()
-	w := cmp.NewQuoteRewriter()
 	r.Load(i)
 	n := p.Parse(r)
-	n = w.Rewrite(n)
 	s := c.Compile(n)
 	compareAssembly(t, s, e)
 }
@@ -898,9 +902,9 @@ func compareAssembly(t *testing.T, a []asm.AsmCmd, e []asm.AsmCmd) {
 
 	err := false
 
-	d := asm.NewDisassembler()
-	da := d.Disassemble(a)
-	de := d.Disassemble(e)
+	d := asm.NewAsmPrinter()
+	da := d.Print(a)
+	de := d.Print(e)
 	la := len(da)
 	le := len(de)
 
@@ -934,6 +938,6 @@ func compareAssembly(t *testing.T, a []asm.AsmCmd, e []asm.AsmCmd) {
 	}
 
 	if err {
-		t.Errorf("\n%s", buf.String())
+		t.Errorf("\n%s\n", buf.String())
 	}
 }

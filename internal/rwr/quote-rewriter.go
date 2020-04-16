@@ -1,7 +1,9 @@
-package cmp
+package rwr
 
 import (
 	"reflect"
+
+	"github.com/mhoertnagl/splis2/internal/cmp"
 )
 
 type QuoteRewriter struct {
@@ -11,48 +13,48 @@ func NewQuoteRewriter() *QuoteRewriter {
 	return &QuoteRewriter{}
 }
 
-func (r *QuoteRewriter) Rewrite(n Node) Node {
+func (r *QuoteRewriter) Rewrite(n cmp.Node) cmp.Node {
 	_, m := r.rewrite(n)
 	return m
 }
 
-func (r *QuoteRewriter) rewrite(n Node) ([]Node, Node) {
+func (r *QuoteRewriter) rewrite(n cmp.Node) ([]cmp.Node, cmp.Node) {
 	switch x := n.(type) {
-	case []Node:
+	case []cmp.Node:
 		return r.rewriteItems(x)
-	case *ListNode:
+	case *cmp.ListNode:
 		return r.rewriteList(x)
 	default:
 		return r.empty(), n
 	}
 }
 
-func (r *QuoteRewriter) rewriteList(n *ListNode) ([]Node, Node) {
+func (r *QuoteRewriter) rewriteList(n *cmp.ListNode) ([]cmp.Node, cmp.Node) {
 	syms := r.empty()
 	if len(n.Items) == 0 {
 		return syms, n
 	}
-	if IsCall(n, "quote") {
+	if cmp.IsCall(n, "quote") {
 		ss, m := r.rewrite(n.Items[1])
-		return r.empty(), Fn(ss, m)
+		return r.empty(), cmp.Fn(ss, m)
 	}
-	if IsCall(n, "unquote") {
+	if cmp.IsCall(n, "unquote") {
 		switch y := n.Items[1].(type) {
-		case *SymbolNode:
+		case *cmp.SymbolNode:
 			syms = append(syms, y)
 			return syms, y
-		case *ListNode:
-			if IsCall(y, "dissolve") {
+		case *cmp.ListNode:
+			if cmp.IsCall(y, "dissolve") {
 				syms = append(syms, y.Items[1])
 				return syms, y
 			}
 		}
 	}
 	ss, ms := r.rewriteItems(n.Items)
-	return ss, NewList(ms)
+	return ss, cmp.NewList(ms)
 }
 
-func (r *QuoteRewriter) rewriteItems(ns []Node) ([]Node, []Node) {
+func (r *QuoteRewriter) rewriteItems(ns []cmp.Node) ([]cmp.Node, []cmp.Node) {
 	ss := r.empty()
 	ms := r.empty()
 	for _, n := range ns {
@@ -63,11 +65,11 @@ func (r *QuoteRewriter) rewriteItems(ns []Node) ([]Node, []Node) {
 	return ss, ms
 }
 
-func (r *QuoteRewriter) empty() []Node {
-	return make([]Node, 0)
+func (r *QuoteRewriter) empty() []cmp.Node {
+	return make([]cmp.Node, 0)
 }
 
-func join(a []Node, b []Node) []Node {
+func join(a []cmp.Node, b []cmp.Node) []cmp.Node {
 	for _, x := range b {
 		if !contains(a, x) {
 			a = append(a, x)
@@ -76,7 +78,7 @@ func join(a []Node, b []Node) []Node {
 	return a
 }
 
-func contains(a []Node, x Node) bool {
+func contains(a []cmp.Node, x cmp.Node) bool {
 	for _, y := range a {
 		if reflect.DeepEqual(y, x) {
 			return true

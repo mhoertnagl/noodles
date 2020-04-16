@@ -77,6 +77,8 @@ func TestDiv2(t *testing.T) {
 	)
 }
 
+// --- BOOL ---
+
 func TestFalse(t *testing.T) {
 	testToS(t, false,
 		vm.Instr(vm.OpFalse),
@@ -88,48 +90,6 @@ func TestTrue(t *testing.T) {
 		vm.Instr(vm.OpTrue),
 	)
 }
-
-func TestIfFalse1(t *testing.T) {
-	testToS(t, int64(0),
-		vm.Instr(vm.OpConst, 0),
-		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpConst, 1),
-	)
-}
-
-func TestIfTrue1(t *testing.T) {
-	testToS(t, int64(1),
-		vm.Instr(vm.OpConst, 0),
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpConst, 1),
-	)
-}
-
-func TestIfElseFalse1(t *testing.T) {
-	testToS(t, int64(0),
-		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfNot, 18),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 9),
-		vm.Instr(vm.OpConst, 0),
-	)
-}
-
-func TestIfElseTrue1(t *testing.T) {
-	testToS(t, int64(1),
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 18),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 9),
-		vm.Instr(vm.OpConst, 0),
-	)
-}
-
-// TODO: If, elseif, else
 
 func TestRunNot1(t *testing.T) {
 	testToS(t, true,
@@ -147,109 +107,139 @@ func TestRunNot2(t *testing.T) {
 	)
 }
 
-func TestRunAnd1(t *testing.T) {
+// --- AND ---
+
+func TestRunAnd00(t *testing.T) {
 	testToS(t, false,
-		// a
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		// b
+		vm.Instr(vm.OpJumpIfNot, 20),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunAnd2(t *testing.T) {
+func TestRunAnd01(t *testing.T) {
 	testToS(t, false,
-		// a
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		// b
+		vm.Instr(vm.OpJumpIfNot, 20),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunAnd3(t *testing.T) {
+func TestRunAnd10(t *testing.T) {
 	testToS(t, false,
-		// a
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		// b
+		vm.Instr(vm.OpJumpIfNot, 20),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunAnd4(t *testing.T) {
+func TestRunAnd11(t *testing.T) {
 	testToS(t, true,
-		// a
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 10),
-		// b
+		vm.Instr(vm.OpJumpIfNot, 20),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunOr1(t *testing.T) {
+func TestRunAnd010(t *testing.T) {
 	testToS(t, false,
-		// a
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIf, 10),
-		// b
-		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJumpIfNot, 30),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpHalt),
+		vm.Instr(vm.OpJumpIfNot, 30),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 31),
+		vm.Instr(vm.OpFalse),
 	)
 }
 
-func TestRunOr2(t *testing.T) {
+func TestRunAnd111(t *testing.T) {
 	testToS(t, true,
-		// a
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 30),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 30),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 31),
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIf, 10),
-		// b
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJump, 1),
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunOr3(t *testing.T) {
-	testToS(t, true,
-		// a
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIf, 10),
-		// b
+// --- OR ---
+
+func TestRunOr00(t *testing.T) {
+	testToS(t, false,
 		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJump, 1),
+		vm.Instr(vm.OpJumpIf, 20),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
-func TestRunOr4(t *testing.T) {
+func TestRunOr01(t *testing.T) {
 	testToS(t, true,
-		// a
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 20),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIf, 10),
-		// b
+		vm.Instr(vm.OpJump, 21),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJump, 1),
-		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpHalt),
 	)
 }
+
+func TestRunOr10(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 20),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 21),
+		vm.Instr(vm.OpTrue),
+	)
+}
+
+func TestRunOr11(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 20),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJump, 21),
+		vm.Instr(vm.OpTrue),
+	)
+}
+
+func TestRunOr010(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 30),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIf, 30),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 31),
+		vm.Instr(vm.OpTrue),
+	)
+}
+
+func TestRunOr000(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 30),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIf, 30),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJump, 31),
+		vm.Instr(vm.OpTrue),
+	)
+}
+
+// --- COMPARISON ---
 
 func TestRunLT1(t *testing.T) {
 	testToS(t, false,
@@ -426,7 +416,7 @@ func TestRunNE3(t *testing.T) {
 // 	)
 // }
 
-// TODO: Environments,locals.
+// --- LET ---
 
 func TestRunLet1(t *testing.T) {
 	m := testRun(t,
@@ -513,6 +503,8 @@ func TestRunLet4(t *testing.T) {
 	testVal(t, nil, m.InspectFrames(0))
 }
 
+// --- DEF ---
+
 func TestRunDef1(t *testing.T) {
 	testToS(t, int64(2),
 		vm.Instr(vm.OpConst, 1),
@@ -523,22 +515,32 @@ func TestRunDef1(t *testing.T) {
 	)
 }
 
-func TestRunIf1(t *testing.T) {
+// --- IF ---
+
+func TestRunIf11(t *testing.T) {
 	testToS(t, int64(1),
 		vm.Instr(vm.OpTrue),
-		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpJumpIfNot, 19),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 9),
+	)
+}
+
+func TestRunIf21(t *testing.T) {
+	testToS(t, int64(0),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 28),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 37),
 		vm.Instr(vm.OpConst, 0),
 	)
 }
 
-func TestRunIf2(t *testing.T) {
-	testToS(t, int64(0),
-		vm.Instr(vm.OpFalse),
-		vm.Instr(vm.OpJumpIfNot, 18),
+func TestRunIf22(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 28),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpJump, 37),
 		vm.Instr(vm.OpConst, 0),
 	)
 }
@@ -548,11 +550,10 @@ func TestRunIf3(t *testing.T) {
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpEQ),
-		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpJumpIfNot, 46),
 		vm.Instr(vm.OpConst, 42),
-		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpJump, 55),
 		vm.Instr(vm.OpConst, 21),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
@@ -561,16 +562,16 @@ func TestRunIf4(t *testing.T) {
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpEQ),
-		vm.Instr(vm.OpJumpIfNot, 18),
+		vm.Instr(vm.OpJumpIfNot, 46),
 		vm.Instr(vm.OpConst, 42),
-		vm.Instr(vm.OpJump, 9),
+		vm.Instr(vm.OpJump, 55),
 		vm.Instr(vm.OpConst, 21),
-		vm.Instr(vm.OpHalt),
 	)
 }
 
 // TODO: Locals with shadowing.
-//       Does not work for the current implementation of let bindings.
+
+// --- VECTOR ---
 
 func TestRunCreateVector1(t *testing.T) {
 	e := []vm.Val{int64(1), int64(2), int64(3)}
@@ -677,6 +678,8 @@ func TestRunDissolve(t *testing.T) {
 	testVal(t, nil, m.InspectStack(3))
 }
 
+// --- HALT ---
+
 func TestRunHalt(t *testing.T) {
 	testToS(t, int64(0),
 		vm.Instr(vm.OpConst, 0),
@@ -685,225 +688,215 @@ func TestRunHalt(t *testing.T) {
 	)
 }
 
+// --- FN ---
+
 func TestRunAnonymousFun2(t *testing.T) {
 	m := testRun(t,
 		// ((fn ...) 1)
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 21),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpReturn),
-	)
-	testVal(t, int64(2), m.InspectStack(0))
-	testVal(t, nil, m.InspectStack(1))
-	testVal(t, nil, m.InspectFrames(0))
-}
-
-func TestRunAnonymousFun3(t *testing.T) {
-	m := testRun(t,
-		// ((fn ...) 1)
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 31),
-		vm.Instr(vm.OpCall),
-		// (+ ((fn ...) 1) 1)
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpReturn),
-	)
-	testVal(t, int64(3), m.InspectStack(0))
-	testVal(t, nil, m.InspectStack(1))
-	testVal(t, nil, m.InspectFrames(0))
-}
-
-func TestRunAnonymousFun4(t *testing.T) {
-	m := testRun(t,
-		// (((fn ...)) 1)
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpRef, 53),
-		// Call the 0-adic function that returns the 1-adic function.
-		vm.Instr(vm.OpCall),
-		// Call the 1-adic function.
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpReturn),
-		// (fn [] ...)
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpRef, 23),
-		vm.Instr(vm.OpReturn),
-	)
-	testVal(t, int64(2), m.InspectStack(0))
-	testVal(t, nil, m.InspectStack(1))
-	testVal(t, nil, m.InspectFrames(0))
-}
-
-func TestRunLeafFunDef(t *testing.T) {
-	m := testRun(t,
-		// (def inc (fn ...))
-		vm.Instr(vm.OpRef, 49),
-		vm.Instr(vm.OpSetGlobal, 0),
-		// (inc 1)
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpGetGlobal, 0),
-		vm.Instr(vm.OpCall),
-		// (+ (inc ...) 1)
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpHalt),
-		// (fn [x] (+ x 1))
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpReturn),
-	)
-	testVal(t, int64(3), m.InspectStack(0))
-	testVal(t, nil, m.InspectStack(1))
-	testVal(t, nil, m.InspectFrames(0))
-}
-
-func TestRunVariadicFun(t *testing.T) {
-	e := []vm.Val{int64(1), int64(2), int64(3), int64(4)}
-	m := testRun(t,
-		// ((fn ...) 1 2 3 4)
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 4),
-		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpRef, 48),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpHalt),
-		// (fn [x & xs] (:: x xs))
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpGetArg, 1),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpCons),
-		vm.Instr(vm.OpReturn),
-	)
-	testVal(t, e, m.InspectStack(0))
-	testVal(t, nil, m.InspectStack(1))
-	testVal(t, nil, m.InspectFrames(0))
-}
-
-func TestRunFac(t *testing.T) {
-	testToS(t, int64(120),
-		vm.Instr(vm.OpRef, 57),
-		vm.Instr(vm.OpSetGlobal, 0),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 5),
-		vm.Instr(vm.OpGetGlobal, 0),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpHalt),
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 0),
-		vm.Instr(vm.OpEQ),
-		vm.Instr(vm.OpJumpIfNot, 18),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 40),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpSub),
-		vm.Instr(vm.OpGetGlobal, 0),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpMul),
-		vm.Instr(vm.OpReturn),
-	)
-}
-
-func TestRunTailFac(t *testing.T) {
-	testToS(t, int64(120),
-		vm.Instr(vm.OpRef, 75),
-		vm.Instr(vm.OpSetGlobal, 0),
-		vm.Instr(vm.OpRef, 190),
-		vm.Instr(vm.OpSetGlobal, 1),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 5),
-		vm.Instr(vm.OpGetGlobal, 1),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpHalt),
-		vm.Instr(vm.OpPushArgs, 2),
-		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpDebug, 3),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 0),
-		vm.Instr(vm.OpEQ),
-		vm.Instr(vm.OpJumpIfNot, 18),
-		vm.Instr(vm.OpGetArg, 1),
 		vm.Instr(vm.OpJump, 49),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpGetArg, 1),
-		vm.Instr(vm.OpMul),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpSub),
-		vm.Instr(vm.OpGetGlobal, 0),
-		vm.Instr(vm.OpCall),
-		vm.Instr(vm.OpReturn),
+		// (fn [x] (+ x 1))
 		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),
-		vm.Instr(vm.OpEnd),
-		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpGetGlobal, 0),
-		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 19),
+		vm.Instr(vm.OpCall),
 	)
+	testVal(t, int64(2), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
 }
+
+//
+// func TestRunAnonymousFun3(t *testing.T) {
+// 	m := testRun(t,
+// 		// ((fn ...) 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 31),
+// 		vm.Instr(vm.OpCall),
+// 		// (+ ((fn ...) 1) 1)
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// 	testVal(t, int64(3), m.InspectStack(0))
+// 	testVal(t, nil, m.InspectStack(1))
+// 	testVal(t, nil, m.InspectFrames(0))
+// }
+//
+// func TestRunAnonymousFun4(t *testing.T) {
+// 	m := testRun(t,
+// 		// (((fn ...)) 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpRef, 53),
+// 		// Call the 0-adic function that returns the 1-adic function.
+// 		vm.Instr(vm.OpCall),
+// 		// Call the 1-adic function.
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpReturn),
+// 		// (fn [] ...)
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpRef, 23),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// 	testVal(t, int64(2), m.InspectStack(0))
+// 	testVal(t, nil, m.InspectStack(1))
+// 	testVal(t, nil, m.InspectFrames(0))
+// }
+//
+// func TestRunLeafFunDef(t *testing.T) {
+// 	m := testRun(t,
+// 		// (def inc (fn ...))
+// 		vm.Instr(vm.OpRef, 49),
+// 		vm.Instr(vm.OpSetGlobal, 0),
+// 		// (inc 1)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		// (+ (inc ...) 1)
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x] (+ x 1))
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpAdd),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// 	testVal(t, int64(3), m.InspectStack(0))
+// 	testVal(t, nil, m.InspectStack(1))
+// 	testVal(t, nil, m.InspectFrames(0))
+// }
+//
+// func TestRunVariadicFun(t *testing.T) {
+// 	e := []vm.Val{int64(1), int64(2), int64(3), int64(4)}
+// 	m := testRun(t,
+// 		// ((fn ...) 1 2 3 4)
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 4),
+// 		vm.Instr(vm.OpConst, 3),
+// 		vm.Instr(vm.OpConst, 2),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpRef, 48),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpHalt),
+// 		// (fn [x & xs] (:: x xs))
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpList),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 1),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpCons),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// 	testVal(t, e, m.InspectStack(0))
+// 	testVal(t, nil, m.InspectStack(1))
+// 	testVal(t, nil, m.InspectFrames(0))
+// }
+//
+// func TestRunFac(t *testing.T) {
+// 	testToS(t, int64(120),
+// 		vm.Instr(vm.OpRef, 57),
+// 		vm.Instr(vm.OpSetGlobal, 0),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 5),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpHalt),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 0),
+// 		vm.Instr(vm.OpEQ),
+// 		vm.Instr(vm.OpJumpIfNot, 18),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpJump, 40),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpMul),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
+//
+// func TestRunTailFac(t *testing.T) {
+// 	testToS(t, int64(120),
+// 		vm.Instr(vm.OpRef, 75),
+// 		vm.Instr(vm.OpSetGlobal, 0),
+// 		vm.Instr(vm.OpRef, 190),
+// 		vm.Instr(vm.OpSetGlobal, 1),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 5),
+// 		vm.Instr(vm.OpGetGlobal, 1),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpHalt),
+// 		vm.Instr(vm.OpPushArgs, 2),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpDebug, 3),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 0),
+// 		vm.Instr(vm.OpEQ),
+// 		vm.Instr(vm.OpJumpIfNot, 18),
+// 		vm.Instr(vm.OpGetArg, 1),
+// 		vm.Instr(vm.OpJump, 49),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpGetArg, 1),
+// 		vm.Instr(vm.OpMul),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpReturn),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpReturn),
+// 	)
+// }
 
 func TestRunStringConst(t *testing.T) {
 	testToS(t, "Hello, World!",
 		vm.Str("Hello, World!"),
-		vm.Instr(vm.OpHalt),
-	)
-}
-
-func TestRunTest0Bin(t *testing.T) {
-	testToS(t, int64(6),
-		vm.Instr(vm.OpJump, 0),
-
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpAdd),
-		vm.Instr(vm.OpConst, 3),
-		vm.Instr(vm.OpAdd),
 		vm.Instr(vm.OpHalt),
 	)
 }

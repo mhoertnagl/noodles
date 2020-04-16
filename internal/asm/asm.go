@@ -1,6 +1,8 @@
 package asm
 
-import "github.com/mhoertnagl/splis2/internal/vm"
+import (
+	"github.com/mhoertnagl/splis2/internal/vm"
+)
 
 type Assembler struct {
 	lbls map[string]uint64
@@ -24,21 +26,22 @@ func (a *Assembler) locateLabelPositions(code AsmCode) {
 		case *AsmLabel:
 			a.lbls[x.Name] = ip
 		case *AsmLabeled:
-			vm.Instr(x.Op, a.lbls[x.Name])
-			ip += 1 + 8
+			mt, err := vm.LookupMeta(x.Op)
+			if err != nil {
+				panic(err)
+			}
+			ip += 1 + uint64(mt.Size())
 		case *AsmIns:
 			mt, err := vm.LookupMeta(x.Op)
 			if err != nil {
 				panic(err)
 			}
-			vm.Instr(x.Op, x.Args...)
 			ip += 1 + uint64(mt.Size())
 		case *AsmStr:
 			mt, err := vm.LookupMeta(vm.OpStr)
 			if err != nil {
 				panic(err)
 			}
-			vm.Str(x.Str)
 			ip += 1 + uint64(mt.Size()) + uint64(len(x.Str))
 		}
 	}
