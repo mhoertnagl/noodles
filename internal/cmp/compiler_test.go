@@ -531,7 +531,6 @@ func TestCompileLenVector(t *testing.T) {
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
 		asm.Labeled(vm.OpJump, "L0"),
-		// (fn [x] (+ x 1))
 		asm.Label("L1"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
@@ -547,12 +546,9 @@ func TestCompileAnonymousFun1(t *testing.T) {
 func TestCompileAnonymousFun11(t *testing.T) {
 	testc(t, `(fn [] (fn [x] (+ x 1)))`,
 		asm.Labeled(vm.OpJump, "L0"),
-		// (fn [] ...)
 		asm.Label("L1"),
 		asm.Instr(vm.OpPop),
 		asm.Labeled(vm.OpJump, "L2"),
-
-		// (fn [x] (+ x 1))
 		asm.Label("L3"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
@@ -560,11 +556,9 @@ func TestCompileAnonymousFun11(t *testing.T) {
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
-
 		asm.Label("L2"),
 		asm.Labeled(vm.OpRef, "L3"),
 		asm.Instr(vm.OpReturn),
-
 		asm.Label("L0"),
 		asm.Labeled(vm.OpRef, "L1"),
 	)
@@ -572,12 +566,9 @@ func TestCompileAnonymousFun11(t *testing.T) {
 
 func TestCompileAnonymousFun2(t *testing.T) {
 	testc(t, `((fn [x] (+ x 1)) 1)`,
-		// ((fn ...) 1)
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 1),
 		asm.Labeled(vm.OpJump, "L0"),
-
-		// (fn [x] (+ x 1))
 		asm.Label("L1"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
@@ -585,113 +576,110 @@ func TestCompileAnonymousFun2(t *testing.T) {
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
-
 		asm.Label("L0"),
 		asm.Labeled(vm.OpRef, "L1"),
 		asm.Instr(vm.OpCall),
 	)
 }
 
-//
-// func TestCompileAnonymousFun3(t *testing.T) {
-// 	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
-// 		// ((fn ...) 1)
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpRef, 31),
-// 		asm.Instr(vm.OpCall),
-// 		// (+ ((fn ...) 1) 1)
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpAdd),
-//
-// 		// (fn [x] (+ x 1))
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpAdd),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
-//
-// func TestCompileAnonymousFun4(t *testing.T) {
-// 	testc(t, `(((fn [] (fn [x] (+ x 1)))) 1)`,
-// 		// (((fn ...)) 1)
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpRef, 53),
-// 		// Call the 0-adic function that returns the 1-adic function.
-// 		asm.Instr(vm.OpCall),
-// 		// Call the 1-adic function.
-// 		asm.Instr(vm.OpCall),
-//
-// 		// (fn [x] (+ x 1))
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpAdd),
-// 		asm.Instr(vm.OpReturn),
-// 		// (fn [] ...)
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpRef, 23),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
-//
-// func TestCompileLeafFunDef(t *testing.T) {
-// 	testc(t, `
-//     (do
-//       (def inc (fn [x] (+ x 1)))
-//       (+ (inc 1) 1)
-//     )`,
-// 		// (def inc (fn ...))
-// 		asm.Instr(vm.OpRef, 49),
-// 		asm.Instr(vm.OpSetGlobal, 0),
-// 		// (inc 1)
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		// (+ (inc ...) 1)
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpAdd),
-//
-// 		// (fn [x] (+ x 1))
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpAdd),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
+func TestCompileAnonymousFun3(t *testing.T) {
+	testc(t, `(+ ((fn [x] (+ x 1)) 1) 1)`,
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
+	)
+}
+
+func TestCompileAnonymousFun4(t *testing.T) {
+	testc(t, `(((fn [] (fn [x] (+ x 1)))) 1)`,
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	)
+}
+
+func TestCompileLeafFunDef(t *testing.T) {
+	testc(t, `
+    (do
+      (def inc (fn [x] (+ x 1)))
+      (+ (inc 1) 1)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
+	)
+}
+
 //
 // // TODO: Deeply nested function calls
-//
-// func TestCompileVariadicFun(t *testing.T) {
-// 	testc(t, `((fn [x & xs] (:: x xs)) 1 2 3 4)`,
-// 		// ((fn ...) 1 2 3 4)
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 4),
-// 		asm.Instr(vm.OpConst, 3),
-// 		asm.Instr(vm.OpConst, 2),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpRef, 48),
-// 		asm.Instr(vm.OpCall),
-//
-// 		// (fn [x & xs] (:: x xs))
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpList),
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpGetArg, 1),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpCons),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
+
+func TestCompileVariadicFun(t *testing.T) {
+	testc(t, `((fn [x & xs] (:: x xs)) 1 2 3 4)`,
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 4),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpCons),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+	)
+}
+
 //
 // func TestCompileSimpleQuote(t *testing.T) {
 // 	testc(t, `'(+ 1 1)`,
