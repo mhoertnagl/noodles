@@ -208,7 +208,7 @@ func (c *Compiler) compileAdd(args []Node, sym *SymTable, ctx *Ctx) {
 		// instructions is then:
 		//
 		//   <(+ x1 x2 x3 x4 ...)> :=
-		//     <x1>, <x2>, OpAdd, <x3>, OpAdd, <x4>, OpAdd, ...
+		//     <x1>, <x2>, Add, <x3>, Add, <x4>, Add, ...
 		//
 		c.compile(args[0], sym, ctx)
 		for _, arg := range args[1:] {
@@ -231,7 +231,7 @@ func (c *Compiler) compileSub(args []Node, sym *SymTable, ctx *Ctx) {
 	case 2:
 		// Only supports at most two operands and computes their difference.
 		//
-		//   <(- x1 x2)> := <x1>, <x2>, OpSub
+		//   <(- x1 x2)> := <x1>, <x2>, Sub
 		//
 		c.compile(args[0], sym, ctx)
 		c.compile(args[1], sym, ctx)
@@ -255,7 +255,7 @@ func (c *Compiler) compileMul(args []Node, sym *SymTable, ctx *Ctx) {
 		// sequence of instructions is then:
 		//
 		//   <(* x1 x2 x3 x4 ...)> :=
-		//     <x1>, <x2>, OpMul, <x3>, OpMul, <x4>, OpMul, ...
+		//     <x1>, <x2>, Mul, <x3>, Mul, <x4>, Mul, ...
 		//
 		c.compile(args[0], sym, ctx)
 		for _, arg := range args[1:] {
@@ -278,7 +278,7 @@ func (c *Compiler) compileDiv(args []Node, sym *SymTable, ctx *Ctx) {
 	case 2:
 		// Only supports at most two operands and computes their quotient.
 		//
-		//   <(/ x1 x2)> := <x1>, <x2>, OpDiv
+		//   <(/ x1 x2)> := <x1>, <x2>, Div
 		//
 		c.compile(args[0], sym, ctx)
 		c.compile(args[1], sym, ctx)
@@ -299,14 +299,14 @@ func (c *Compiler) compileAnd(args []Node, sym *SymTable, ctx *Ctx) {
 	default:
 		//   <(and x1 x2 ... xn)> :=
 		//        <x1>
-		//        OpJumpIfNot L0
+		//        JumpIfNot L0
 		//        <x2>
-		//        OpJumpIfNot L0
+		//        JumpIfNot L0
 		//        ...
 		//        <xn>
-		//        OpJump L1
-		//    L0: OpFalse
-		//    L1:
+		//        Jump L1
+		//    L0: False
+		//    L1: ...
 		//
 		lbl := c.newLbl()
 		end := c.newLbl()
@@ -391,9 +391,9 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 // the root environment and are available in the entire codebase for the entire
 // lifetime of the program.
 //
-//   <(def x y)> :=
+//    <(def x y)> :=
 //        <y>
-//        OpSetGlobal #x
+//        SetGlobal #x
 //
 func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
@@ -421,6 +421,21 @@ func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 	c.instr(vm.OpSetGlobal, id)
 }
 
+//
+//   <(if cond cons)> :=
+//       <cond>
+//       JumpIfNot L0
+//       <cons>
+//   L0: ...
+//
+//   <(if cond cons alt)> :=
+//       <cons>
+//       JumpIfNot L0
+//       <cons>
+//       Jump L1
+//   L0: <alt>
+//   L1: ...
+//
 func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 && len(args) != 3 {
 		panic("[if] requires either two or three arguments")
@@ -445,7 +460,24 @@ func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 	}
 }
 
-// func (c *compiler) compileCond(args []Node) vm.Ins {
+//
+//   <(cond cond1 block1 cond2 block2 ...)> :=
+//       <cond1>
+//       JumpIfNot L0
+//       <block1>
+//       Jump LX
+//   L0: <cond2>
+//       JumpIfNot L1
+//       <block2>
+//       Jump LX
+//   L1: <cond3>
+//       ...
+//   LN: <condN>
+//       JumpIfNot LX
+//       <blockN>
+//   LX: ...
+//
+// func (c *Compiler) compileCond(args []Node, sym *SymTable, ctx *Ctx) {
 //
 // }
 
@@ -456,7 +488,8 @@ func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	skp := c.newLbl()
 	fnn := c.newLbl()
 	sub := sym.NewSymTable()
-	// Compiles the code in-place. Jump over the function implementation.
+	// Compiles the function body in-place.
+	// Jump over the function implementation.
 	c.labeled(vm.OpJump, skp)
 	c.label(fnn)
 	switch x := args[0].(type) {

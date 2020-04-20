@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
 )
 
 // This is a special marker that marks the end of a sequence on the stack.
@@ -269,6 +270,10 @@ func (m *VM) popUInt64() uint64 {
 
 func (m *VM) popVector() []Val {
 	return m.pop().([]Val)
+}
+
+func (m *VM) popFileDesc() *os.File {
+	return m.pop().(*os.File)
 }
 
 func (m *VM) pushFrame(v Val) {

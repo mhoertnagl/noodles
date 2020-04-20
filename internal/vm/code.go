@@ -67,6 +67,9 @@ const (
 	// OpTailCall
 	OpReturn
 	OpEnd
+
+	OpRead
+	OpWrite
 	// TODO: Perhaps obsolete if we switch script and function portion and start
 	//       vm at script start.
 	OpHalt

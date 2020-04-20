@@ -1,6 +1,7 @@
 package vm_test
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -904,6 +905,11 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 func testRun(t *testing.T, c ...vm.Ins) *vm.VM {
 	t.Helper()
 	m := vm.NewVM(1024, 512, 512)
+
+	m.AddGlobal(0, os.Stdin)  // *STD-IN*
+	m.AddGlobal(1, os.Stdout) // *STD-OUT*
+	m.AddGlobal(2, os.Stderr) // *STD-ERR*
+
 	m.Run(vm.Concat(c))
 	return m
 }

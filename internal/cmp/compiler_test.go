@@ -680,6 +680,7 @@ func TestCompileVariadicFun(t *testing.T) {
 	)
 }
 
+//// TODO: Move to rewriter_test
 //
 // func TestCompileSimpleQuote(t *testing.T) {
 // 	testc(t, `'(+ 1 1)`,
@@ -764,6 +765,8 @@ func TestCompileVariadicFun(t *testing.T) {
 // 		asm.Instr(vm.OpReturn),
 // 	)
 // }
+////
+
 //
 // func TestCompileFac(t *testing.T) {
 // 	testc(t, `
@@ -873,6 +876,41 @@ func TestCompileVariadicFun(t *testing.T) {
 // 		asm.Instr(vm.OpReturn),
 // 	)
 // }
+
+func TestCompileClosure(t *testing.T) {
+	testc(t, `
+    (do
+      (def divN (fn [n]
+        (fn [x] (/ x n)) ))
+      ((divN 3) 9)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpDiv),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 9),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	)
+}
 
 func testc(t *testing.T, i string, e ...asm.AsmCmd) {
 	t.Helper()
