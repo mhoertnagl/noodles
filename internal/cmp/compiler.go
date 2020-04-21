@@ -62,6 +62,7 @@ func NewCompiler() *Compiler {
 	c.specs.add("let", c.compileLet)
 	c.specs.add("def", c.compileDef)
 	c.specs.add("if", c.compileIf)
+	c.specs.add("cond", c.compileCond)
 	c.specs.add("do", c.compileNodes)
 	c.specs.add("fn", c.compileFn)
 	c.specs.add("and", c.compileAnd)
@@ -477,9 +478,27 @@ func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 //       <blockN>
 //   LX: ...
 //
-// func (c *Compiler) compileCond(args []Node, sym *SymTable, ctx *Ctx) {
-//
-// }
+func (c *Compiler) compileCond(args []Node, sym *SymTable, ctx *Ctx) {
+	if len(args)%2 == 1 {
+		panic("[cond] reqires an even number of case-block pairs")
+	}
+	len := len(args)
+	end := c.newLbl()
+	for i := 0; i < len-2; i += 2 {
+		nxt := c.newLbl()
+		c.compile(args[i], sym, ctx)
+		c.labeled(vm.OpJumpIfNot, nxt)
+		c.compile(args[i+1], sym, ctx)
+		c.labeled(vm.OpJump, end)
+		c.label(nxt)
+	}
+	if len >= 2 {
+		c.compile(args[len-2], sym, ctx)
+		c.labeled(vm.OpJumpIfNot, end)
+		c.compile(args[len-1], sym, ctx)
+		c.label(end)
+	}
+}
 
 func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {

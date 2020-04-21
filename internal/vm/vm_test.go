@@ -570,6 +570,56 @@ func TestRunIf4(t *testing.T) {
 	)
 }
 
+// --- COND ---
+
+func TestRunCond1(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 28),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 56),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 75),
+		vm.Instr(vm.OpConst, 3),
+	)
+}
+
+func TestRunCond2(t *testing.T) {
+	testToS(t, int64(2),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 28),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 56),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 75),
+		vm.Instr(vm.OpConst, 3),
+	)
+}
+
+func TestRunCond3(t *testing.T) {
+	testToS(t, int64(3),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 28),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 56),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 75),
+		vm.Instr(vm.OpConst, 3),
+	)
+}
+
 // TODO: Locals with shadowing.
 
 // --- VECTOR ---

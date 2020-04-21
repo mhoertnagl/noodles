@@ -124,6 +124,41 @@ func TestAssembleIf4(t *testing.T) {
 	testa(t, i, e)
 }
 
+// --- COND ---
+
+func TestAssembleCond1(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpFalse),
+		asm.Labeled(vm.OpJumpIfNot, "L1"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpFalse),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpConst, 2),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpTrue),
+		asm.Labeled(vm.OpJumpIfNot, "L0"),
+		asm.Instr(vm.OpConst, 3),
+		asm.Label("L0"),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 28),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpJumpIfNot, 56),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpJumpIfNot, 75),
+		vm.Instr(vm.OpConst, 3),
+	)
+	testa(t, i, e)
+}
+
 // --- AND ---
 
 func TestAssembleAnd0(t *testing.T) {

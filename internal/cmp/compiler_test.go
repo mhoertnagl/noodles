@@ -335,6 +335,63 @@ func TestCompileIf4(t *testing.T) {
 	)
 }
 
+// --- COND ---
+
+func TestCompileCond0(t *testing.T) {
+	testc(t, "(cond)")
+}
+
+func TestCompileCond1(t *testing.T) {
+	testc(t, `
+    (cond
+      true 1)`,
+		asm.Instr(vm.OpTrue),
+		asm.Labeled(vm.OpJumpIfNot, "L0"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Label("L0"),
+	)
+}
+
+func TestCompileCond2(t *testing.T) {
+	testc(t, `
+    (cond
+      false 1
+      true  2)`,
+		asm.Instr(vm.OpFalse),
+		asm.Labeled(vm.OpJumpIfNot, "L1"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpTrue),
+		asm.Labeled(vm.OpJumpIfNot, "L0"),
+		asm.Instr(vm.OpConst, 2),
+		asm.Label("L0"),
+	)
+}
+
+func TestCompileCond3(t *testing.T) {
+	testc(t, `
+    (cond
+      false 1
+      false 2
+      true  3)`,
+		asm.Instr(vm.OpFalse),
+		asm.Labeled(vm.OpJumpIfNot, "L1"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpFalse),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpConst, 2),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpTrue),
+		asm.Labeled(vm.OpJumpIfNot, "L0"),
+		asm.Instr(vm.OpConst, 3),
+		asm.Label("L0"),
+	)
+}
+
 // --- AND ---
 
 func TestCompileAnd0(t *testing.T) {
