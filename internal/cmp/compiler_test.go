@@ -585,6 +585,18 @@ func TestCompileLenVector(t *testing.T) {
 	)
 }
 
+func TestCompileAnonymousFun0(t *testing.T) {
+	testc(t, `(fn [] 1)`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+	)
+}
+
 func TestCompileAnonymousFun1(t *testing.T) {
 	testc(t, `(fn [x] (+ x 1))`,
 		asm.Labeled(vm.OpJump, "L0"),
@@ -726,7 +738,6 @@ func TestCompileVariadicFun(t *testing.T) {
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpList),
 		asm.Instr(vm.OpPushArgs, 1),
-		asm.Instr(vm.OpPop),
 		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpGetArg, 0),
 		asm.Instr(vm.OpCons),
@@ -943,6 +954,18 @@ func TestCompileTailFac(t *testing.T) {
 	)
 }
 
+func TestCompilePrimitiveAsArgument(t *testing.T) {
+	testc(t, `((fn [op a b] (op a b)) +)`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+	)
+}
+
 func TestCompileClosure(t *testing.T) {
 	var minus3 int64 = -3
 	testc(t, `
@@ -984,9 +1007,11 @@ func testc(t *testing.T, i string, e ...asm.AsmCmd) {
 	r := cmp.NewReader()
 	p := cmp.NewParser()
 	c := cmp.NewCompiler()
+
 	r.Load(i)
 	n := p.Parse(r)
 	s := c.Compile(n)
+
 	compareAssembly(t, s, e)
 }
 

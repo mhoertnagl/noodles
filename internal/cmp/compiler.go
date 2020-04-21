@@ -8,34 +8,37 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-// TODO: let bindings should have their own symbol table.
-//       Fix Indexof to account for this fact.
-// TODO: Define functions that return the special forms for (+, *) and (-, /)
+// TODO: write as a primitive function?
+// TODO: (defn error [& args] (write *STD-ERR* "ERROR: " @args "\n"))
+
+// TODO: :::
+// TODO: join (strings) -- concatenates strings
+// TODO: explode (strings) -- String to list of single character strings
+
+// TODO: Dont push anyting in reverse order
+// TODO: Primitives and special forms as arguments
+
 // TODO: Variadic +, *, list, ...
 // TODO: Special functions +, -, *, / as well as primitives need implementations
 //       as ordinary functions. This way they can be passed around as args.
-// TODO: context
-// TODO: TR
-// TODO: TCO
+
 // TODO: Closure
 
 // TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
 //       unterschiedliche Größe haben kann.
 
-// TODO: *STDOUT*
-// TODO: (error *STDERR* args...)
-// TODO: write
 // TODO: str -> use printer to turn value into a string.
 // TODO: *STDIN*
 // TODO: read
 
-// TODO: :::
 // TODO: quot
 // TODO: mod
-// TODO: join (strings)
 
 // TODO: Feed global names to disassembler and any place where they make sense.
 // TODO: Optional parameter for macro definitions.
+
+// TODO: let bindings should have their own symbol table.
+//       Fix Indexof to account for this fact.
 
 type Compiler struct {
 	specs specDefs
@@ -84,12 +87,6 @@ func NewCompiler() *Compiler {
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
 
 	return c
-}
-
-// AddGlobal registers a name with the global definitions.
-// NOTE: Every definition has to be registerd in the VM as well.
-func (c *Compiler) AddGlobal(name string) uint64 {
-	return c.defs.add(name)
 }
 
 func (c *Compiler) Compile(node Node) asm.AsmCode {
@@ -544,9 +541,11 @@ func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *C
 			c.instr(vm.OpList)
 			// Then push the vector to the frames stack as well.
 			c.instr(vm.OpPushArgs, 1)
+		} else {
+			// Removes the function argument's end marker from the stack.
+			c.instr(vm.OpPop)
 		}
-		// Removes the function argument's end marker from the stack.
-		c.instr(vm.OpPop)
+
 		c.compile(body, sym, ctx)
 	}
 	c.instr(vm.OpReturn)

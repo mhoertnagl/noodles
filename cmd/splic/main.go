@@ -38,9 +38,7 @@ func main() {
 	cmp := cmp.NewCompiler()
 	asm := asm.NewAssembler()
 
-	cmp.AddGlobal("*STD-IN*")
-	cmp.AddGlobal("*STD-OUT*")
-	cmp.AddGlobal("*STD-ERR*")
+	cmp.AddDefaultGlobals()
 
 	srcBytes, err := ioutil.ReadFile(srcPath)
 	if err != nil {

@@ -35,37 +35,6 @@ func NewVM(stackSize int64, envStackSize int64, frameStackSize int64) *VM {
 	}
 }
 
-// AddGlobal assigns a value to an ID in the global definitions.
-// NOTE: Every definition has to be registerd in the compiler as well.
-func (m *VM) AddGlobal(id uint64, val Val) {
-	m.defs[id] = val
-}
-
-func (m *VM) InspectStack(offset int64) Val {
-	a := m.sp - offset - 1
-	if a >= 0 {
-		return m.stack[a]
-	}
-	return nil
-}
-
-func (m *VM) StackSize() int64 {
-	return m.sp
-}
-
-func (m *VM) InspectFrames(offset int64) Val {
-	a := m.fp + offset
-	// Adresses above the FSP are invalid.
-	if a >= 0 && a < m.fsp {
-		return m.frames[a]
-	}
-	return nil
-}
-
-func (m *VM) FramesSize() int64 {
-	return m.fsp
-}
-
 func (m *VM) Run(code Ins) {
 	m.code = code
 	ln := int64(len(code))
@@ -112,7 +81,6 @@ func (m *VM) Run(code Ins) {
 			for v := m.pop(); v != end; v = m.pop() {
 				l = append(l, v)
 			}
-			m.push(end)
 			m.push(l)
 		case OpCons:
 			v := m.pop()
@@ -228,6 +196,11 @@ func (m *VM) Run(code Ins) {
 			m.push(end)
 		case OpHalt:
 			return
+		case OpWrite:
+			f := m.popFileDesc()
+			for v := m.pop(); v != end; v = m.pop() {
+				fmt.Fprint(f, v)
+			}
 		case OpDebug:
 			mode := m.readUint64()
 			// Bit 0 show stack.
@@ -348,27 +321,6 @@ func (m *VM) le(l Val, r Val) bool {
 		}
 	}
 	return false
-}
-
-func (m *VM) printStack() {
-	fmt.Print("STACK ⫣")
-	for i := int64(0); i < m.sp; i++ {
-		fmt.Printf(" %v │", m.stack[i])
-	}
-	fmt.Print("\n")
-}
-
-func (m *VM) printFrames() {
-	w := m.fsp - m.fp + 2
-	fmt.Print("FRAME ⫣")
-	for i := int64(0); i < m.fsp; i++ {
-		if i > 0 && i%w == w-1 {
-			fmt.Printf(" %v │", m.frames[i])
-		} else {
-			fmt.Printf(" %v ⏐", m.frames[i])
-		}
-	}
-	fmt.Print("\n")
 }
 
 func prepend(v Val, l []Val) []Val {

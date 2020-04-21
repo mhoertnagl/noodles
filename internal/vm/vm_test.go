@@ -1,7 +1,6 @@
 package vm_test
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -650,6 +649,21 @@ func TestRunCreateVector2(t *testing.T) {
 	testVal(t, nil, m.InspectStack(1))
 }
 
+func TestRunCreateVector3(t *testing.T) {
+	e := []vm.Val{int64(0), int64(1), int64(2), int64(3)}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpCons),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
 func TestRunVectorHead(t *testing.T) {
 	e := int64(1)
 	m := testRun(t,
@@ -837,11 +851,10 @@ func TestRunVariadicFun(t *testing.T) {
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpJump, 86),
+		vm.Instr(vm.OpJump, 85),
 		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpPop),
 		vm.Instr(vm.OpGetArg, 1),
 		vm.Instr(vm.OpGetArg, 0),
 		vm.Instr(vm.OpCons),
@@ -937,6 +950,39 @@ func TestRunStringConst(t *testing.T) {
 	)
 }
 
+func TestRunWrite1(t *testing.T) {
+	m := vm.NewVM(1024, 512, 512)
+	m.AddDefaultGlobals()
+
+	m.Run(vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Str("Hello, World!\n"),
+		vm.Instr(vm.OpGetGlobal, 1), // *STD-OUT*
+		vm.Instr(vm.OpWrite),
+	))
+
+	// EXPECTED: Hello, World!
+}
+
+func TestRunWrite2(t *testing.T) {
+	m := vm.NewVM(1024, 512, 512)
+	m.AddDefaultGlobals()
+
+	m.Run(vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Str("\n"),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpGetGlobal, 1), // *STD-OUT*
+		vm.Instr(vm.OpWrite),
+	))
+
+	// EXPECTED: [1 2 3]
+}
+
 // testToS executes a sequence of instructions in the vm and tests the top of
 // the stack element against an expected value. Will raise an error if the
 // types or the values are unequal. The stack is fixed to a maximum size of
@@ -955,11 +1001,6 @@ func testToS(t *testing.T, expected vm.Val, c ...vm.Ins) {
 func testRun(t *testing.T, c ...vm.Ins) *vm.VM {
 	t.Helper()
 	m := vm.NewVM(1024, 512, 512)
-
-	m.AddGlobal(0, os.Stdin)  // *STD-IN*
-	m.AddGlobal(1, os.Stdout) // *STD-OUT*
-	m.AddGlobal(2, os.Stderr) // *STD-ERR*
-
 	m.Run(vm.Concat(c))
 	return m
 }

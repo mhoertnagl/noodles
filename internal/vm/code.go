@@ -139,9 +139,13 @@ var meta = map[Op]*OpMeta{
 	OpCall:    {"Call", []int{}},
 	OpRecCall: {"RecCall", []int{}},
 	OpReturn:  {"Return", []int{}},
-	OpEnd:     {"End", []int{}},
-	OpHalt:    {"Halt", []int{}},
-	OpDebug:   {"Debug", []int{8}},
+
+	OpRead:  {"Read", []int{}},
+	OpWrite: {"Write", []int{}},
+
+	OpEnd:   {"End", []int{}},
+	OpHalt:  {"Halt", []int{}},
+	OpDebug: {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

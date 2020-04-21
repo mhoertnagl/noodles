@@ -14,10 +14,7 @@ func main() {
 
 	pr := vm.NewPrinter()
 	vm := vm.NewVM(1024, 512, 512)
-
-	vm.AddGlobal(0, os.Stdin)  // *STD-IN*
-	vm.AddGlobal(1, os.Stdout) // *STD-OUT*
-	vm.AddGlobal(2, os.Stderr) // *STD-ERR*
+	vm.AddDefaultGlobals()
 
 	for _, inFileName := range flag.Args() {
 		inFile, err := os.Open(inFileName)
