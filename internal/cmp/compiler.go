@@ -67,6 +67,7 @@ func NewCompiler() *Compiler {
 	c.specs.add("fn", c.compileFn)
 	c.specs.add("and", c.compileAnd)
 	c.specs.add("or", c.compileOr)
+	c.specs.add("rec", c.compileRec)
 
 	c.prims = primDefs{}
 	c.prims.add("fst", vm.OpFst, 1, false)
@@ -583,18 +584,31 @@ func (c *Compiler) verifyParam(param Node, pos int) string {
 	}
 }
 
+func (c *Compiler) compileRec(args []Node, sym *SymTable, ctx *Ctx) {
+	if len(args) != 1 {
+		panic("[rec] expects exactly 1 argument")
+	}
+
+	if x, ok := args[0].(*ListNode); ok {
+		c.compileList(x, sym, ctx.NewRecCtx(true))
+	} else {
+		panic("[rec] argument must be a list call")
+	}
+}
+
 func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable, ctx *Ctx) {
 	c.instr(vm.OpEnd)
-	c.compileNodesReverse(args, sym, ctx)
+	// Reset recursive invocation for all arguments.
+	c.compileNodesReverse(args, sym, ctx.NewRecCtx(false))
 	// The calling function can be implemented either as a global definintion
 	// or passed as a local argument from a let binding.
 	c.compileSymbol(s, sym, ctx)
-	// if ctx.FnName == s.Name {
-	// 	c.instr(vm.OpRecCall)
-	// } else {
-	// 	c.instr(vm.OpCall)
-	// }
-	c.instr(vm.OpCall)
+
+	if ctx.Recurse {
+		c.instr(vm.OpRecCall)
+	} else {
+		c.instr(vm.OpCall)
+	}
 }
 
 func (c *Compiler) compileListCall(lst *ListNode, args []Node, sym *SymTable, ctx *Ctx) {

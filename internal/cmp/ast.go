@@ -2,8 +2,6 @@ package cmp
 
 import "fmt"
 
-// TODO: Move to separate namespace?
-
 type Node interface {
 }
 

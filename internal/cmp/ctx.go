@@ -1,9 +1,9 @@
 package cmp
 
 type Ctx struct {
-	FnName string
-	IsVal  bool
-	IsLast bool
+	Recurse bool
+	IsVal   bool
+	Last    bool
 }
 
 func NewCtx() *Ctx {
@@ -12,16 +12,16 @@ func NewCtx() *Ctx {
 
 func (c *Ctx) NewCtx() *Ctx {
 	return &Ctx{
-		FnName: c.FnName,
-		IsVal:  c.IsVal,
-		IsLast: c.IsLast,
+		Recurse: c.Recurse,
+		IsVal:   c.IsVal,
+		Last:    c.Last,
 	}
 }
 
-func (c *Ctx) NewDefCtx(name string) *Ctx {
+func (c *Ctx) NewRecCtx(recurse bool) *Ctx {
 	return &Ctx{
-		FnName: name,
-		IsVal:  c.IsVal,
-		IsLast: c.IsLast,
+		Recurse: recurse,
+		IsVal:   c.IsVal,
+		Last:    c.Last,
 	}
 }

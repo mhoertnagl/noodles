@@ -2,7 +2,6 @@ package rwr
 
 import "github.com/mhoertnagl/splis2/internal/cmp"
 
-// TODO: Braucht Referenz auf cmp.
 // TODO: Macro tests mit compiler in rewriter tests verschieben.
 
 type argsMap map[string]cmp.Node

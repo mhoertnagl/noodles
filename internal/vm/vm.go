@@ -217,6 +217,9 @@ func (m *VM) Run(code Ins) {
 			m.pushFrame(m.fp)   // Push pointer to previous frame.
 			m.fp = m.fsp        // Set pointer to new frame.
 			m.ip = m.popInt64() // Call function.
+		case OpRecCall:
+			m.fsp = m.fp        // Drop arguments.
+			m.ip = m.popInt64() // Call function.
 		case OpReturn:
 			m.fsp = m.fp             // Drop arguments.
 			m.fp = m.popFrameInt64() // Restore pointer to previous frame.

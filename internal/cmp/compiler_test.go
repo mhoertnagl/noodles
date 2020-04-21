@@ -824,117 +824,127 @@ func TestCompileVariadicFun(t *testing.T) {
 // }
 ////
 
-//
-// func TestCompileFac(t *testing.T) {
-// 	testc(t, `
-//     (do
-//       (def fac
-//         (fn [n]
-//           (do
-//             (debug 3)
-//             (if (= n 0)
-//               1
-//               (* n (fac (- n 1)))
-//             )
-//           )
-//         )
-//       )
-//       (debug 3)
-//       (fac 5)
-//       (debug 3)
-//     )`,
-// 		asm.Instr(vm.OpRef, 57),
-// 		asm.Instr(vm.OpSetGlobal, 0),
-// 		asm.Instr(vm.OpDebug, 3),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 5),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpDebug, 3),
-//
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpDebug, 3),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 0),
-// 		asm.Instr(vm.OpEQ),
-// 		asm.Instr(vm.OpJumpIfNot, 18),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpJump, 40),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpSub),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpMul),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
-//
-// func TestCompileTailFac(t *testing.T) {
-// 	testc(t, `
-//     (do
-//       (def _fac
-//         (fn [n acc]
-//           (do
-//             (debug 3)
-//             (if (= n 0)
-//               acc
-//               (_fac (- n 1) (* n acc))
-//             )
-//           )
-// 				)
-// 			)
-// 			(def fac (fn [n] (_fac n 1) ))
-//       (debug 3)
-//       (fac 5)
-//       (debug 3)
-//     )`,
-// 		asm.Instr(vm.OpRef, 75),
-// 		asm.Instr(vm.OpSetGlobal, 0),
-// 		asm.Instr(vm.OpRef, 190),
-// 		asm.Instr(vm.OpSetGlobal, 1),
-// 		asm.Instr(vm.OpDebug, 3),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 5),
-// 		asm.Instr(vm.OpGetGlobal, 1),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpDebug, 3),
-//
-// 		asm.Instr(vm.OpPushArgs, 2),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpDebug, 3),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 0),
-// 		asm.Instr(vm.OpEQ),
-// 		asm.Instr(vm.OpJumpIfNot, 18),
-// 		asm.Instr(vm.OpGetArg, 1),
-// 		asm.Instr(vm.OpJump, 49),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpGetArg, 1),
-// 		asm.Instr(vm.OpMul),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpSub),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpReturn),
-//
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 1),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpReturn),
-// 	)
-// }
+func TestCompileFac(t *testing.T) {
+	testc(t, `
+    (do
+      (def fac
+        (fn [n]
+          (do
+            (debug 3)
+            (if (= n 0)
+              1
+              (* n (fac (- n 1)))
+            )
+          )
+        )
+      )
+      (debug 3)
+      (fac 5)
+      (debug 3)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpDebug, 3),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 0),
+		asm.Instr(vm.OpEQ),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L3"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpSub),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpMul),
+		asm.Label("L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpDebug, 3),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 5),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpDebug, 3),
+	)
+}
+
+func TestCompileTailFac(t *testing.T) {
+	testc(t, `
+    (do
+      (def _fac
+        (fn [n acc]
+          (do
+            (debug 3)
+            (if (= n 0)
+              acc
+              (rec (_fac (- n 1) (* n acc)))
+            )
+          )
+				)
+			)
+			(def fac (fn [n] (_fac n 1) ))
+      (debug 3)
+      (fac 5)
+      (debug 3)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpDebug, 3),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 0),
+		asm.Instr(vm.OpEQ),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Labeled(vm.OpJump, "L3"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpMul),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpSub),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpRecCall),
+		asm.Label("L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Labeled(vm.OpJump, "L4"),
+		asm.Label("L5"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L4"),
+		asm.Labeled(vm.OpRef, "L5"),
+		asm.Instr(vm.OpSetGlobal, 1),
+		asm.Instr(vm.OpDebug, 3),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 5),
+		asm.Instr(vm.OpGetGlobal, 1),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpDebug, 3),
+	)
+}
 
 func TestCompileClosure(t *testing.T) {
+	var minus3 int64 = -3
 	testc(t, `
     (do
       (def divN (fn [n]
@@ -950,7 +960,7 @@ func TestCompileClosure(t *testing.T) {
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
 		asm.Instr(vm.OpGetArg, 0),
-		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
