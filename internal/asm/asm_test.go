@@ -719,6 +719,24 @@ func TestAssembleString(t *testing.T) {
 	testa(t, i, e)
 }
 
+// --- WRITE ---
+
+func TestAssembleWrite1(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpEnd),
+		asm.Str("Hello, World!\n"),
+		asm.Instr(vm.OpGetGlobal, 1),
+		asm.Instr(vm.OpWrite),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Str("Hello, World!\n"),
+		vm.Instr(vm.OpGetGlobal, 1),
+		vm.Instr(vm.OpWrite),
+	)
+	testa(t, i, e)
+}
+
 func testa(t *testing.T, i asm.AsmCode, e []byte) {
 	t.Helper()
 	a := asm.NewAssembler()

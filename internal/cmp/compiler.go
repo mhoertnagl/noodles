@@ -16,6 +16,7 @@ import (
 // TODO: explode (strings) -- String to list of single character strings
 
 // TODO: Dont push anyting in reverse order
+// TODO: Explicit GT and GE
 // TODO: Primitives and special forms as arguments
 
 // TODO: Variadic +, *, list, ...
@@ -71,10 +72,11 @@ func NewCompiler() *Compiler {
 	c.specs.add("and", c.compileAnd)
 	c.specs.add("or", c.compileOr)
 	c.specs.add("rec", c.compileRec)
+	c.specs.add("write", c.compileWrite)
 
 	c.prims = primDefs{}
-	c.prims.add("fst", vm.OpFst, 1, false)
-	c.prims.add("rest", vm.OpRest, 1, false)
+	c.prims.add("nth", vm.OpNth, 2, false)
+	c.prims.add("drop", vm.OpDrop, 2, false)
 	c.prims.add("len", vm.OpLength, 1, false)
 	c.prims.add("<", vm.OpLT, 2, false)
 	c.prims.add("<=", vm.OpLE, 2, false)
@@ -85,6 +87,7 @@ func NewCompiler() *Compiler {
 	c.prims.add("not", vm.OpNot, 1, false)
 	c.prims.add("::", vm.OpCons, 2, true)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
+	// c.prims.add("write", vm.OpWrite, 1, false)
 
 	return c
 }
@@ -593,6 +596,16 @@ func (c *Compiler) compileRec(args []Node, sym *SymTable, ctx *Ctx) {
 	} else {
 		panic("[rec] argument must be a list call")
 	}
+}
+
+func (c *Compiler) compileWrite(args []Node, sym *SymTable, ctx *Ctx) {
+	if len(args) == 0 {
+		panic("[rec] expects at least 1 argument")
+	}
+
+	c.instr(vm.OpEnd)
+	c.compileNodesReverse(args, sym, ctx)
+	c.instr(vm.OpWrite)
 }
 
 func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable, ctx *Ctx) {

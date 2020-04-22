@@ -667,12 +667,13 @@ func TestRunCreateVector3(t *testing.T) {
 func TestRunVectorHead(t *testing.T) {
 	e := int64(1)
 	m := testRun(t,
+		vm.Instr(vm.OpConst, 0),
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpFst),
+		vm.Instr(vm.OpNth),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
@@ -681,9 +682,10 @@ func TestRunVectorHead(t *testing.T) {
 func TestRunVectorTail1(t *testing.T) {
 	e := []vm.Val{}
 	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpRest),
+		vm.Instr(vm.OpDrop),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
@@ -692,12 +694,13 @@ func TestRunVectorTail1(t *testing.T) {
 func TestRunVectorTail2(t *testing.T) {
 	e := []vm.Val{int64(2), int64(3)}
 	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 3),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpList),
-		vm.Instr(vm.OpRest),
+		vm.Instr(vm.OpDrop),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))

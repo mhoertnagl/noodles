@@ -87,18 +87,20 @@ func (m *VM) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
-		case OpFst:
+		case OpNth:
 			l := m.popVector()
+			n := m.popInt64()
 			// TODO: panic if null?
-			m.push(l[0])
-		case OpRest:
+			m.push(l[n])
+		case OpDrop:
 			l := m.popVector()
+			n := m.popInt64()
 			if len(l) == 0 {
 				// TODO: push fresh empty vector?
 				m.push(l)
 				// m.push(make([]Val, 0))
 			} else {
-				m.push(l[1:])
+				m.push(l[n:])
 			}
 		case OpLength:
 			l := m.popVector()

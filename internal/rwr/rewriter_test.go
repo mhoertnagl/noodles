@@ -64,23 +64,43 @@ func TestRewriteQuoteWithMultiOccuranceOfSingelVariable(t *testing.T) {
 func TestRewriteArgsSimple(t *testing.T) {
 	pars := []string{"a"}
 	args := []cmp.Node{parse("(+ 1 1)")}
-	rw := rwr.NewArgsRewriter(pars, args)
+	rw := rwr.NewArgsRewriter(pars, "", args)
 	testRewriter(t, rw, `(* a a)`, `(* (+ 1 1) (+ 1 1))`)
+}
+
+func TestRewriteArgsVector(t *testing.T) {
+	pars := []string{"a", "b", "c"}
+	args := []cmp.Node{parse("1"), parse("2"), parse("3")}
+	rw := rwr.NewArgsRewriter(pars, "", args)
+	testRewriter(t, rw, `(nth 1 [a b c])`, `(nth 1 [1 2 3])`)
 }
 
 func TestRewriteArgsDeep(t *testing.T) {
 	pars := []string{"a", "b"}
 	args := []cmp.Node{parse("(+ 1 1)"), parse("(- 2)")}
-	rw := rwr.NewArgsRewriter(pars, args)
+	rw := rwr.NewArgsRewriter(pars, "", args)
 	testRewriter(t, rw, `(* (* a b) a)`, `(* (* (+ 1 1) (- 2)) (+ 1 1))`)
+}
+
+func TestRewriteVarArgs(t *testing.T) {
+	pars := []string{"a"}
+	args := []cmp.Node{parse("1"), parse("2"), parse("3"), parse("4")}
+	rw := rwr.NewArgsRewriter(pars, "b", args)
+	testRewriter(t, rw, `(:: a b)`, `(:: 1 [2 3 4])`)
+}
+
+func TestRewriteVarArgsDissolve(t *testing.T) {
+	args := []cmp.Node{parse("(+ 1 1)"), parse("(- 2 2)")}
+	rw := rwr.NewArgsRewriter([]string{}, "a", args)
+	testRewriter(t, rw, `(do @a)`, `(do (+ 1 1) (- 2 2))`)
 }
 
 func TestRewriteDefmacroSimple(t *testing.T) {
 	is := `(do
-    (defmacro defn [name args body] (def name (fn args body)))
-    (defn inc [x] (+ x 1))
+    (defmacro defn [name args & body] (def name (fn args (do body))))
+    (defn inc [x] (+ x 1) (- x 1))
   )`
-	es := `(do (def inc (fn [x] (+ x 1))))`
+	es := `(do (def inc (fn [x] (do (+ x 1) (- x 1)))))`
 	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
@@ -92,6 +112,16 @@ func TestRewriteDefmacroNested(t *testing.T) {
     (m1 1 2)
   )`
 	es := `(do (- 2 1))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroVarArg(t *testing.T) {
+	is := `(do
+    (defmacro m1 [a & b] (:: a b))
+    (m1 1 2 3 4)
+  )`
+	es := `(do (:: 1 [2 3 4]))`
 	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }

@@ -105,17 +105,36 @@ func NewList2(items ...Node) *ListNode {
 	return &ListNode{Items: items}
 }
 
+func Call(name string, n Node) *ListNode {
+	return NewList2(NewSymbol(name), n)
+}
+
+func CallVar(name string, n ...Node) *ListNode {
+	m := []Node{NewSymbol(name)}
+	m = append(m, n...)
+	return NewList(m)
+}
+
 func Quote(n Node) *ListNode {
-	return NewList2(NewSymbol("quote"), n)
+	return Call("quote", n)
 }
 
 func Unquote(n Node) *ListNode {
-	return NewList2(NewSymbol("unquote"), n)
+	return Call("unquote", n)
 }
 
 func Dissolve(n Node) *ListNode {
-	return NewList2(NewSymbol("dissolve"), n)
+	return Call("dissolve", n)
 }
+
+// func Do(n Node) *ListNode {
+// 	switch x := n.(type) {
+// 	case []Node:
+// 		return CallVar("do", x...)
+// 	default:
+// 		return CallVar("do", x)
+// 	}
+// }
 
 func Fn(args []Node, body Node) *ListNode {
 	return NewList2(NewSymbol("fn"), args, body)

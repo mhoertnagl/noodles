@@ -11,13 +11,25 @@
   ;; @param sym   name  The name of the function.
   ;; @param (sym) args  The list of arument symbols.
   ;; @param (any) body  The body of the function.
-  (defmacro defn [name args body] (def name (fn args body)))
+  (defmacro defn [name args & body] (def name (fn args (do @body))))
+
+  (defmacro print [& args] (write *STD-OUT* @args))
+
+  (defmacro println [& args] (write *STD-OUT* @args "\n"))
+
+  (defmacro error [& args] )
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
   ;; @param  any x  A value.
   ;; @return bool   `true` iff `x` is `nil`.
   ; (defn nil? [x] (= x nil))
+
+  ;; (bool? )
+  ;; (int? )
+  ;; (float? )
+  ;; (str? )
+  ;; (vec? )
 
   ;; `true?` returns true if and only if `x` is the boolean `true`.
   ;;
@@ -31,16 +43,9 @@
   ;; @return bool  `true` iff `x` is the boolean `false`.
   ; (defn false? [x] (= x false))
 
-  ;; `not` returns `false` if `x` is truthy; `true` otherwise. `not` is an
-  ;; alias for `false?`.
-  ;;
-  ;; @param  any  x  A value.
-  ;; @return bool    `false` if `x` is truthy; `true` otherwise.
-  ; (def not false?)
-
   ;; `else` is an alias for the boolean atom `true`. Used in `cond` expressions
   ;; to denote the default branch.
-  ; (def else true)
+  (defmacro else [] true)
 
   ;; `identity` returns the argument itself.
   ;;
@@ -52,7 +57,14 @@
   ;; `empty?` returns the number of elements in the vector `xs`.
   ;;
   ;; @param  (any) xs  A vector of elements.
-  (defn empty? [xs] (= (len xs) 0))
+  (defmacro empty? [xs] (= (len xs) 0))
+
+  (defmacro vec [& args] args)
+
+  (defmacro fst [xs] (nth 0 xs))
+  (defmacro snd [xs] (nth 1 xs))
+  (defmacro trd [xs] (nth 2 xs))
+  (defmacro rst [xs] (drop 1 xs))
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -77,6 +89,31 @@
   ;; @return (num)      The sequence of integers from `a` up to `b`.
   (defn irange [start end] (range start end 1))
 
+  ;; `reduce` reduces a sequence of elements into a single element by successive
+  ;; application of the binary function `f` in a left-associative fashion where
+  ;; `b` is the initial value.
+  ;; If the list is empty, `reduce` will return `b`.
+  ;;
+  ;; @param  fun(S T)T f   A binary function.
+  ;; @param  T         b   The initial value.
+  ;; @param  (S)       xs  A list of elements.
+  ;; @return T             The left-associative reduction of `xs` into a single
+  ;;                       element.
+  (defn reduce [f b xs]
+    (if (empty? xs)
+      b
+      (rec (reduce f (f (fst xs) b) (rst xs)))))
+
+  ; (defn reduce-right [f b xs]
+  ;   (if (empty? xs)
+  ;     b
+  ;     (f b (reduce-right f (head xs) (tail xs)))))
+
+  (defn fold [f xs]
+    (if (empty? xs)
+      nil ; TODO: Throw error.
+      (reduce f (fst xs) (rst xs)) ))
+
   ;; `map` applies a function of one argument to each element of a list and
   ;; returns a list of the application results in the same order as the
   ;; elements.
@@ -88,37 +125,12 @@
   (defn map [f xs]
     (if (empty? xs)
       []
-      (:: (f (head xs)) (map f (tail xs)))))
+      (:: (f (fst xs)) (map f (rst xs)))))
 
   ; (defn flat-map [p xs]
   ;   (if (empty? xs)
   ;     ()
   ;     (::: (f (head xs)) (map f (tail xs)))))
-
-  ;; `reduce` reduces a sequence of elements into a single element by successive
-  ;; application of the binary function `f` in a left-associative fashion where
-  ;; `b` is the initial value.
-  ;; If the list is empty, `reduce` will return `b`.
-  ;;
-  ;; @param  fun(T S)T f   A binary function.
-  ;; @param  T         b   The initial value.
-  ;; @param  (S)       xs  A list of elements.
-  ;; @return T             The left-associative reduction of `xs` into a single
-  ;;                       element.
-  (defn reduce [f b xs]
-    (if (empty? xs)
-      b
-      (reduce f (f b (head xs)) (tail xs))))
-
-  ; (defn reduce-right [f b xs]
-  ;   (if (empty? xs)
-  ;     b
-  ;     (f b (reduce f (head xs) (tail xs)))))
-
-  (defn fold [f xs]
-    (if (empty? xs)
-      nil ; TODO: Throw error.
-      (reduce f (head xs) (tail xs)) ))
 
   ; (defn filter [p xs]
   ;   (cond (empty? xs) xs
@@ -171,6 +183,6 @@
   ;     (:: v (repeat (- n 1) v)) ))
 
   ;; (defn flatten [xs])
-  (use "core/math")
+  ; (use "core/math")
   ; (use "core/io")
 )

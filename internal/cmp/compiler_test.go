@@ -553,24 +553,26 @@ func TestCompileVector2(t *testing.T) {
 }
 
 func TestCompileFirstVector(t *testing.T) {
-	testc(t, "(fst [1 2 3])",
+	testc(t, "(nth 0 [1 2 3])",
+		asm.Instr(vm.OpConst, 0),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpConst, 2),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpList),
-		asm.Instr(vm.OpFst),
+		asm.Instr(vm.OpNth),
 	)
 }
 
-func TestCompileRestVector(t *testing.T) {
-	testc(t, "(rest [1 2 3])",
+func TestCompileDropVector(t *testing.T) {
+	testc(t, "(drop 1 [1 2 3])",
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpConst, 2),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpList),
-		asm.Instr(vm.OpRest),
+		asm.Instr(vm.OpDrop),
 	)
 }
 
@@ -954,51 +956,62 @@ func TestCompileTailFac(t *testing.T) {
 	)
 }
 
-func TestCompilePrimitiveAsArgument(t *testing.T) {
-	testc(t, `((fn [op a b] (op a b)) +)`,
-		asm.Labeled(vm.OpJump, "L0"),
-		asm.Label("L1"),
-		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpReturn),
-		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
-	)
-}
+// func TestCompilePrimitiveAsArgument(t *testing.T) {
+// 	testc(t, `((fn [op a b] (op a b)) +)`,
+// 		asm.Labeled(vm.OpJump, "L0"),
+// 		asm.Label("L1"),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpConst, 1),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L0"),
+// 		asm.Labeled(vm.OpRef, "L1"),
+// 	)
+// }
 
-func TestCompileClosure(t *testing.T) {
-	var minus3 int64 = -3
-	testc(t, `
-    (do
-      (def divN (fn [n]
-        (fn [x] (/ x n)) ))
-      ((divN 3) 9)
-    )`,
-		asm.Labeled(vm.OpJump, "L0"),
-		asm.Label("L1"),
-		asm.Instr(vm.OpPushArgs, 1),
-		asm.Instr(vm.OpPop),
-		asm.Labeled(vm.OpJump, "L2"),
-		asm.Label("L3"),
-		asm.Instr(vm.OpPushArgs, 1),
-		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpGetArg, 0),
-		asm.Instr(vm.OpGetArg, uint64(minus3)),
-		asm.Instr(vm.OpDiv),
-		asm.Instr(vm.OpReturn),
-		asm.Label("L2"),
-		asm.Labeled(vm.OpRef, "L3"),
-		asm.Instr(vm.OpReturn),
-		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
-		asm.Instr(vm.OpSetGlobal, 0),
+// func TestCompileClosure(t *testing.T) {
+// 	var minus3 int64 = -3
+// 	testc(t, `
+//     (do
+//       (def divN (fn [n]
+//         (fn [x] (/ x n)) ))
+//       ((divN 3) 9)
+//     )`,
+// 		asm.Labeled(vm.OpJump, "L0"),
+// 		asm.Label("L1"),
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Labeled(vm.OpJump, "L2"),
+// 		asm.Label("L3"),
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpGetArg, uint64(minus3)),
+// 		asm.Instr(vm.OpDiv),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L2"),
+// 		asm.Labeled(vm.OpRef, "L3"),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L0"),
+// 		asm.Labeled(vm.OpRef, "L1"),
+// 		asm.Instr(vm.OpSetGlobal, 0),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpConst, 9),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpConst, 3),
+// 		asm.Instr(vm.OpGetGlobal, 0),
+// 		asm.Instr(vm.OpCall),
+// 		asm.Instr(vm.OpCall),
+// 	)
+// }
+
+// --- WRITE ---
+
+func TestCompileWrite1(t *testing.T) {
+	testcd(t, `(write *STD-OUT* "Hello, World!\n")`,
 		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpConst, 9),
-		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpConst, 3),
-		asm.Instr(vm.OpGetGlobal, 0),
-		asm.Instr(vm.OpCall),
-		asm.Instr(vm.OpCall),
+		asm.Str("Hello, World!\n"),
+		asm.Instr(vm.OpGetGlobal, 1),
+		asm.Instr(vm.OpWrite),
 	)
 }
 
@@ -1007,6 +1020,21 @@ func testc(t *testing.T, i string, e ...asm.AsmCmd) {
 	r := cmp.NewReader()
 	p := cmp.NewParser()
 	c := cmp.NewCompiler()
+
+	r.Load(i)
+	n := p.Parse(r)
+	s := c.Compile(n)
+
+	compareAssembly(t, s, e)
+}
+
+func testcd(t *testing.T, i string, e ...asm.AsmCmd) {
+	t.Helper()
+	r := cmp.NewReader()
+	p := cmp.NewParser()
+	c := cmp.NewCompiler()
+
+	c.AddDefaultGlobals()
 
 	r.Load(i)
 	n := p.Parse(r)
