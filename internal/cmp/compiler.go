@@ -8,10 +8,6 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-// TODO: write as a primitive function?
-// TODO: (defn error [& args] (write *STD-ERR* "ERROR: " @args "\n"))
-
-// TODO: :::
 // TODO: join (strings) -- concatenates strings
 // TODO: explode (strings) -- String to list of single character strings
 
@@ -19,10 +15,14 @@ import (
 // TODO: Explicit GT and GE
 // TODO: Primitives and special forms as arguments
 
+// TODO: join two lists (::)
+// TODO: prepend (+:) [a.k.a. cons] / append (:+)
+
 // TODO: Variadic +, *, list, ...
 // TODO: Special functions +, -, *, / as well as primitives need implementations
 //       as ordinary functions. This way they can be passed around as args.
 
+// TODO: Call agruments outside of current function context.
 // TODO: Closure
 
 // TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
@@ -87,7 +87,7 @@ func NewCompiler() *Compiler {
 	c.prims.add("not", vm.OpNot, 1, false)
 	c.prims.add("::", vm.OpCons, 2, true)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
-	// c.prims.add("write", vm.OpWrite, 1, false)
+	c.prims.add("halt", vm.OpHalt, 0, false)
 
 	return c
 }

@@ -737,6 +737,18 @@ func TestAssembleWrite1(t *testing.T) {
 	testa(t, i, e)
 }
 
+// --- HALT ---
+
+func TestAssembleHalt(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpHalt),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpHalt),
+	)
+	testa(t, i, e)
+}
+
 func testa(t *testing.T, i asm.AsmCode, e []byte) {
 	t.Helper()
 	a := asm.NewAssembler()

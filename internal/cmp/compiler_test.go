@@ -1015,6 +1015,14 @@ func TestCompileWrite1(t *testing.T) {
 	)
 }
 
+// --- HALT ---
+
+func TestCompileHalt(t *testing.T) {
+	testc(t, "(halt)",
+		asm.Instr(vm.OpHalt),
+	)
+}
+
 func testc(t *testing.T, i string, e ...asm.AsmCmd) {
 	t.Helper()
 	r := cmp.NewReader()

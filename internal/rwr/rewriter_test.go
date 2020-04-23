@@ -89,6 +89,20 @@ func TestRewriteVarArgs(t *testing.T) {
 	testRewriter(t, rw, `(:: a b)`, `(:: 1 [2 3 4])`)
 }
 
+func TestRewriteArgDissolve1(t *testing.T) {
+	pars := []string{"a"}
+	args := []cmp.Node{parse("b")}
+	rw := rwr.NewArgsRewriter(pars, "", args)
+	testRewriter(t, rw, `(+ @a)`, `(+ (dissolve b))`)
+}
+
+func TestRewriteArgDissolve2(t *testing.T) {
+	pars := []string{"a"}
+	args := []cmp.Node{parse("[1 2 3]")}
+	rw := rwr.NewArgsRewriter(pars, "", args)
+	testRewriter(t, rw, `(+ @a)`, `(+ 1 2 3)`)
+}
+
 func TestRewriteVarArgsDissolve(t *testing.T) {
 	args := []cmp.Node{parse("(+ 1 1)"), parse("(- 2 2)")}
 	rw := rwr.NewArgsRewriter([]string{}, "a", args)
@@ -97,7 +111,8 @@ func TestRewriteVarArgsDissolve(t *testing.T) {
 
 func TestRewriteDefmacroSimple(t *testing.T) {
 	is := `(do
-    (defmacro defn [name args & body] (def name (fn args (do body))))
+    (defmacro defn [name args & body]
+      (def name (fn args (do @body))))
     (defn inc [x] (+ x 1) (- x 1))
   )`
 	es := `(do (def inc (fn [x] (do (+ x 1) (- x 1)))))`
@@ -122,6 +137,27 @@ func TestRewriteDefmacroVarArg(t *testing.T) {
     (m1 1 2 3 4)
   )`
 	es := `(do (:: 1 [2 3 4]))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroPrint1(t *testing.T) {
+	is := `(do
+    (defmacro print [& args] (write *STD-OUT* @args))
+    (print "Hello" ", " "World" "!")
+  )`
+	es := `(do (write *STD-OUT* "Hello" ", " "World" "!"))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroPrint2(t *testing.T) {
+	is := `(do
+    (defmacro print [& args] (write *STD-OUT* @args))
+    (defmacro println [& args] (print @args "\n"))
+    (println "Hello, World!")
+  )`
+	es := `(do (write *STD-OUT* "Hello, World!" "\n"))`
 	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
@@ -170,6 +206,10 @@ func equalNode(l cmp.Node, r cmp.Node) bool {
 		}
 	case int64:
 		if rx, ok := r.(int64); ok {
+			return lx == rx
+		}
+	case string:
+		if rx, ok := r.(string); ok {
 			return lx == rx
 		}
 	case *cmp.SymbolNode:
