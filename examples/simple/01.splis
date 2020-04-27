@@ -1,0 +1,6 @@
+(do
+  (use "core/prelude")
+
+  (println (repeat 5 [4 3 2 1]))
+  ; (println (remove (fn [x] (> x 2)) [1 2 3 4 5 6]))
+)

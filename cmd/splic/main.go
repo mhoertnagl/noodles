@@ -18,7 +18,7 @@ func main() {
 	args := flag.Args()
 
 	if len(args) != 1 {
-		panic("Provide exactly one input file.")
+		panic("provide exactly one input file")
 	}
 
 	srcPath := args[0]
@@ -43,6 +43,10 @@ func main() {
 	srcBytes, err := ioutil.ReadFile(srcPath)
 	if err != nil {
 		panic(err)
+	}
+
+	if len(srcBytes) == 0 {
+		panic("source file is empty")
 	}
 
 	rdr.Load(string(srcBytes))

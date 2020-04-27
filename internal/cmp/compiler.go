@@ -85,7 +85,8 @@ func NewCompiler() *Compiler {
 	c.prims.add("=", vm.OpEQ, 2, false)
 	c.prims.add("!=", vm.OpNE, 2, false)
 	c.prims.add("not", vm.OpNot, 1, false)
-	c.prims.add("::", vm.OpCons, 2, true)
+	c.prims.add("+:", vm.OpCons, 2, true)
+	c.prims.add(":+", vm.OpAppend, 2, false)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
 	c.prims.add("halt", vm.OpHalt, 0, false)
 

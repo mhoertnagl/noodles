@@ -27,6 +27,12 @@ func NewMacroRewriter() *MacroRewriter {
 
 func (r *MacroRewriter) Rewrite(n cmp.Node) cmp.Node {
 	switch x := n.(type) {
+	case *cmp.SymbolNode:
+		if def, ok := r.macros[x.Name]; ok {
+			rw := NewArgsRewriter(def.man, def.opt, []cmp.Node{})
+			return r.Rewrite(rw.Rewrite(def.body))
+		}
+		return n
 	case []cmp.Node:
 		return RewriteItems(r, x)
 	case *cmp.ListNode:

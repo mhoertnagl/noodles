@@ -664,6 +664,21 @@ func TestRunCreateVector3(t *testing.T) {
 	testVal(t, nil, m.InspectStack(1))
 }
 
+func TestRunVectorAppend(t *testing.T) {
+	e := []vm.Val{int64(1), int64(2), int64(3), int64(4)}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpConst, 4),
+		vm.Instr(vm.OpAppend),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
 func TestRunVectorHead(t *testing.T) {
 	e := int64(1)
 	m := testRun(t,

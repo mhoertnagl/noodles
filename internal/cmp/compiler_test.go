@@ -541,7 +541,7 @@ func TestCompileVector1(t *testing.T) {
 }
 
 func TestCompileVector2(t *testing.T) {
-	testc(t, "(:: 1 (:: 2 (:: 3 [])))",
+	testc(t, "(+: 1 (+: 2 (+: 3 [])))",
 		asm.Instr(vm.OpEmptyVector),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpCons),
@@ -549,6 +549,18 @@ func TestCompileVector2(t *testing.T) {
 		asm.Instr(vm.OpCons),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpCons),
+	)
+}
+
+func TestCompileVectorAppend(t *testing.T) {
+	testc(t, "(:+ [1 2 3] 4)",
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpConst, 4),
+		asm.Instr(vm.OpAppend),
 	)
 }
 
@@ -728,8 +740,28 @@ func TestCompileLeafFunDef(t *testing.T) {
 //
 // // TODO: Deeply nested function calls
 
-func TestCompileVariadicFun(t *testing.T) {
-	testc(t, `((fn [x & xs] (:: x xs)) 1 2 3 4)`,
+func TestCompileVariadicFun1(t *testing.T) {
+	testc(t, `((fn [& xs] xs) 1 2 3 4)`,
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 4),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 0),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+	)
+}
+
+func TestCompileVariadicFun2(t *testing.T) {
+	testc(t, `((fn [x & xs] (+: x xs)) 1 2 3 4)`,
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 4),
 		asm.Instr(vm.OpConst, 3),

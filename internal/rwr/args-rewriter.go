@@ -60,7 +60,7 @@ func (r *ArgsRewriter) rewriteListArg(a *cmp.ListNode) []cmp.Node {
 	if cmp.IsCall(a, "dissolve") {
 		k := r.Rewrite(a.Items[1])
 		if kl, ok := k.([]cmp.Node); ok {
-			return RewriteItems(r, kl)
+			return kl
 		}
 	}
 	return []cmp.Node{r.Rewrite(a)}

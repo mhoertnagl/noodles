@@ -109,13 +109,34 @@ func TestRewriteVarArgsDissolve(t *testing.T) {
 	testRewriter(t, rw, `(do @a)`, `(do (+ 1 1) (- 2 2))`)
 }
 
-func TestRewriteDefmacroSimple(t *testing.T) {
+func TestRewriteDefmacroSimple0(t *testing.T) {
+	is := `(do
+    (defmacro else [] true)
+    (cond else 1)
+  )`
+	es := `(do (cond true 1))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroSimple1(t *testing.T) {
 	is := `(do
     (defmacro defn [name args & body]
       (def name (fn args (do @body))))
     (defn inc [x] (+ x 1) (- x 1))
   )`
 	es := `(do (def inc (fn [x] (do (+ x 1) (- x 1)))))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroSimple2(t *testing.T) {
+	is := `(do
+    (defmacro defn [name args & body]
+      (def name (fn args (do @body))))
+    (defn add [x y] (+ x y) (- x 1))
+  )`
+	es := `(do (def add (fn [x y] (do (+ x y) (- x 1)))))`
 	rw := rwr.NewMacroRewriter()
 	testRewriter(t, rw, is, es)
 }
@@ -131,7 +152,28 @@ func TestRewriteDefmacroNested(t *testing.T) {
 	testRewriter(t, rw, is, es)
 }
 
-func TestRewriteDefmacroVarArg(t *testing.T) {
+func TestRewriteDefmacroNameClash(t *testing.T) {
+	is := `(do
+    (defmacro m1 [& x] (+ @x 1))
+    (m1 x y)
+  )`
+	es := `(do (+ x y 1))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroVarArg1(t *testing.T) {
+	is := `(do
+    (defmacro defn [name args & body]
+      (def name (fn args (do @body))))
+    (defn vec [& args] args)
+  )`
+	es := `(do (def vec (fn [& args] (do args))))`
+	rw := rwr.NewMacroRewriter()
+	testRewriter(t, rw, is, es)
+}
+
+func TestRewriteDefmacroVarArg2(t *testing.T) {
 	is := `(do
     (defmacro m1 [a & b] (:: a b))
     (m1 1 2 3 4)

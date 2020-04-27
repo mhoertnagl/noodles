@@ -87,6 +87,11 @@ func (m *VM) Run(code Ins) {
 			l := m.popVector()
 			// TODO: This will not create a copy of the vector.
 			m.push(prepend(v, l))
+		case OpAppend:
+			v := m.pop()
+			l := m.popVector()
+			// TODO: This will not create a copy of the vector.
+			m.push(append(l, v))
 		case OpNth:
 			l := m.popVector()
 			n := m.popInt64()

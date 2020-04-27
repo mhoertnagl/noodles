@@ -8,17 +8,30 @@
   ;;
   ;; ```(defn not [x] (if x false true))```
   ;;
-  ;; @param sym   name  The name of the function.
-  ;; @param (sym) args  The list of arument symbols.
-  ;; @param (any) body  The body of the function.
+  ;; @param  sym   name  The name of the function.
+  ;; @param  [sym] args  The list of arument symbols.
+  ;; @param  [any] body  The body of the function.
   (defmacro defn [name args & body] (def name (fn args (do @body))))
 
+  ;; `print` prints a sequence of arguments to *STD-OUT* without spaces
+  ;; inbetween.
+  ;;
+  ;; @param  &any args  A variable list of printable arguments.
   (defmacro print [& args] (write *STD-OUT* @args))
 
+  ;; `println` prints a sequence of arguments to *STD-OUT* without spaces
+  ;; inbetween and adds a newline character to the end.
+  ;;
+  ;; @param  &any args  A variable list of printable arguments.
   (defmacro println [& args] (print @args "\n"))
 
-  (defmacro error [& args] (do (write *STD-ERR* "ERROR:" @args "\n")
-                               (halt)))
+  ;; `error` prints a sequence of arguments to *STD-ERR* without spaces
+  ;; inbetween and adds a newline character to the end.
+  ;;   In addition the machine halts execution.
+  ;;
+  ;; @param  &any args  A variable list of printable arguments.
+  (defmacro error [& args] (do (write *STD-ERR* "ERROR: " @args "\n")
+                               (halt) ))
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
@@ -53,7 +66,6 @@
   ;; @param  any x  Any argument.
   ;; @return any    `x` itself.
   (defn identity [x] x)
-  ; (defmacro identity [x] x)
 
   ;; `inc` increments the number `n` by one.
   ;;
@@ -96,14 +108,53 @@
 
   ;; `empty?` returns the number of elements in the vector `xs`.
   ;;
-  ;; @param  (any) xs  A vector of elements.
+  ;; @param  [any] xs  A vector of elements.
   (defmacro empty? [xs] (= (len xs) 0))
 
+  ;; `vec` takes a variable number of arguments and returns a vector containing
+  ;; the arguments in the same order as specified.
+  ;;
+  ;; ; >> [1 2 3]
+  ;; ```(vec 1 2 3)```
+  ;;
+  ;; @param  &any  args  A variable list of arguments.
+  ;; @return [any]       The vector containing the arguments in the same order.
   (defn vec [& args] args)
 
+  ;; `fst` returns the first element of the vector `xs`.
+  ;;
+  ;; ; >> 1
+  ;; ```(fst [1 2 3 4])```
+  ;;
+  ;; @param  [any] xs  A list of arguments.
+  ;; @return any       The first element in the vector.
   (defmacro fst [xs] (nth 0 xs))
+
+  ;; `snd` returns the second element of the vector `xs`.
+  ;;
+  ;; ; >> 2
+  ;; ```(snd [1 2 3 4])```
+  ;;
+  ;; @param  [any] xs  A list of arguments.
+  ;; @return any       The second element in the vector.
   (defmacro snd [xs] (nth 1 xs))
+
+  ;; `trd` returns the third element of the vector `xs`.
+  ;;
+  ;; ; >> 3
+  ;; ```(trd [1 2 3 4])```
+  ;;
+  ;; @param  [any] xs  A list of arguments.
+  ;; @return any       The third element in the vector.
   (defmacro trd [xs] (nth 2 xs))
+
+  ;; `rst` returns the vector `xs` without the first element.
+  ;;
+  ;; ; >> [2 3 4]
+  ;; ```(rst [1 2 3 4])```
+  ;;
+  ;; @param  [any] xs  A list of arguments.
+  ;; @return any       The vector without the first element.
   (defmacro rst [xs] (drop 1 xs))
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
@@ -111,16 +162,19 @@
   ;; `step` denotes the increment added to `start` until it is greater or equal
   ;; to `end`.
   ;;
+  ;; ; >> 15
+  ;; ```(reduce (fn [x b] (+ x b)) 0 [1 2 3 4 5])```
+  ;;
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
   ;; @param  num step   The increment step size.
-  ;; @return (num)      The sequence of numbers from `a` up to `b`.
-  (defn range [start end step] (_range start end step []))
+  ;; @return [num]      The sequence of numbers from `a` up to `b`.
+  (defn _range [start end step acc]
+    (if (> start end)
+      acc
+      (rec (_range (+ start 1) end step (:+ acc start))) ))
 
-    (defn _range [start end step acc]
-      (if (>= start end)
-        acc
-        (rec (_range start (- end step) step (:: end acc))) ))
+  (defn range [start end step] (_range start (- end 1) step []))
 
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -128,8 +182,23 @@
   ;;
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
-  ;; @return (num)      The sequence of integers from `a` up to `b`.
+  ;; @return [num]      The sequence of integers from `a` up to `b`.
   (defn irange [start end] (range start end 1))
+
+  ;; `repeat` returns a list that contains the element `v` exactly `n` times.
+  ;;
+  ;; ; >> ["o" "o" "o" "o" "o"]
+  ;; ```(repeat 5 "o")```
+  ;;
+  ;; @param  num n  The number of repetitions.
+  ;; @param  any v  The value to be repeated.
+  ;; @return [any]  The list that contains `v` exactly `n` times.
+  (defn _repeat [n v acc]
+    (if (<= n 0)
+      acc
+      (rec (_repeat (- n 1) v (:+ acc v))) ))
+
+  (defn repeat [n v] (_repeat n v []) )
 
   ;; `reduce` reduces a sequence of elements into a single element by successive
   ;; application of the binary function `f` in a left-associative fashion where
@@ -159,29 +228,36 @@
   ;; @param  (T)     xs  A list of elements.
   ;; @return (S)         The list of elements applied to the unary function
   ;;                     individually.
-  (defn map [f xs] (_map f xs []))
+  (defn _map [f xs acc]
+    (if (empty? xs)
+      acc
+      (rec (_map f (rst xs) (:+ acc (f (fst xs))) )) ))
 
-    (defn _map [f xs acc]
-      (if (empty? xs)
-        acc
-        (rec (_map f (rst xs) (:: (f (fst xs)) acc))) ))
+  (defn map [f xs] (_map f xs []))
 
   ; (defn flat-map [p xs]
   ;   (if (empty? xs)
   ;     ()
-  ;     (::: (f (head xs)) (map f (tail xs)))))
+  ;     (:: (f (head xs)) (map f (tail xs)))))
+
+  (defn _filter [p xs acc]
+    (cond (empty? xs)  acc
+          (p (fst xs)) (rec (_filter p (rst xs) (:+ acc (fst xs))))
+          else         (rec (_filter p (rst xs) acc)) ))
 
   (defn filter [p xs] (_filter p xs []))
 
-    (defn _filter [p xs acc]
-      (cond (empty? xs)  acc
-            (p (fst xs)) (rec (_filter p (rst xs) (:: (fst xs) acc)))
-            else         (rec (_filter p (rst xs) acc)) ))
 
   ; TODO: Won't work...
   ;       needs calling of arguments outside of the current function context.
   ; (defn remove [p xs] (filter '(not (p ~x)) xs))
   ; (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
+  (defn _remove [p xs acc]
+    (cond (empty? xs)  acc
+          (p (fst xs)) (rec (_remove p (rst xs) acc))
+          else         (rec (_remove p (rst xs) (:+ acc (fst xs)))) ))
+
+  (defn remove [p xs] (_remove p xs []))
 
   (defn all [p xs]
     (cond (empty? xs)        true
@@ -193,44 +269,43 @@
           (p (fst xs)) true
           else         (rec (any p (rst xs))) ))
 
-  ;; (defn reverse [xs])
+  (defn _reverse [xs acc]
+    (if (empty? xs)
+      acc
+      (rec (_reverse (rst xs) (+: (fst xs) acc)))))
+
+  (defn reverse [xs] (_reverse xs []))
+
+  (defn _take [n xs acc]
+    (cond (empty? xs) acc
+          (<= n 0)    acc
+          else        (rec (_take (- n 1) (rst xs) (:+ acc (fst xs)))) ))
 
   (defn take [n xs] (_take n xs []))
-
-    (defn _take [n xs acc]
-      (cond (empty? xs) acc
-            (<= n 0)    acc
-            else        (rec (_take (- n 1) (rst xs) (:: (fst xs) acc))) ))
 
   (defn drop-while [p xs]
     (cond (empty? xs)  xs
           (p (fst xs)) (rec (drop-while p (rst xs)))
           else         xs ))
 
-  ; (defn take-while [p xs]
-  ;   (cond
-  ;     (empty? xs) xs
-  ;     (p (head xs)) (:: (head xs) (take-while p (tail xs)))
-  ;     else () ))
+  (defn _take-while [p xs acc]
+    (cond (empty? xs)  acc
+          (p (fst xs)) (rec (_take-while p (rst xs) (:+ acc (fst xs))))
+          else         acc ))
+
+  (defn take-while [p xs] (_take-while p xs []))
+
+  (defn _zip-with [f xs ys acc]
+    (cond (empty? xs) acc
+          (empty? ys) acc
+          else        (rec (_zip-with f
+                                      (rst xs)
+                                      (rst ys)
+                                      (:+ acc (f (fst xs) (fst ys))) )) ))
 
   (defn zip-with [f xs ys] (_zip-with f xs ys []))
 
-    (defn _zip-with [f xs ys acc]
-      (cond (empty? xs) acc
-            (empty? ys) acc
-            (rec (_zip-with f
-                            (rst xs)
-                            (rst ys)
-                            (:: (f (fst xs) (fst ys)) acc))) ))
-
   (defn zip [xs ys] (zip-with vec xs ys))
-
-  (defn repeat [n v] (_repeat n v []) )
-
-    (defn _repeat [n v acc]
-      (if (<= n 0)
-        []
-        (rec (_repeat (- n 1) v (:: v acc))) ))
 
   ;; (defn flatten [xs])
   ; (use "core/math")
