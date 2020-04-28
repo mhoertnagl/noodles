@@ -217,6 +217,23 @@
 
   (defn repeat [n v] (_repeat n v []) )
 
+  ;; Alternative definition.
+  ; (defn repeat [n v]
+  ;   (defn _repeat [n v acc]
+  ;     (if (<= n 0)
+  ;       acc
+  ;       (rec (_repeat (- n 1) v (:+ acc v))) ))
+  ;   (_repeat n v []) )
+
+
+  ;; TODO: Not my style but does not work!
+  ; (defn repeat [n v] (let
+  ;   (_repeat (fn [n v acc]
+  ;       (if (<= n 0)
+  ;         acc
+  ;         (rec (_repeat (- n 1) v (:+ acc v))) )))
+  ;   (_repeat n v []) ))
+
   ;; `reduce` reduces a sequence of elements into a single element by successive
   ;; application of the binary function `f` in a left-associative fashion where
   ;; `b` is the initial value.

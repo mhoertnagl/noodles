@@ -8,15 +8,23 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
+// TODO: prelude docs and unit tests.
+
+// TODO: join arbitrary number of lists (:: a1 a2 ... an)
+// TODO: flatmap
+// TODO: let binding functions
+
+// TODO: floating point support.
+
+// TODO: mod
+// TODO: quot
+
 // TODO: join (strings) -- concatenates strings
 // TODO: explode (strings) -- String to list of single character strings
 
 // TODO: Dont push anyting in reverse order
 // TODO: Explicit GT and GE
 // TODO: Primitives and special forms as arguments
-
-// TODO: join two lists (::)
-// TODO: prepend (+:) [a.k.a. cons] / append (:+)
 
 // TODO: Variadic +, *, list, ...
 // TODO: Special functions +, -, *, / as well as primitives need implementations
@@ -31,9 +39,6 @@ import (
 // TODO: str -> use printer to turn value into a string.
 // TODO: *STDIN*
 // TODO: read
-
-// TODO: quot
-// TODO: mod
 
 // TODO: Feed global names to disassembler and any place where they make sense.
 // TODO: Optional parameter for macro definitions.

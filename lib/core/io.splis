@@ -1,8 +1,0 @@
-;; Input/Output routines.
-(do
-  ;; TODO: Doc.
-  (defmacro print [& args] (write *STD-OUT* @args))
-
-  ;; TODO: Doc.
-  (defmacro println [& args] (write *STD-OUT* @args "\n"))
-)
