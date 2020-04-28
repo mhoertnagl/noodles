@@ -275,6 +275,40 @@ func TestCompileLet4(t *testing.T) {
 	)
 }
 
+func TestCompileLet5(t *testing.T) {
+	testc(t, `
+    (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
+      (b 1) )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 0),
+		asm.Instr(vm.OpEQ),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L3"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpSub),
+		asm.Instr(vm.OpGetArg, 0), // <-- Actually that should point to b in the previous frame.
+		asm.Instr(vm.OpCall),
+		asm.Label("L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpDropArgs, 1),
+	)
+}
+
 func TestCompileDef1(t *testing.T) {
 	testc(t, "(def b (+ 1 1))",
 		asm.Instr(vm.OpConst, 1),
@@ -530,6 +564,8 @@ func TestCompileDo(t *testing.T) {
 	)
 }
 
+// --- VECTORS ---
+
 func TestCompileVector1(t *testing.T) {
 	testc(t, "[1 2 3]",
 		asm.Instr(vm.OpEnd),
@@ -561,6 +597,25 @@ func TestCompileVectorAppend(t *testing.T) {
 		asm.Instr(vm.OpList),
 		asm.Instr(vm.OpConst, 4),
 		asm.Instr(vm.OpAppend),
+	)
+}
+
+func TestCompileVectorConcat(t *testing.T) {
+	testc(t, "(:: [1 2] [3 4] [5 6])",
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpConst, 5),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 4),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpConcat),
 	)
 }
 
@@ -598,6 +653,8 @@ func TestCompileLenVector(t *testing.T) {
 		asm.Instr(vm.OpLength),
 	)
 }
+
+// --- FN ---
 
 func TestCompileAnonymousFun0(t *testing.T) {
 	testc(t, `(fn [] 1)`,

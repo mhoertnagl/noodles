@@ -5,5 +5,7 @@
   (test "increment 1" 2 (inc 1))
   (test "increment negative number" 0 (inc (- 1)))
 
-  
+  (test "map 0" [[0] [0 1] [0 1 2]] (map (fn [x] (irange 0 x)) [1 2 3]))
+
+  (test "flat-map 0" [0 0 1 0 1 2] (flat-map (fn [x] (irange 0 x)) [1 2 3]))
 )

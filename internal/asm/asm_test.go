@@ -291,6 +291,104 @@ func TestAssembleOr3(t *testing.T) {
 	testa(t, i, e)
 }
 
+// --- VECTORS ---
+
+func TestAssembleVectorConcat(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpConst, 5),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 4),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpList),
+		asm.Instr(vm.OpConcat),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 4),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpConcat),
+	)
+	testa(t, i, e)
+}
+
+// --- LET ---
+
+func TestAssembleLet32(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 0),
+		asm.Instr(vm.OpEQ),
+		asm.Labeled(vm.OpJumpIfNot, "L2"),
+		asm.Instr(vm.OpConst, 1),
+		asm.Labeled(vm.OpJump, "L3"),
+		asm.Label("L2"),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpSub),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpCall),
+		asm.Label("L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpDropArgs, 1),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 96),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpJumpIfNot, 65),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpJump, 95),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpSub),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 9),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpDropArgs, 1),
+	)
+	testa(t, i, e)
+}
+
 // --- FN ---
 
 func TestAssembleAnonymousFun1(t *testing.T) {

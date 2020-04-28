@@ -36,10 +36,10 @@
   ;; `test` creates a `name`d test case. Compares the expected `exp` and the
   ;; actual `act` value and returns an error message if they are not equal (=).
   ;;
+  ;; ```(test "increment 0" 0 (inc 0))```
   ;; >> FAILED: increment 1
   ;;      Expected: 1
   ;;      Actual:   2
-  ;; ```(test "increment 0" 0 (inc 0))```
   ;;
   ;; @param str name  The name for the test case.
   ;; @param any exp   The expected value.
@@ -123,52 +123,53 @@
   ;; @return num    The absolute value `|n|`.
   (defn abs [n] (if (pos? n) n (- n)))
 
-  ;; `empty?` returns the number of elements in the vector `xs`.
+  ;; `empty?` returns `true` if the vector `xs` is empty.
   ;;
-  ;; @param  [any] xs  A vector of elements.
+  ;; @param  [T] xs  A vector of elements.
+  ;; @return bool   `true` if the vector is empty.
   (defmacro empty? [xs] (= (len xs) 0))
 
   ;; `vec` takes a variable number of arguments and returns a vector containing
   ;; the arguments in the same order as specified.
   ;;
-  ;; ; >> [1 2 3]
   ;; ```(vec 1 2 3)```
+  ;; >> [1 2 3]
   ;;
-  ;; @param  &any  args  A variable list of arguments.
-  ;; @return [any]       The vector containing the arguments in the same order.
+  ;; @param  &T  args  A variable list of arguments.
+  ;; @return [T]       The vector containing the arguments in the same order.
   (defn vec [& args] args)
 
   ;; `fst` returns the first element of the vector `xs`.
   ;;
-  ;; ; >> 1
   ;; ```(fst [1 2 3 4])```
+  ;; >> 1
   ;;
-  ;; @param  [any] xs  A list of arguments.
-  ;; @return any       The first element in the vector.
+  ;; @param  [T] xs  A list of arguments.
+  ;; @return T       The first element in the vector.
   (defmacro fst [xs] (nth 0 xs))
 
   ;; `snd` returns the second element of the vector `xs`.
   ;;
-  ;; ; >> 2
   ;; ```(snd [1 2 3 4])```
+  ;; >> 2
   ;;
-  ;; @param  [any] xs  A list of arguments.
-  ;; @return any       The second element in the vector.
+  ;; @param  [T] xs  A list of arguments.
+  ;; @return T       The second element in the vector.
   (defmacro snd [xs] (nth 1 xs))
 
   ;; `trd` returns the third element of the vector `xs`.
   ;;
-  ;; ; >> 3
   ;; ```(trd [1 2 3 4])```
+  ;; >> 3
   ;;
-  ;; @param  [any] xs  A list of arguments.
-  ;; @return any       The third element in the vector.
+  ;; @param  [T] xs  A list of arguments.
+  ;; @return T       The third element in the vector.
   (defmacro trd [xs] (nth 2 xs))
 
   ;; `rst` returns the vector `xs` without the first element.
   ;;
-  ;; ; >> [2 3 4]
   ;; ```(rst [1 2 3 4])```
+  ;; >> [2 3 4]
   ;;
   ;; @param  [any] xs  A list of arguments.
   ;; @return any       The vector without the first element.
@@ -179,8 +180,8 @@
   ;; `step` denotes the increment added to `start` until it is greater or equal
   ;; to `end`.
   ;;
-  ;; ; >> 15
   ;; ```(reduce (fn [x b] (+ x b)) 0 [1 2 3 4 5])```
+  ;; >> 15
   ;;
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
@@ -204,12 +205,12 @@
 
   ;; `repeat` returns a list that contains the element `v` exactly `n` times.
   ;;
-  ;; ; >> ["o" "o" "o" "o" "o"]
   ;; ```(repeat 5 "o")```
+  ;; >> ["o" "o" "o" "o" "o"]
   ;;
   ;; @param  num n  The number of repetitions.
-  ;; @param  any v  The value to be repeated.
-  ;; @return [any]  The list that contains `v` exactly `n` times.
+  ;; @param  T v    The value to be repeated.
+  ;; @return [T]    The list that contains `v` exactly `n` times.
   (defn _repeat [n v acc]
     (if (<= n 0)
       acc
@@ -241,7 +242,7 @@
   ;;
   ;; @param  fun(S T)T f   A binary function.
   ;; @param  T         b   The initial value.
-  ;; @param  (S)       xs  A list of elements.
+  ;; @param  [S]       xs  A list of elements.
   ;; @return T             The left-associative reduction of `xs` into a single
   ;;                       element.
   (defn reduce [f b xs]
@@ -254,14 +255,13 @@
       (error "[fold] list is empty")
       (reduce f (fst xs) (rst xs)) ))
 
-  ;; `map` applies a function of one argument to each element of a list and
+  ;; `map` applies the unary function `f` to each element of the list `xs` and
   ;; returns a list of the application results in the same order as the
   ;; elements.
   ;;
   ;; @param  fun(T)S f   A unary function.
-  ;; @param  (T)     xs  A list of elements.
-  ;; @return (S)         The list of elements applied to the unary function
-  ;;                     individually.
+  ;; @param  [T]     xs  A list of elements.
+  ;; @return [S]         The list of elements applied to `f` individually.
   (defn _map [f xs acc]
     (if (empty? xs)
       acc
@@ -269,11 +269,32 @@
 
   (defn map [f xs] (_map f xs []))
 
-  ; (defn flat-map [p xs]
-  ;   (if (empty? xs)
-  ;     ()
-  ;     (:: (f (head xs)) (map f (tail xs)))))
+  ;; `flat-map` applies to unary function `f` to each element of the list `xs`
+  ;; and flattens the list of lists as `f` is required to return a list.
+  ;;
+  ;; ```(flat-map (fn [x] (irange 0 x)) [1 2 3])```
+  ;; >> [0 0 1 0 1 2]
+  ;;
+  ;; @param  fun(T)[S] f   A unary function.
+  ;; @param  [T]       xs  A list of elements.
+  ;; @return [S]           The list of elements applied to `f` and then
+  ;;                       flattened into a single list.
+  (defn _flat-map [f xs acc]
+    (if (empty? xs)
+      acc
+      (rec (_flat-map f (rst xs) (:: acc (f (fst xs))) )) ))
 
+  (defn flat-map [f xs] (_flat-map f xs []))
+
+  ;; `filter` retains all elements from `xs` for which the predicate `p`
+  ;; returns `true`. Preserves the order of the elements.
+  ;;
+  ;; ```(filter (fn [x] (> x 2)) [1 2 3 4])```
+  ;; >> [3 4]
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return [T]            The elements in `xs` that fulfill predicate `p`.
   (defn _filter [p xs acc]
     (cond (empty? xs)  acc
           (p (fst xs)) (rec (_filter p (rst xs) (:+ acc (fst xs))))
@@ -306,7 +327,7 @@
   (defn _reverse [xs acc]
     (if (empty? xs)
       acc
-      (rec (_reverse (rst xs) (+: (fst xs) acc)))))
+      (rec (_reverse (rst xs) (+: (fst xs) acc) )) ))
 
   (defn reverse [xs] (_reverse xs []))
 

@@ -1,8 +1,26 @@
 (do
   (use "core/prelude")
 
-  (test "increment0" 1 (inc 1))
-  (test "increment1" 1 (inc 2))
-  (println (repeat 5 [4 3 2 1]))
-  ; (println (remove (fn [x] (> x 2)) [1 2 3 4 5 6]))
+  ; (defn b [n acc]
+  ;   (if (= n 0)
+  ;     acc
+  ;     (b (dec n) (inc acc))))
+
+  (println (let (a [1 2 3] b 4) (:+ a b)))
+
+  (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
+    (println (b 1) ))
+
+  ; (defn repeat2 [n v]
+  ;   (let (_repeat2 (fn [n v acc] (if (<= n 0) acc (_repeat2 (- n 1) v (:+ acc v)) )))
+  ;   (_repeat2 n v []) ))
+
+  ; (defn repeat2 [n v]
+  ;   (let (_repeat2 repeat)
+  ;   (_repeat2 n v) ))
+  ;
+  ; (println (repeat2 3 0))
+
+  (println (map (fn [x] (irange 0 x)) [1 2 3]))
+  (println (flat-map (fn [x] (irange 0 x)) [1 2 3]))
 )

@@ -30,6 +30,7 @@ const (
 	OpList
 	OpCons
 	OpAppend
+	OpConcat
 	OpNth
 	OpDrop
 	OpLength
@@ -109,6 +110,7 @@ var meta = map[Op]*OpMeta{
 	OpList:     {"List", []int{}},
 	OpCons:     {"Cons", []int{}},
 	OpAppend:   {"Append", []int{}},
+	OpConcat:   {"Concat", []int{}},
 	OpNth:      {"Nth", []int{}},
 	OpDrop:     {"Drop", []int{}},
 	OpLength:   {"Tail", []int{}},

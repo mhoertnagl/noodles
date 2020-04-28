@@ -10,9 +10,7 @@ import (
 
 // TODO: prelude docs and unit tests.
 
-// TODO: join arbitrary number of lists (:: a1 a2 ... an)
 // TODO: flatmap
-// TODO: let binding functions
 
 // TODO: floating point support.
 
@@ -22,7 +20,7 @@ import (
 // TODO: join (strings) -- concatenates strings
 // TODO: explode (strings) -- String to list of single character strings
 
-// TODO: Dont push anyting in reverse order
+// TODO: Push everything in reverse order
 // TODO: Explicit GT and GE
 // TODO: Primitives and special forms as arguments
 
@@ -32,6 +30,9 @@ import (
 
 // TODO: Call agruments outside of current function context.
 // TODO: Closure
+// TODO: let binding functions
+//       See TestCompileLet5: this is because we cannot access the local
+//       variable inside a function (a.k.a closures).
 
 // TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
 //       unterschiedliche Größe haben kann.
@@ -47,12 +48,13 @@ import (
 //       Fix Indexof to account for this fact.
 
 type Compiler struct {
-	specs specDefs
-	prims primDefs
-	fns   fnDefs
-	defs  *defMap
-	code  asm.AsmCode
-	lblId int
+	specs    specDefs
+	prims    primDefs
+	varPrims varPrimDefs
+	fns      fnDefs
+	defs     *defMap
+	code     asm.AsmCode
+	lblId    int
 }
 
 func NewCompiler() *Compiler {
@@ -77,7 +79,6 @@ func NewCompiler() *Compiler {
 	c.specs.add("and", c.compileAnd)
 	c.specs.add("or", c.compileOr)
 	c.specs.add("rec", c.compileRec)
-	c.specs.add("write", c.compileWrite)
 
 	c.prims = primDefs{}
 	c.prims.add("nth", vm.OpNth, 2, false)
@@ -94,6 +95,10 @@ func NewCompiler() *Compiler {
 	c.prims.add(":+", vm.OpAppend, 2, false)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
 	c.prims.add("halt", vm.OpHalt, 0, false)
+
+	c.varPrims = varPrimDefs{}
+	c.varPrims.add("write", vm.OpWrite, 1)
+	c.varPrims.add("::", vm.OpConcat, 0)
 
 	return c
 }
@@ -175,6 +180,12 @@ func (c *Compiler) compileList(n *ListNode, sym *SymTable, ctx *Ctx) {
 			c.compilePrim(prim, n.Rest(), sym, ctx)
 			return
 		}
+		// Variable primitive functions are like primitives but with a variable
+		// number of arguments.
+		if prim, ok := c.varPrims[x.Name]; ok {
+			c.compileVarPrim(prim, n.Rest(), sym, ctx)
+			return
+		}
 		// Compile a call to the global function.
 		c.compileCall(x, n.Rest(), sym, ctx)
 	case *ListNode:
@@ -195,6 +206,16 @@ func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ct
 	} else {
 		c.compileNodes(args, sym, ctx)
 	}
+	c.instr(prim.op)
+}
+
+func (c *Compiler) compileVarPrim(prim varPrimDef, args []Node, sym *SymTable, ctx *Ctx) {
+	if len(args) < prim.argsMin {
+		panic(fmt.Sprintf("[%s] requires at least [%d] arguments", prim.name, prim.argsMin))
+	}
+
+	c.instr(vm.OpEnd)
+	c.compileNodesReverse(args, sym, ctx)
 	c.instr(prim.op)
 }
 
@@ -602,16 +623,6 @@ func (c *Compiler) compileRec(args []Node, sym *SymTable, ctx *Ctx) {
 	} else {
 		panic("[rec] argument must be a list call")
 	}
-}
-
-func (c *Compiler) compileWrite(args []Node, sym *SymTable, ctx *Ctx) {
-	if len(args) == 0 {
-		panic("[rec] expects at least 1 argument")
-	}
-
-	c.instr(vm.OpEnd)
-	c.compileNodesReverse(args, sym, ctx)
-	c.instr(vm.OpWrite)
 }
 
 func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable, ctx *Ctx) {

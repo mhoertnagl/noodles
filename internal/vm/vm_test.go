@@ -551,22 +551,6 @@ func TestRunLet2(t *testing.T) {
 	testVal(t, nil, m.InspectFrames(0))
 }
 
-func TestRunLet31(t *testing.T) {
-	m := testRun(t,
-		vm.Instr(vm.OpConst, 1),
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpConst, 2),
-		vm.Instr(vm.OpPushArgs, 1),
-		vm.Instr(vm.OpGetArg, 1),
-		vm.Instr(vm.OpGetArg, 0),
-		vm.Instr(vm.OpHalt),
-	)
-	testVal(t, int64(1), m.InspectFrames(0))
-	testVal(t, int64(2), m.InspectFrames(1))
-	testVal(t, int64(1), m.InspectStack(0))
-	testVal(t, int64(2), m.InspectStack(1))
-}
-
 func TestRunLet3(t *testing.T) {
 	m := testRun(t,
 		vm.Instr(vm.OpConst, 1),
@@ -583,6 +567,55 @@ func TestRunLet3(t *testing.T) {
 	testVal(t, nil, m.InspectStack(1))
 	testVal(t, nil, m.InspectFrames(0))
 }
+
+func TestRunLet31(t *testing.T) {
+	m := testRun(t,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpHalt),
+	)
+	testVal(t, int64(1), m.InspectFrames(0))
+	testVal(t, int64(2), m.InspectFrames(1))
+	testVal(t, int64(1), m.InspectStack(0))
+	testVal(t, int64(2), m.InspectStack(1))
+}
+
+// TODO: Requires closures.
+// func TestRunLet32(t *testing.T) {
+// 	m := testRun(t,
+// 		vm.Instr(vm.OpJump, 96),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 0),
+// 		vm.Instr(vm.OpEQ),
+// 		vm.Instr(vm.OpJumpIfNot, 65),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpJump, 95),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpSub),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpReturn),
+// 		vm.Instr(vm.OpRef, 9),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 1),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpDropArgs, 1),
+// 	)
+// 	// testVal(t, int64(1), m.InspectFrames(0))
+// 	// testVal(t, int64(2), m.InspectFrames(1))
+// 	testVal(t, int64(1), m.InspectStack(0))
+// 	// testVal(t, int64(2), m.InspectStack(1))
+// }
 
 func TestRunLet4(t *testing.T) {
 	m := testRun(t,
@@ -720,7 +753,7 @@ func TestRunCond3(t *testing.T) {
 
 // TODO: Locals with shadowing.
 
-// --- VECTOR ---
+// --- VECTORS ---
 
 func TestRunCreateVector1(t *testing.T) {
 	e := []vm.Val{int64(1), int64(2), int64(3)}
@@ -773,6 +806,38 @@ func TestRunVectorAppend(t *testing.T) {
 		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpConst, 4),
 		vm.Instr(vm.OpAppend),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorConcat0(t *testing.T) {
+	e := []vm.Val{}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConcat),
+	)
+	testVal(t, e, m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+}
+
+func TestRunVectorConcat(t *testing.T) {
+	e := []vm.Val{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpConst, 5),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 4),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpConcat),
 	)
 	testVal(t, e, m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))

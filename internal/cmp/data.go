@@ -32,6 +32,18 @@ func (d primDefs) add(name string, op vm.Op, nargs int, rev bool) {
 	d[name] = primDef{name: name, op: op, nargs: nargs, rev: rev}
 }
 
+type varPrimDef struct {
+	name    string
+	op      vm.Op
+	argsMin int
+}
+
+type varPrimDefs map[string]varPrimDef
+
+func (d varPrimDefs) add(name string, op vm.Op, argsMin int) {
+	d[name] = varPrimDef{name: name, op: op, argsMin: argsMin}
+}
+
 type defMap struct {
 	index uint64
 	ids   map[string]uint64
