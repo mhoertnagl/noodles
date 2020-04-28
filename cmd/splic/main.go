@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -42,15 +43,25 @@ func main() {
 
 	srcBytes, err := ioutil.ReadFile(srcPath)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(-1)
 	}
 
 	if len(srcBytes) == 0 {
-		panic("source file is empty")
+		fmt.Println("source file is empty")
+		os.Exit(-1)
 	}
 
 	rdr.Load(string(srcBytes))
 	n := prs.Parse(rdr)
+
+	if len(prs.Errors()) > 0 {
+		for _, err := range prs.Errors() {
+			fmt.Println(err.Msg)
+		}
+		os.Exit(-1)
+	}
+
 	n = urw.Rewrite(n)
 	n = qrw.Rewrite(n)
 	n = mrw.Rewrite(n)
@@ -60,7 +71,8 @@ func main() {
 	outPath := util.FilePathWithoutExt(srcPath)
 	outFile, err := os.Create(outPath + ".nob")
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(-1)
 	}
 
 	util.WriteStatic(c, outFile)

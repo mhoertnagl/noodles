@@ -295,6 +295,15 @@ func TestRunLE3(t *testing.T) {
 	)
 }
 
+func TestRunEQ0(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
 func TestRunEQ1(t *testing.T) {
 	testToS(t, true,
 		vm.Instr(vm.OpConst, 0),
@@ -317,6 +326,96 @@ func TestRunEQ3(t *testing.T) {
 	testToS(t, false,
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ4(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ5(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpFalse),
+		vm.Instr(vm.OpTrue),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ6(t *testing.T) {
+	testToS(t, false,
+		vm.Str("xxx"),
+		vm.Str("yyy"),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ7(t *testing.T) {
+	testToS(t, true,
+		vm.Str("xxx"),
+		vm.Str("xxx"),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ8(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ9(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 0),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ10(t *testing.T) {
+	testToS(t, true,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEQ),
+		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunEQ11(t *testing.T) {
+	testToS(t, false,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpList),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpList),
 		vm.Instr(vm.OpEQ),
 		vm.Instr(vm.OpHalt),
 	)

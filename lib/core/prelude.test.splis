@@ -1,0 +1,9 @@
+(do
+  (use "core/prelude")
+
+  (test "increment 0" 1 (inc 0))
+  (test "increment 1" 2 (inc 1))
+  (test "increment negative number" 0 (inc (- 1)))
+
+  
+)

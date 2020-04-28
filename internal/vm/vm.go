@@ -40,10 +40,10 @@ func (m *VM) Run(code Ins) {
 	ln := int64(len(code))
 	for m.ip = 0; m.ip < ln; {
 		switch m.readOp() {
+		// case OpNil:
+		//   m.push(nil)
 		case OpConst:
 			m.push(m.readInt64())
-			// case OpNil:
-			//   m.push(nil)
 		case OpRef:
 			m.push(m.readInt64())
 		case OpFalse:
@@ -146,6 +146,7 @@ func (m *VM) Run(code Ins) {
 			l := m.pop()
 			m.push(m.eq(l, r))
 		case OpNE:
+			// TODO: Can be replaced with these two instructions OpEQ, OpNot
 			r := m.pop()
 			l := m.pop()
 			m.push(!m.eq(l, r))
@@ -299,13 +300,40 @@ func (m *VM) readString(l int64) string {
 
 func (m *VM) eq(l Val, r Val) bool {
 	switch ll := l.(type) {
+	case bool:
+		switch rr := r.(type) {
+		case bool:
+			return ll == rr
+		}
 	case int64:
 		switch rr := r.(type) {
 		case int64:
 			return ll == rr
 		}
+	case string:
+		switch rr := r.(type) {
+		case string:
+			return ll == rr
+		}
+	case []Val:
+		switch rr := r.(type) {
+		case []Val:
+			return m.eqSeq(ll, rr)
+		}
 	}
 	return false
+}
+
+func (m *VM) eqSeq(l []Val, r []Val) bool {
+	if len(l) != len(r) {
+		return false
+	}
+	for i := 0; i < len(l); i++ {
+		if m.eq(l[i], r[i]) == false {
+			return false
+		}
+	}
+	return true
 }
 
 func (m *VM) lt(l Val, r Val) bool {
@@ -333,63 +361,6 @@ func (m *VM) le(l Val, r Val) bool {
 func prepend(v Val, l []Val) []Val {
 	return append([]Val{v}, l...)
 }
-
-// func eq(e Evaluator, env data.Env, args []data.Node) data.Node {
-// 	if len(args) != 2 {
-// 		return e.Error("[=] expects 2 arguments.")
-// 	}
-// 	return eq2(e, env, args[0], args[1])
-// }
-
-// func eq2(e Evaluator, env data.Env, a, b data.Node) data.Node {
-// 	if reflect.TypeOf(a) != reflect.TypeOf(b) {
-// 		return false
-// 	}
-// 	switch x := a.(type) {
-// 	case *data.SymbolNode:
-// 		y := b.(*data.SymbolNode)
-// 		return x.Name == y.Name
-// 	case *data.ListNode:
-// 		y := b.(*data.ListNode)
-// 		return eqSeq(e, env, x.Items, y.Items)
-// 	case *data.VectorNode:
-// 		y := b.(*data.VectorNode)
-// 		return eqSeq(e, env, x.Items, y.Items)
-// 	case *data.HashMapNode:
-// 		y := b.(*data.HashMapNode)
-// 		return eqHashMap(e, env, x.Items, y.Items)
-// 	default:
-// 		return a == b
-// 	}
-// }
-
-// func eqSeq(e Evaluator, env data.Env, as, bs []data.Node) data.Node {
-// 	if len(as) != len(bs) {
-// 		return false
-// 	}
-// 	for i := 0; i < len(as); i++ {
-// 		if eq2(e, env, as[i], bs[i]) == false {
-// 			return false
-// 		}
-// 	}
-// 	return true
-// }
-
-// func eqHashMap(e Evaluator, env data.Env, as, bs data.Map) data.Node {
-// 	if len(as) != len(bs) {
-// 		return false
-// 	}
-// 	for k, va := range as {
-// 		vb, ok := bs[k]
-// 		if !ok {
-// 			return false
-// 		}
-// 		if eq2(e, env, va, vb) == false {
-// 			return false
-// 		}
-// 	}
-// 	return true
-// }
 
 // func join(e Evaluator, env data.Env, args []data.Node) data.Node {
 // 	var sb strings.Builder

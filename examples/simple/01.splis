@@ -1,6 +1,8 @@
 (do
   (use "core/prelude")
 
+  (test "increment0" 1 (inc 1))
+  (test "increment1" 1 (inc 2))
   (println (repeat 5 [4 3 2 1]))
   ; (println (remove (fn [x] (> x 2)) [1 2 3 4 5 6]))
 )

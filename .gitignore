@@ -13,6 +13,9 @@ bin/splis
 *.splis.lib
 *.splis.bin
 
+# Noodles binaries.
+*.nob
+
 # Test binary, build with `go test -c`
 *.test
 

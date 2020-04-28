@@ -33,6 +33,23 @@
   (defmacro error [& args] (do (write *STD-ERR* "ERROR: " @args "\n")
                                (halt) ))
 
+  ;; `test` creates a `name`d test case. Compares the expected `exp` and the
+  ;; actual `act` value and returns an error message if they are not equal (=).
+  ;;
+  ;; >> FAILED: increment 1
+  ;;      Expected: 1
+  ;;      Actual:   2
+  ;; ```(test "increment 0" 0 (inc 0))```
+  ;;
+  ;; @param str name  The name for the test case.
+  ;; @param any exp   The expected value.
+  ;; @param any act   The actual value.
+  (defmacro test [name exp act]
+    (if (!= act exp) (do
+      (println "FAILED: " name)
+      (println "  Expected: " exp)
+      (println "  Actual:   " act) )))
+
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
   ;; @param  any x  A value.
