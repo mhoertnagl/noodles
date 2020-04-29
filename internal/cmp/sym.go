@@ -53,18 +53,24 @@ func (s *SymTable) Remove(ns []string) {
 	}
 }
 
-func (s *SymTable) Find(n string) (*SymEntry, bool) {
-	for c := s; c != nil; c = c.parent {
-		if e, ok := c.entries[n]; ok {
-			return e, true
-		}
-	}
-	return nil, false
-}
+// func (s *SymTable) Find(n string) (*SymEntry, bool) {
+// 	for c := s; c != nil; c = c.parent {
+// 		if e, ok := c.entries[n]; ok {
+// 			return e, true
+// 		}
+// 	}
+// 	return nil, false
+// }
 
 func (s *SymTable) IndexOf(n string) (int, bool) {
-	if e, ok := s.Find(n); ok {
-		return e.idx, true
+	dfp := 0
+	for c := s; c != nil; c = c.parent {
+		if e, ok := c.entries[n]; ok {
+			return dfp + e.idx, true
+		}
+		// Subtract the FP and the RP cell as well as the number of arguments
+		// of the current frame.
+		dfp -= 2 + c.Size()
 	}
 	return 0, false
 }

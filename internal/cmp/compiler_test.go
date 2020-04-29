@@ -276,6 +276,7 @@ func TestCompileLet4(t *testing.T) {
 }
 
 func TestCompileLet5(t *testing.T) {
+	var minus3 int64 = -3
 	testc(t, `
     (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
       (b 1) )`,
@@ -294,7 +295,7 @@ func TestCompileLet5(t *testing.T) {
 		asm.Instr(vm.OpGetArg, 0),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpSub),
-		asm.Instr(vm.OpGetArg, 0), // <-- Actually that should point to b in the previous frame.
+		asm.Instr(vm.OpGetArg, uint64(minus3)), // <-- Actually that should point to b in the previous frame.
 		asm.Instr(vm.OpCall),
 		asm.Label("L3"),
 		asm.Instr(vm.OpReturn),
@@ -768,6 +769,35 @@ func TestCompileAnonymousFun4(t *testing.T) {
 	)
 }
 
+func TestCompileAnonymousNestedFun(t *testing.T) {
+	var minus3 int64 = -3
+	testc(t, `((fn [n] ((fn [m] (/ n m)) 3)) 6)`,
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpDiv),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+	)
+}
+
 func TestCompileLeafFunDef(t *testing.T) {
 	testc(t, `
     (do
@@ -793,9 +823,6 @@ func TestCompileLeafFunDef(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 	)
 }
-
-//
-// // TODO: Deeply nested function calls
 
 func TestCompileVariadicFun1(t *testing.T) {
 	testc(t, `((fn [& xs] xs) 1 2 3 4)`,
@@ -1045,6 +1072,42 @@ func TestCompileTailFac(t *testing.T) {
 	)
 }
 
+func TestCompileClosure(t *testing.T) {
+	var minus3 int64 = -3
+	testc(t, `
+    (do
+      (def divN (fn [n]
+        (fn [x] (/ x n)) ))
+      ((divN 3) 9)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpDiv),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 9),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	)
+}
+
 // func TestCompilePrimitiveAsArgument(t *testing.T) {
 // 	testc(t, `((fn [op a b] (op a b)) +)`,
 // 		asm.Labeled(vm.OpJump, "L0"),
@@ -1054,42 +1117,6 @@ func TestCompileTailFac(t *testing.T) {
 // 		asm.Instr(vm.OpReturn),
 // 		asm.Label("L0"),
 // 		asm.Labeled(vm.OpRef, "L1"),
-// 	)
-// }
-
-// func TestCompileClosure(t *testing.T) {
-// 	var minus3 int64 = -3
-// 	testc(t, `
-//     (do
-//       (def divN (fn [n]
-//         (fn [x] (/ x n)) ))
-//       ((divN 3) 9)
-//     )`,
-// 		asm.Labeled(vm.OpJump, "L0"),
-// 		asm.Label("L1"),
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Labeled(vm.OpJump, "L2"),
-// 		asm.Label("L3"),
-// 		asm.Instr(vm.OpPushArgs, 1),
-// 		asm.Instr(vm.OpPop),
-// 		asm.Instr(vm.OpGetArg, 0),
-// 		asm.Instr(vm.OpGetArg, uint64(minus3)),
-// 		asm.Instr(vm.OpDiv),
-// 		asm.Instr(vm.OpReturn),
-// 		asm.Label("L2"),
-// 		asm.Labeled(vm.OpRef, "L3"),
-// 		asm.Instr(vm.OpReturn),
-// 		asm.Label("L0"),
-// 		asm.Labeled(vm.OpRef, "L1"),
-// 		asm.Instr(vm.OpSetGlobal, 0),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 9),
-// 		asm.Instr(vm.OpEnd),
-// 		asm.Instr(vm.OpConst, 3),
-// 		asm.Instr(vm.OpGetGlobal, 0),
-// 		asm.Instr(vm.OpCall),
-// 		asm.Instr(vm.OpCall),
 // 	)
 // }
 

@@ -567,6 +567,57 @@ func TestAssembleAnonymousFun4(t *testing.T) {
 	testa(t, i, e)
 }
 
+func TestAssembleAnonymousNestedFun(t *testing.T) {
+	var minus3 int64 = -3
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpDiv),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpCall),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpJump, 89),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpJump, 78),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, uint64(minus3)),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 19),
+		vm.Instr(vm.OpCall),
+	)
+	testa(t, i, e)
+}
+
 func TestAssembleLeafFunDef(t *testing.T) {
 	i := []asm.AsmCmd{
 		asm.Labeled(vm.OpJump, "L0"),
@@ -801,6 +852,61 @@ func TestAssembleTailFac(t *testing.T) {
 		vm.Instr(vm.OpGetGlobal, 1),
 		vm.Instr(vm.OpCall),
 		vm.Instr(vm.OpDebug, 3),
+	)
+	testa(t, i, e)
+}
+
+func TestAssembleClosure(t *testing.T) {
+	var minus3 int64 = -3
+	i := []asm.AsmCmd{
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpDiv),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 9),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 68),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpJump, 58),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, uint64(minus3)),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 28),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 9),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 9),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpCall),
 	)
 	testa(t, i, e)
 }

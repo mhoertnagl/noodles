@@ -10,8 +10,6 @@ import (
 
 // TODO: prelude docs and unit tests.
 
-// TODO: flatmap
-
 // TODO: floating point support.
 
 // TODO: mod
@@ -33,19 +31,18 @@ import (
 // TODO: let binding functions
 //       See TestCompileLet5: this is because we cannot access the local
 //       variable inside a function (a.k.a closures).
+// TODO: let bindings should have their own symbol table.
+//       Fix Indexof to account for this fact.
 
 // TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
 //       unterschiedliche Größe haben kann.
 
-// TODO: str -> use printer to turn value into a string.
 // TODO: *STDIN*
 // TODO: read
+// TODO: parse?
 
 // TODO: Feed global names to disassembler and any place where they make sense.
 // TODO: Optional parameter for macro definitions.
-
-// TODO: let bindings should have their own symbol table.
-//       Fix Indexof to account for this fact.
 
 type Compiler struct {
 	specs    specDefs

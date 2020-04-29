@@ -1002,6 +1002,34 @@ func TestRunAnonymousFun4(t *testing.T) {
 	testVal(t, nil, m.InspectFrames(0))
 }
 
+func TestRunAnonymousNestedFun(t *testing.T) {
+	var minus3 int64 = -3
+	m := testRun(t,
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpJump, 89),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpJump, 78),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, uint64(minus3)),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpDiv),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 48),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 19),
+		vm.Instr(vm.OpCall),
+	)
+	testVal(t, int64(2), m.InspectStack(0))
+	testVal(t, nil, m.InspectStack(1))
+	testVal(t, nil, m.InspectFrames(0))
+}
+
 func TestRunLeafFunDef(t *testing.T) {
 	m := testRun(t,
 		vm.Instr(vm.OpJump, 39),
@@ -1125,12 +1153,43 @@ func TestRunTailFac(t *testing.T) {
 	)
 }
 
+// func TestRunClosure(t *testing.T) {
+// 	var minus3 int64 = -3
+// 	testToS(t, int64(120),
+// 		vm.Instr(vm.OpJump, 68),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpJump, 58),
+// 		vm.Instr(vm.OpPushArgs, 1),
+// 		vm.Instr(vm.OpPop),
+// 		vm.Instr(vm.OpGetArg, 0),
+// 		vm.Instr(vm.OpGetArg, uint64(minus3)),
+// 		vm.Instr(vm.OpDiv),
+// 		vm.Instr(vm.OpReturn),
+// 		vm.Instr(vm.OpRef, 28),
+// 		vm.Instr(vm.OpReturn),
+// 		vm.Instr(vm.OpRef, 9),
+// 		vm.Instr(vm.OpSetGlobal, 0),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 9),
+// 		vm.Instr(vm.OpEnd),
+// 		vm.Instr(vm.OpConst, 3),
+// 		vm.Instr(vm.OpGetGlobal, 0),
+// 		vm.Instr(vm.OpCall),
+// 		vm.Instr(vm.OpCall),
+// 	)
+// }
+
+// --- STR ---
+
 func TestRunStringConst(t *testing.T) {
 	testToS(t, "Hello, World!",
 		vm.Str("Hello, World!"),
 		vm.Instr(vm.OpHalt),
 	)
 }
+
+// --- WRITE ---
 
 func TestRunWrite1(t *testing.T) {
 	m := vm.NewVM(1024, 512, 512)
