@@ -2,9 +2,8 @@ package cmp
 
 type Ctx struct {
 	Recurse bool
-	// Cargs   *SymbolNode
-	IsVal bool
-	Last  bool
+	IsVal   bool
+	Last    bool
 }
 
 func NewCtx() *Ctx {

@@ -284,7 +284,7 @@ func TestCompileLet5(t *testing.T) {
 		asm.Label("L1"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpConst, 0),
 		asm.Instr(vm.OpEQ),
 		asm.Labeled(vm.OpJumpIfNot, "L2"),
@@ -292,15 +292,16 @@ func TestCompileLet5(t *testing.T) {
 		asm.Labeled(vm.OpJump, "L3"),
 		asm.Label("L2"),
 		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpSub),
-		asm.Instr(vm.OpGetArg, uint64(minus3)), // <-- Actually that should point to b in the previous frame.
+		asm.Instr(vm.OpGetArg, 0),
 		asm.Instr(vm.OpCall),
 		asm.Label("L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Ref(1, "L1"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 1),
@@ -665,7 +666,7 @@ func TestCompileAnonymousFun0(t *testing.T) {
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 	)
 }
 
@@ -680,7 +681,7 @@ func TestCompileAnonymousFun1(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 	)
 }
 
@@ -698,10 +699,10 @@ func TestCompileAnonymousFun11(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
-		asm.Labeled(vm.OpRef, "L3"),
+		asm.Ref(0, "L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 	)
 }
 
@@ -718,7 +719,7 @@ func TestCompileAnonymousFun2(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 	)
 }
@@ -736,7 +737,7 @@ func TestCompileAnonymousFun3(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
@@ -760,10 +761,10 @@ func TestCompileAnonymousFun4(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
-		asm.Labeled(vm.OpRef, "L3"),
+		asm.Ref(0, "L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 		asm.Instr(vm.OpCall),
 	)
@@ -784,16 +785,17 @@ func TestCompileAnonymousNestedFun(t *testing.T) {
 		asm.Label("L3"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpGetArg, uint64(minus3)),
 		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
-		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Ref(1, "L3"),
 		asm.Instr(vm.OpCall),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 	)
 }
@@ -813,7 +815,7 @@ func TestCompileLeafFunDef(t *testing.T) {
 		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpSetGlobal, 0),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 1),
@@ -839,7 +841,7 @@ func TestCompileVariadicFun1(t *testing.T) {
 		asm.Instr(vm.OpGetArg, 0),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 	)
 }
@@ -861,7 +863,7 @@ func TestCompileVariadicFun2(t *testing.T) {
 		asm.Instr(vm.OpCons),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpCall),
 	)
 }
@@ -994,7 +996,7 @@ func TestCompileFac(t *testing.T) {
 		asm.Label("L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpSetGlobal, 0),
 		asm.Instr(vm.OpDebug, 3),
 		asm.Instr(vm.OpEnd),
@@ -1048,7 +1050,7 @@ func TestCompileTailFac(t *testing.T) {
 		asm.Label("L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpSetGlobal, 0),
 		asm.Labeled(vm.OpJump, "L4"),
 		asm.Label("L5"),
@@ -1061,7 +1063,7 @@ func TestCompileTailFac(t *testing.T) {
 		asm.Instr(vm.OpCall),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L4"),
-		asm.Labeled(vm.OpRef, "L5"),
+		asm.Ref(0, "L5"),
 		asm.Instr(vm.OpSetGlobal, 1),
 		asm.Instr(vm.OpDebug, 3),
 		asm.Instr(vm.OpEnd),
@@ -1073,6 +1075,7 @@ func TestCompileTailFac(t *testing.T) {
 }
 
 func TestCompileClosure(t *testing.T) {
+	fmt.Println("Hallo")
 	var minus3 int64 = -3
 	testc(t, `
     (do
@@ -1088,15 +1091,16 @@ func TestCompileClosure(t *testing.T) {
 		asm.Label("L3"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpGetArg, 0),
-		asm.Instr(vm.OpGetArg, uint64(minus3)),
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
-		asm.Labeled(vm.OpRef, "L3"),
+		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Ref(1, "L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
-		asm.Labeled(vm.OpRef, "L1"),
+		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpSetGlobal, 0),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 9),

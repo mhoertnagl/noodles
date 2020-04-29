@@ -529,31 +529,47 @@ func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
 		panic("[fn] expects exactly 2 arguments")
 	}
+
 	skp := c.newLbl()
-	fnn := c.newLbl()
+	fne := c.newLbl()
 	sub := sym.NewSymTable()
+
+	// TODO: analyse the body for external refernces.
+
 	// Compiles the function body in-place.
 	// Jump over the function implementation.
 	c.labeled(vm.OpJump, skp)
-	c.label(fnn)
+	// The function entry point.
+	c.label(fne)
+	// Accept parameter lists either as (a1 a2 ..) or as [a1 a2 ...] though it
+	// is customary to use the second notational form through out.
+	var eps []*SymbolNode
 	switch x := args[0].(type) {
 	case *ListNode:
-		c.compileFnBody(x.Items, args[1], sub, ctx)
+		eps = c.compileFnBody(x.Items, args[1], sub, ctx)
 	case []Node:
-		c.compileFnBody(x, args[1], sub, ctx)
+		eps = c.compileFnBody(x, args[1], sub, ctx)
 	default:
 		panic("[fn] first argument must be a list or vector")
 	}
+	// This marks the end of the function.
 	c.label(skp)
-	c.labeled(vm.OpRef, fnn)
+	// Push the extern arguments on the stack for the closure.
+	for _, ep := range eps {
+		c.compileSymbol(ep, sub, ctx)
+	}
+	// Return a closure to the function.
+	c.ref(len(eps), fne)
 }
 
-func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *Ctx) {
+func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *Ctx) []*SymbolNode {
 	switch len(params) {
 	case 0:
 		// Removes the function argument's end marker from the stack.
 		c.instr(vm.OpPop)
 		c.compile(body, sym, ctx)
+		c.instr(vm.OpReturn)
+		return []*SymbolNode{}
 	default:
 		man, opt := c.compileParams(params)
 		// Add the mandatory arguments to the local symbol table.
@@ -573,9 +589,55 @@ func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *C
 			c.instr(vm.OpPop)
 		}
 
-		c.compile(body, sym, ctx)
+		// Inspect the body and return a list of local parameters that need to be
+		// bundled in the closure.
+		eps := c.listClosureParams(body, sym)
+		// Create a closure symbol table. This table has the same parent as sym
+		// itself. It is not a child of sym. The closure table contains the closure
+		// params beginning with index 0 and then all params that are in sym
+		// shifted in index by the number of closure params.
+		csym := NewClosureSymTable(sym, eps)
+		// Compile the body with this closure context.
+		c.compile(body, csym, ctx)
+		c.instr(vm.OpReturn)
+		return eps
 	}
-	c.instr(vm.OpReturn)
+}
+
+func (c *Compiler) listClosureParams(node Node, sym *SymTable) []*SymbolNode {
+	switch n := node.(type) {
+	case *SymbolNode:
+		// Check if it is a local symbol that is external to the current scope.
+		if idx, ok := sym.IndexOf(n.Name); ok && idx < 0 {
+			return []*SymbolNode{n}
+		}
+	case []Node:
+		return c.listClosureParamsList(n, sym)
+	case *ListNode:
+		return c.listClosureParamsList(n.Items, sym)
+	}
+	return []*SymbolNode{}
+}
+
+func (c *Compiler) listClosureParamsList(nodes []Node, sym *SymTable) []*SymbolNode {
+	res := []*SymbolNode{}
+	for _, node := range nodes {
+		for _, param := range c.listClosureParams(node, sym) {
+			if notContainsSymbol(res, param) {
+				res = append(res, param)
+			}
+		}
+	}
+	return res
+}
+
+func notContainsSymbol(syms []*SymbolNode, s *SymbolNode) bool {
+	for _, sym := range syms {
+		if sym.Name == s.Name {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Compiler) compileParams(params []Node) ([]string, string) {
@@ -662,6 +724,10 @@ func (c *Compiler) label(name string) {
 
 func (c *Compiler) labeled(op vm.Op, name string) {
 	c.code = append(c.code, asm.Labeled(op, name))
+}
+
+func (c *Compiler) ref(cargs int, name string) {
+	c.code = append(c.code, asm.Ref(cargs, name))
 }
 
 func (c *Compiler) instr(op vm.Op, args ...uint64) {

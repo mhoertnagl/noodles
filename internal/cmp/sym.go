@@ -26,6 +26,32 @@ func (s *SymTable) NewSymTable() *SymTable {
 	}
 }
 
+// NewClosureSymTable create a closure symbol table. This table has the same
+// parent as sym itself. It is NOT a child of sym. The closure table contains
+// the closure params beginning with index 0 and then all params that are in
+// sym shifted in index by the number of closure params.
+func NewClosureSymTable(s *SymTable, eps []*SymbolNode) *SymTable {
+	// The closure symbol table is NOT a child of s but of the parent of s.
+	cs := &SymTable{
+		parent:  s.parent,
+		entries: make(symMap),
+	}
+	// Add all the new closure parameters beginning at index 0.
+	for idx, ps := range eps {
+		cs.entries[ps.Name] = &SymEntry{
+			idx: idx,
+		}
+	}
+	// Shift all local parameter indexes by the number of closure parameters.
+	cargs := len(eps)
+	for name, n := range s.entries {
+		cs.entries[name] = &SymEntry{
+			idx: cargs + n.idx,
+		}
+	}
+	return cs
+}
+
 func (s *SymTable) Size() int {
 	return len(s.entries)
 }
@@ -42,6 +68,20 @@ func (s *SymTable) Add(ns []string) {
 		}
 	}
 }
+
+// func (s *SymTable) AddClosureParams(ns []*SymbolNode) {
+// 	cargs := len(ns)
+// 	// Shift all local parameter indexes by the number of closure parameters.
+// 	for _, n := range s.entries {
+// 		n.idx += cargs
+// 	}
+// 	// Add all the new closure parameters beginning at index 0.
+// 	for idx, n := range ns {
+// 		s.entries[n.Name] = &SymEntry{
+// 			idx: idx,
+// 		}
+// 	}
+// }
 
 func (s *SymTable) RemoveVar(ns ...string) {
 	s.Remove(ns)

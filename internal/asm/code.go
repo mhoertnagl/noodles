@@ -16,6 +16,12 @@ type AsmLabeled struct {
 	Name string
 }
 
+type AsmRef struct {
+	Op    vm.Op
+	Name  string
+	Cargs int
+}
+
 type AsmIns struct {
 	Op   vm.Op
 	Args []uint64
@@ -33,6 +39,10 @@ func Label(name string) *AsmLabel {
 
 func Labeled(op vm.Op, name string) *AsmLabeled {
 	return &AsmLabeled{Op: op, Name: name}
+}
+
+func Ref(cargs int, name string) *AsmRef {
+	return &AsmRef{Op: vm.OpRef, Name: name, Cargs: cargs}
 }
 
 func Instr(op vm.Op, args ...uint64) *AsmIns {

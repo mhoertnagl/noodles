@@ -9,13 +9,13 @@ type ErrorNode struct {
 	Msg string
 }
 
+func NewError(format string, args ...interface{}) *ErrorNode {
+	return &ErrorNode{Msg: fmt.Sprintf(format, args...)}
+}
+
 func IsError(n Node) bool {
 	_, ok := n.(*ErrorNode)
 	return ok
-}
-
-func NewError(format string, args ...interface{}) *ErrorNode {
-	return &ErrorNode{Msg: fmt.Sprintf(format, args...)}
 }
 
 func IsNil(n Node) bool {
@@ -46,17 +46,29 @@ type SymbolNode struct {
 	Name string
 }
 
+func NewSymbol(name string) *SymbolNode {
+	return &SymbolNode{Name: name}
+}
+
 func IsSymbol(n Node) bool {
 	_, ok := n.(*SymbolNode)
 	return ok
 }
 
-func NewSymbol(name string) *SymbolNode {
-	return &SymbolNode{Name: name}
+func (s *SymbolNode) String() string {
+	return s.Name
 }
 
 type ListNode struct {
 	Items []Node
+}
+
+func NewList(items []Node) *ListNode {
+	return &ListNode{Items: items}
+}
+
+func NewList2(items ...Node) *ListNode {
+	return &ListNode{Items: items}
 }
 
 func (l *ListNode) Empty() bool {
@@ -97,14 +109,6 @@ func IsCall(n *ListNode, fn string) bool {
 	return false
 }
 
-func NewList(items []Node) *ListNode {
-	return &ListNode{Items: items}
-}
-
-func NewList2(items ...Node) *ListNode {
-	return &ListNode{Items: items}
-}
-
 func Call(name string, n Node) *ListNode {
 	return NewList2(NewSymbol(name), n)
 }
@@ -126,15 +130,6 @@ func Unquote(n Node) *ListNode {
 func Dissolve(n Node) *ListNode {
 	return Call("dissolve", n)
 }
-
-// func Do(n Node) *ListNode {
-// 	switch x := n.(type) {
-// 	case []Node:
-// 		return CallVar("do", x...)
-// 	default:
-// 		return CallVar("do", x)
-// 	}
-// }
 
 func Fn(args []Node, body Node) *ListNode {
 	return NewList2(NewSymbol("fn"), args, body)
