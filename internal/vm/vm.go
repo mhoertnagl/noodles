@@ -43,9 +43,9 @@ func (m *VM) Run(code Ins) {
 		// case OpNil:
 		//   m.push(nil)
 		case OpConst:
-			m.push(m.readInt64())
-		case OpRef:
-			m.push(m.readInt64())
+			c := m.readInt64()
+			fmt.Printf("Const %d\n", c)
+			m.push(c)
 		case OpFalse:
 			m.push(false)
 		case OpTrue:
@@ -57,6 +57,7 @@ func (m *VM) Run(code Ins) {
 			m.push(m.readString(int64(l)))
 		case OpPop:
 			m.pop()
+			fmt.Printf("Pop\n")
 		case OpAdd:
 			r := m.popInt64()
 			l := m.popInt64()
@@ -73,6 +74,7 @@ func (m *VM) Run(code Ins) {
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l / r)
+			fmt.Printf("Div\n")
 		case OpNot:
 			v := m.popBool()
 			m.push(!v)
@@ -168,6 +170,7 @@ func (m *VM) Run(code Ins) {
 			m.push(m.le(l, r))
 		case OpJump:
 			m.ip = m.readInt64()
+			fmt.Printf("Jump\n")
 		case OpJumpIf:
 			ip := m.readInt64()
 			if m.popBool() {
@@ -183,33 +186,67 @@ func (m *VM) Run(code Ins) {
 			// Pops n arguments from the stack and pushes them onto the frames stack.
 			// This will reverse the order of the arguments.
 			n := m.readInt64()
+			// m.printFrames()
+			fmt.Printf("PushArgs %d\n", n)
 			for ; n > 0; n-- {
 				m.pushFrame(m.pop())
 			}
+			// m.printFrames()
 		case OpDropArgs:
 			m.fsp -= m.readInt64()
 		case OpGetArg:
 			// The first argument is at FRAMES[FP], the nth at FRAMES[FP + n].
-			a := m.fp + m.readInt64()
+			d := m.readInt64()
+			a := m.fp + d
+			fmt.Printf("GetArg @[%d + %d] = %v\n", m.fp, d, m.frames[a])
+			// m.printFrames()
 			m.push(m.frames[a])
 		case OpSetGlobal:
 			m.defs[m.readInt64()] = m.pop()
+			fmt.Printf("SetGlobal\n")
 		case OpGetGlobal:
 			m.push(m.defs[m.readInt64()])
+			fmt.Printf("GetGlobal\n")
+		case OpRef:
+			n := m.readInt64()
+			a := m.readInt64()
+			r := NewRef(a)
+			// Pop n closure arguments from the stack. We will save them in the Ref
+			// struct and push them on the stack whenever the closure gets called.
+			for ; n > 0; n-- {
+				r.Add(m.pop())
+			}
+			fmt.Printf("Ref %v @%v\n", r.cargs, r.addr)
+			m.push(r)
 		case OpCall:
-			m.pushFrame(m.ip)   // Push IP.
-			m.pushFrame(m.fp)   // Push pointer to previous frame.
-			m.fp = m.fsp        // Set pointer to new frame.
-			m.ip = m.popInt64() // Call function.
+			m.pushFrame(m.ip) // Push IP.
+			m.pushFrame(m.fp) // Push pointer to previous frame.
+			r := m.popRef()
+			// Push closue arguments.
+			for _, carg := range r.cargs {
+				m.push(carg)
+			}
+			fmt.Printf("Call @%d\n", r.addr)
+			// m.printStack()
+			// m.printFrames()
+			m.fp = m.fsp  // Set pointer to new frame.
+			m.ip = r.addr // Call function.
 		case OpRecCall:
-			m.fsp = m.fp        // Drop arguments.
-			m.ip = m.popInt64() // Call function.
+			r := m.popRef()
+			// Push closue arguments.
+			for _, carg := range r.cargs {
+				m.push(carg)
+			}
+			m.fsp = m.fp  // Drop arguments.
+			m.ip = r.addr // Call function.
 		case OpReturn:
 			m.fsp = m.fp             // Drop arguments.
 			m.fp = m.popFrameInt64() // Restore pointer to previous frame.
 			m.ip = m.popFrameInt64() // Restore IP.
+			fmt.Printf("Return\n")
 		case OpEnd:
 			m.push(end)
+			fmt.Printf("End\n")
 		case OpHalt:
 			return
 		case OpWrite:
@@ -231,6 +268,9 @@ func (m *VM) Run(code Ins) {
 		default:
 			panic("Unsupported operation.")
 		}
+		m.printStack()
+		m.printFrames()
+		fmt.Printf("---\n")
 	}
 }
 
@@ -266,6 +306,10 @@ func (m *VM) popVector() []Val {
 
 func (m *VM) popFileDesc() *os.File {
 	return m.pop().(*os.File)
+}
+
+func (m *VM) popRef() *Ref {
+	return m.pop().(*Ref)
 }
 
 func (m *VM) pushFrame(v Val) {

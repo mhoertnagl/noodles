@@ -139,7 +139,7 @@ var meta = map[Op]*OpMeta{
 	OpDropArgs: {"DropArgs", []int{8}},
 	OpGetArg:   {"GetArg", []int{8}},
 
-	OpRef:     {"Ref", []int{8}},
+	OpRef:     {"Ref", []int{8, 8}},
 	OpCall:    {"Call", []int{}},
 	OpRecCall: {"RecCall", []int{}},
 	OpReturn:  {"Return", []int{}},
@@ -203,12 +203,12 @@ func Instr(op Op, args ...uint64) []byte {
 	return ins
 }
 
-func Bool(n bool) []byte {
-	if n {
-		return Instr(OpTrue)
-	}
-	return Instr(OpFalse)
-}
+// func Bool(n bool) []byte {
+// 	if n {
+// 		return Instr(OpTrue)
+// 	}
+// 	return Instr(OpFalse)
+// }
 
 func Str(s string) []byte {
 	b := []byte(s)

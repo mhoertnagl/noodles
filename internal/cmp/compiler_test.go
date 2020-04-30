@@ -275,12 +275,16 @@ func TestCompileLet4(t *testing.T) {
 	)
 }
 
+// TODO: GetArg -3 Gibs noch nicht! Wir sollten hier wohl auch eigene Frames
+//       für Let bindings einführen (mit stuffing für RP)
+
 func TestCompileLet5(t *testing.T) {
-	var minus3 int64 = -3
 	testc(t, `
-    (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
+    (let
+      (b (fn [m] (if (= m 0) 1 (b (- m 1))) ))
       (b 1) )`,
 		asm.Labeled(vm.OpJump, "L0"),
+		// BEGIN FN
 		asm.Label("L1"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
@@ -299,9 +303,11 @@ func TestCompileLet5(t *testing.T) {
 		asm.Instr(vm.OpCall),
 		asm.Label("L3"),
 		asm.Instr(vm.OpReturn),
+		// END FN
 		asm.Label("L0"),
-		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpGetArg, 0),
 		asm.Ref(1, "L1"),
+		// BEGIN LET
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 1),
@@ -782,6 +788,7 @@ func TestCompileAnonymousNestedFun(t *testing.T) {
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
 		asm.Labeled(vm.OpJump, "L2"),
+		// (fn [m] (/ n m))
 		asm.Label("L3"),
 		asm.Instr(vm.OpPushArgs, 1),
 		asm.Instr(vm.OpPop),
@@ -789,6 +796,7 @@ func TestCompileAnonymousNestedFun(t *testing.T) {
 		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpReturn),
+		// end
 		asm.Label("L2"),
 		asm.Instr(vm.OpGetArg, uint64(minus3)),
 		asm.Ref(1, "L3"),
@@ -1075,8 +1083,6 @@ func TestCompileTailFac(t *testing.T) {
 }
 
 func TestCompileClosure(t *testing.T) {
-	fmt.Println("Hallo")
-	var minus3 int64 = -3
 	testc(t, `
     (do
       (def divN (fn [n]
@@ -1089,26 +1095,31 @@ func TestCompileClosure(t *testing.T) {
 		asm.Instr(vm.OpPop),
 		asm.Labeled(vm.OpJump, "L2"),
 		asm.Label("L3"),
-		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPushArgs, 2),
 		asm.Instr(vm.OpPop),
 		asm.Instr(vm.OpGetArg, 1),
 		asm.Instr(vm.OpGetArg, 0),
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L2"),
-		asm.Instr(vm.OpGetArg, uint64(minus3)),
+		asm.Instr(vm.OpGetArg, 0),
 		asm.Ref(1, "L3"),
 		asm.Instr(vm.OpReturn),
 		asm.Label("L0"),
+		// def divN
 		asm.Ref(0, "L1"),
 		asm.Instr(vm.OpSetGlobal, 0),
+		// ((divN 3) 9 )
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 9),
+		// (divN 3)
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpGetGlobal, 0),
 		asm.Instr(vm.OpCall),
+		// --- (divN 3)
 		asm.Instr(vm.OpCall),
+		// --- ((divN 3) 9 )
 	)
 }
 

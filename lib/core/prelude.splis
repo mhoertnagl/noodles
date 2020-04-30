@@ -129,6 +129,10 @@
   ;; @return bool   `true` if the vector is empty.
   (defmacro empty? [xs] (= (len xs) 0))
 
+  ;; Violates convention:
+  ;; (defn ++: [xs & args] (:: args xs))
+  ;; (defn :++ [xs & args] (:: xs args))
+
   ;; `vec` takes a variable number of arguments and returns a vector containing
   ;; the arguments in the same order as specified.
   ;;
