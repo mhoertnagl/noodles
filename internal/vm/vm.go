@@ -350,6 +350,86 @@ func (m *VM) readString(l int64) string {
 	return s
 }
 
+func (m *VM) add(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll + rr
+		case float64:
+			return float64(ll) + rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll + float64(rr)
+		case float64:
+			return ll + rr
+		}
+	}
+	panic("cannot add non-number")
+}
+
+func (m *VM) sub(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll - rr
+		case float64:
+			return float64(ll) - rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll - float64(rr)
+		case float64:
+			return ll - rr
+		}
+	}
+	panic("cannot subtract non-number")
+}
+
+func (m *VM) mul(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll * rr
+		case float64:
+			return float64(ll) * rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll * float64(rr)
+		case float64:
+			return ll * rr
+		}
+	}
+	panic("cannot multiply non-number")
+}
+
+func (m *VM) div(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll / rr
+		case float64:
+			return float64(ll) / rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll / float64(rr)
+		case float64:
+			return ll / rr
+		}
+	}
+	panic("cannot divide non-number")
+}
+
 func (m *VM) eq(l Val, r Val) bool {
 	switch ll := l.(type) {
 	case bool:

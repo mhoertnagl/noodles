@@ -102,6 +102,12 @@
   ;; @return num    `n - 1`.
   (defn dec [n] (- n 1))
 
+  ;; TODO: primitives passable as arguments.
+  ; (defn .+ [& args] (+ @args))
+  ; (defn .- [l r] (- l r))
+  ; (defn .* [& args] (* @args))
+  ; (defn ./ [l r] (/ l r))
+
   ;; `pos?` returns `true` if the value `n` is greater than `0`; `false`
   ;; otherwise.
   ;;

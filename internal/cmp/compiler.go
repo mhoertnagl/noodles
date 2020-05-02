@@ -8,12 +8,12 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-// TODO: prelude docs and unit tests.
-
 // TODO: floating point support.
-
+//       Combined operations with implicit convertions.
+// TODO: Variadic +, *
 // TODO: mod
-// TODO: quot
+
+// TODO: prelude docs and unit tests.
 
 // TODO: join (strings) -- concatenates strings
 // TODO: explode (strings) -- String to list of single character strings
@@ -22,15 +22,11 @@ import (
 // TODO: Explicit GT and GE
 // TODO: Primitives and special forms as arguments
 
-// TODO: Variadic +, *, list, ...
+// TODO: Variadic list, ...
 // TODO: Special functions +, -, *, / as well as primitives need implementations
 //       as ordinary functions. This way they can be passed around as args.
 
-// TODO: Call agruments outside of current function context.
-// TODO: Closure
-// TODO: let binding functions
-//       See TestCompileLet5: this is because we cannot access the local
-//       variable inside a function (a.k.a closures).
+// TODO: let binding functions - see TestCompileLet5.
 // TODO: let bindings should have their own symbol table.
 //       Fix Indexof to account for this fact.
 
@@ -42,7 +38,6 @@ import (
 // TODO: parse?
 
 // TODO: Feed global names to disassembler and any place where they make sense.
-// TODO: Optional parameter for macro definitions.
 
 type Compiler struct {
 	specs    specDefs
