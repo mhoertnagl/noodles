@@ -56,7 +56,7 @@ func TestRewriteNestedQuote(t *testing.T) {
 	)
 }
 
-func TestRewriteQuoteWithMultiOccuranceOfSingelVariable(t *testing.T) {
+func TestRewriteQuoteWithMultiOccurenceOfSingelVariable(t *testing.T) {
 	rw := rwr.NewQuoteRewriter()
 	testRewriter(t, rw, `'(* ~n ~n ~n)`, `(fn [n] (* n n n))`)
 }
@@ -220,6 +220,93 @@ func TestRewriteUse(t *testing.T) {
 	rw := rwr.NewUseRewriter(paths)
 	testRewriter(t, rw, is, es)
 }
+
+// TODO: Move to rewriter_test
+//
+// func TestCompileSimpleQuote(t *testing.T) {
+// 	testc(t, `'(+ 1 1)`,
+// 		asm.Instr(vm.OpRef, 10),
+//
+// 		// (fn [] (+ 1 1))
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpConst, 1),
+// 		asm.Instr(vm.OpConst, 1),
+// 		asm.Instr(vm.OpAdd),
+// 		asm.Instr(vm.OpReturn),
+// 	)
+// }
+//
+// func TestCompileReplacementQuote(t *testing.T) {
+// 	testc(t, `'(+ ~a ~b)`,
+// 		asm.Instr(vm.OpRef, 10),
+//
+// 		// (fn [a b] (+ a b))
+// 		asm.Instr(vm.OpPushArgs, 2),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpAdd),
+// 		asm.Instr(vm.OpReturn),
+// 	)
+// }
+//
+// func TestCompileSpliceQuote(t *testing.T) {
+// 	testc(t, `'(+ ~a ~@b)`,
+// 		asm.Instr(vm.OpRef, 10),
+//
+// 		// (fn [a b] (+ a @b))
+// 		asm.Instr(vm.OpPushArgs, 2),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpDissolve),
+// 		asm.Instr(vm.OpAdd),
+// 		asm.Instr(vm.OpReturn),
+// 	)
+// }
+//
+// func TestCompileSpliceQuote2(t *testing.T) {
+// 	testc(t, `'(+ ~@a ~@b)`,
+// 		asm.Instr(vm.OpRef, 10),
+//
+// 		// (fn [a b] (+ @a @b))
+// 		asm.Instr(vm.OpPushArgs, 2),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpDissolve),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpDissolve),
+// 		asm.Instr(vm.OpAdd),
+// 		asm.Instr(vm.OpReturn),
+// 	)
+// }
+//
+// func TestCompileQuote3(t *testing.T) {
+// 	code := `
+//   (do
+//     (def cube '(* ~n ~n ~n))
+//     (cube 3)
+//   )
+//   `
+// 	testc(t, code,
+// 		asm.Instr(vm.OpRef, 39),
+// 		asm.Instr(vm.OpSetGlobal, 0),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpConst, 3),
+// 		asm.Instr(vm.OpGetGlobal, 0),
+// 		asm.Instr(vm.OpCall),
+//
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpMul),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpMul),
+// 		asm.Instr(vm.OpReturn),
+// 	)
+// }
+//
 
 func testRewriter(t *testing.T, rw rwr.Rewriter, i string, e string) {
 	t.Helper()

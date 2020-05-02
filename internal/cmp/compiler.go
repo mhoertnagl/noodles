@@ -399,7 +399,7 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 		sym.AddVar(s.Name)
 
 		c.compile(bs.Items[i+1], sym, ctx)
-		// Add the let bindings ont at a time so that subsequent bindings
+		// Add the let bindings one at a time so that subsequent bindings
 		// will be able to access the privously defined let bindings.
 		c.instr(vm.OpPushArgs, 1)
 	}
@@ -434,15 +434,7 @@ func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 	// compiling the body of the definition in order to make the symbol available
 	// to recursive function calls.
 	id := c.defs.getOrAdd(s.Name)
-	// Make the definition name avialable in the body through the context.
-	// code.Append(c.compile(args[1], sym, ctx.NewDefCtx(s.Name)))
-	// if IsCallN(args[1], "fn") {
-	// 	subCtx := NewCtx()
-	// 	subCtx.FnName = s.Name
-	// 	c.compile(args[1], sym, subCtx)
-	// } else {
-	// 	c.compile(args[1], sym, ctx)
-	// }
+
 	c.compile(args[1], sym, ctx)
 	c.instr(vm.OpSetGlobal, id)
 }
@@ -542,12 +534,14 @@ func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 }
 
 func (c *Compiler) compileFn2(params []Node, body Node, sym *SymTable, ctx *Ctx) {
+	// FInd all closure parameters.
 	eps := c.listClosureParamsForSub(params, body, sym)
-	sub := sym.NewSymTable() //sym.NewClosureSymTable(eps)
-
+	// Prepend closure parameters.
 	newParams := []Node{}
 	newParams = append(newParams, eps...)
 	newParams = append(newParams, params...)
+
+	sub := sym.NewSymTable()
 
 	skp := c.newLbl()
 	fen := c.newLbl()
