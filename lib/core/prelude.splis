@@ -228,15 +228,6 @@
 
   (defn repeat [n v] (_repeat n v []) )
 
-  ;; Alternative definition.
-  ; (defn repeat [n v]
-  ;   (defn _repeat [n v acc]
-  ;     (if (<= n 0)
-  ;       acc
-  ;       (rec (_repeat (- n 1) v (:+ acc v))) ))
-  ;   (_repeat n v []) )
-
-
   ;; TODO: Not my style but does not work!
   ; (defn repeat [n v] (let
   ;   (_repeat (fn [n v acc]
@@ -260,6 +251,15 @@
       b
       (rec (reduce f (f (fst xs) b) (rst xs))) ))
 
+  ;; `fold` reduces a sequence of elements into a single element by successive
+  ;; application of the binary function `f` in a left-associative fashion where
+  ;; the initial element is the first element of `xs`.
+  ;; This function will fail with an error message if `xs` is empty.
+  ;;
+  ;; @param  fun(S T)T f   A binary function.
+  ;; @param  [S]       xs  A list of elements.
+  ;; @return T             The left-associative reduction of `xs` into a single
+  ;;                       element.
   (defn fold [f xs]
     (if (empty? xs)
       (error "[fold] list is empty")
@@ -279,6 +279,9 @@
 
   (defn map [f xs] (_map f xs []))
 
+  ;; TODO: Reduce version.
+  ; (defn map [f xs] (reduce (fn [v b] (:+ b (f v))) [] xs))
+
   ;; `flat-map` applies to unary function `f` to each element of the list `xs`
   ;; and flattens the list of lists as `f` is required to return a list.
   ;;
@@ -295,6 +298,9 @@
       (rec (_flat-map f (rst xs) (:: acc (f (fst xs))) )) ))
 
   (defn flat-map [f xs] (_flat-map f xs []))
+
+  ;; TODO: Reduce version.
+  ; (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
 
   ;; `filter` retains all elements from `xs` for which the predicate `p`
   ;; returns `true`. Preserves the order of the elements.
@@ -313,8 +319,7 @@
   (defn filter [p xs] (_filter p xs []))
 
 
-  ; TODO: Won't work...
-  ;       needs calling of arguments outside of the current function context.
+  ; TODO: Should work now.
   ; (defn remove [p xs] (filter '(not (p ~x)) xs))
   ; (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
   (defn _remove [p xs acc]
@@ -340,6 +345,9 @@
       (rec (_reverse (rst xs) (+: (fst xs) acc) )) ))
 
   (defn reverse [xs] (_reverse xs []))
+
+  ;; TODO: With reduce.
+  ; (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
 
   (defn _take [n xs acc]
     (cond (empty? xs) acc
