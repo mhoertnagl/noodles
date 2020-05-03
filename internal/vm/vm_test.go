@@ -1,6 +1,7 @@
 package vm_test
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
@@ -20,6 +21,12 @@ func TestConst2(t *testing.T) {
 	)
 	testVal(t, int64(43), m.InspectStack(0))
 	testVal(t, int64(42), m.InspectStack(1))
+}
+
+func TestFConst1(t *testing.T) {
+	testToS(t, 3.1415,
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1415)),
+	)
 }
 
 func TestPop(t *testing.T) {
@@ -45,10 +52,34 @@ func TestPop(t *testing.T) {
 // 	)
 // }
 
-func TestAdd2(t *testing.T) {
+func TestAddII(t *testing.T) {
 	testToS(t, int64(42),
 		vm.Instr(vm.OpConst, 19),
 		vm.Instr(vm.OpConst, 23),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestAddIF(t *testing.T) {
+	testToS(t, 4.1,
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestAddFI(t *testing.T) {
+	testToS(t, 4.1,
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestAddFF(t *testing.T) {
+	testToS(t, 6.2,
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
 		vm.Instr(vm.OpAdd),
 	)
 }
@@ -69,11 +100,27 @@ func TestMul2(t *testing.T) {
 	)
 }
 
-func TestDiv2(t *testing.T) {
-	testToS(t, int64(21),
-		vm.Instr(vm.OpConst, 42),
+func TestDiv(t *testing.T) {
+	testToS(t, 3.5,
+		vm.Instr(vm.OpConst, 7),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpDiv),
+	)
+}
+
+func TestDivFF(t *testing.T) {
+	testToS(t, 2,
+		vm.Instr(vm.OpConstF, math.Float64bits(6.2)),
+		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
+		vm.Instr(vm.OpDiv),
+	)
+}
+
+func TestMod(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpConst, 7),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpMod),
 	)
 }
 

@@ -140,11 +140,13 @@ func normalizeString(val string) string {
 
 func (p *Parser) parseNumber() Node {
 	if v, err := strconv.ParseInt(p.tok, 10, 64); err == nil {
-		// if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
 		// TODO: Create a constant pool for the numbers [-32, 31]?
 		return v
 	}
-	return p.error("[%s] is not a floating point number.\n", p.tok)
+	if v, err := strconv.ParseFloat(p.tok, 64); err == nil {
+		return v
+	}
+	return p.error("[%s] is not a number.\n", p.tok)
 }
 
 func isNumber(tok string) bool {

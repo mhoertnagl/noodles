@@ -15,6 +15,7 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
+	OpConstF
 	// OpNil
 	OpTrue
 	OpFalse
@@ -26,6 +27,7 @@ const (
 	OpSub
 	OpMul
 	OpDiv
+	OpMod
 
 	OpList
 	OpCons
@@ -72,8 +74,7 @@ const (
 
 	OpRead
 	OpWrite
-	// TODO: Perhaps obsolete if we switch script and function portion and start
-	//       vm at script start.
+
 	OpHalt
 	OpDebug
 )
@@ -94,7 +95,8 @@ type OpMeta struct {
 }
 
 var meta = map[Op]*OpMeta{
-	OpConst: {"Const", []int{8}},
+	OpConst:  {"Const", []int{8}},
+	OpConstF: {"ConstF", []int{8}},
 	// OpNil:         {"Nil", []int{}},
 	OpTrue:        {"True", []int{}},
 	OpFalse:       {"False", []int{}},
@@ -106,6 +108,7 @@ var meta = map[Op]*OpMeta{
 	OpSub: {"Sub", []int{}},
 	OpMul: {"Mul", []int{}},
 	OpDiv: {"Div", []int{}},
+	OpMod: {"Mod", []int{}},
 
 	OpList:     {"List", []int{}},
 	OpCons:     {"Cons", []int{}},

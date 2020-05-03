@@ -21,8 +21,8 @@ func printNode(buf *bytes.Buffer, node Node) {
 		buf.WriteString(strconv.FormatBool(x))
 	case int64:
 		buf.WriteString(strconv.FormatInt(x, 10))
-	// case float64:
-	// 	buf.WriteString(strconv.FormatFloat(x, 'f', -1, 64))
+	case float64:
+		buf.WriteString(strconv.FormatFloat(x, 'f', -1, 64))
 	case string:
 		printString(buf, x)
 	case *SymbolNode:

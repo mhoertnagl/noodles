@@ -3,6 +3,7 @@ package cmp_test
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/mhoertnagl/splis2/internal/asm"
@@ -25,6 +26,15 @@ func TestCompileInteger(t *testing.T) {
 	)
 	testc(t, "1",
 		asm.Instr(vm.OpConst, 1),
+	)
+}
+
+func TestCompileFloat(t *testing.T) {
+	testc(t, "0.1",
+		asm.Instr(vm.OpConstF, math.Float64bits(0.1)),
+	)
+	testc(t, "1.0",
+		asm.Instr(vm.OpConstF, math.Float64bits(1)),
 	)
 }
 
@@ -161,6 +171,14 @@ func TestCompileDiv(t *testing.T) {
 		asm.Instr(vm.OpDiv),
 		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpDiv),
+	)
+}
+
+func TestCompileMod(t *testing.T) {
+	testc(t, "(mod 7 3)",
+		asm.Instr(vm.OpConst, 7),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpMod),
 	)
 }
 

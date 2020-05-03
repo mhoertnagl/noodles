@@ -90,6 +90,9 @@
   ;; @return any    `x` itself.
   (defn identity [x] x)
 
+  ;; The constant PI.
+  (def *PI* 3.141592653589793)
+
   ;; `inc` increments the number `n` by one.
   ;;
   ;; @param  num n  A number.
@@ -107,6 +110,16 @@
   ; (defn .- [l r] (- l r))
   ; (defn .* [& args] (* @args))
   ; (defn ./ [l r] (/ l r))
+  ; (defn .< [a b] (< a b))
+  ; (defn .> [a b] (> a b))
+  ; (defn .<= [a b] (<= a b))
+  ; (defn .>= [a b] (>= a b))
+  ; (defn .= [a b] (= a b))
+  ; (defn .!= [a b] (!= a b))
+
+  ; (defn .:+ [l v] (:+ l v))
+  ; (defn .+: [v l] (+: v l))
+  ; (defn .:: [a b] (:: a b))
 
   ;; `pos?` returns `true` if the value `n` is greater than `0`; `false`
   ;; otherwise.
@@ -128,6 +141,18 @@
   ;; @param  num  n  A number.
   ;; @return bool    `true` if `n` is negative; `false` otherwise.
   (defn neg? [n] (< n 0))
+
+  ;; `even?` tests if a number is even.
+  ;;
+  ;; @param  num  n  A number.
+  ;; @return bool    `true` iff `n` is even.
+  (defn even? [n] (= (mod n 2) 0))
+
+  ;; `odd?` tests if a number is odd.
+  ;;
+  ;; @param  num  n  A number.
+  ;; @return bool    `true` iff `n` is odd.
+  (defn odd? [n] (= (mod n 2) 1))
 
   ;; `abs` computes the absolute value of `n`.
   ;;
@@ -298,15 +323,14 @@
   ;; @param  [T]       xs  A list of elements.
   ;; @return [S]           The list of elements applied to `f` and then
   ;;                       flattened into a single list.
+  ;; TODO: Reduce version.
+  ; (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
   (defn _flat-map [f xs acc]
     (if (empty? xs)
       acc
       (rec (_flat-map f (rst xs) (:: acc (f (fst xs))) )) ))
 
   (defn flat-map [f xs] (_flat-map f xs []))
-
-  ;; TODO: Reduce version.
-  ; (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
 
   ;; `filter` retains all elements from `xs` for which the predicate `p`
   ;; returns `true`. Preserves the order of the elements.
@@ -324,7 +348,14 @@
 
   (defn filter [p xs] (_filter p xs []))
 
-
+  ;; `remove` discards all elements that fulfill predicate `p` from list `xs`.
+  ;;
+  ;; ```(remove (fn [x] (> x 2)) [1 2 3 4])```
+  ;; >> [1 2]
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return [T]            The elements in `xs` that do not fulfill `p`.
   ; TODO: Should work now.
   ; (defn remove [p xs] (filter '(not (p ~x)) xs))
   ; (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
@@ -335,15 +366,42 @@
 
   (defn remove [p xs] (_remove p xs []))
 
+  ;; `all` returns `true` if all elements in list `xs` fulfill predicate `p`.
+  ;;
+  ;; ```(all (fn [x] (< x 5)) [1 2 3 4])```
+  ;; >> true
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return bool           `true` if all elements in `xs` fulfill `p`.
   (defn all [p xs]
     (cond (empty? xs)        true
           (not (p (fst xs))) false
           else               (rec (all p (rst xs))) ))
 
+  ;; `any` returns `true` if at least one element in list `xs` fulfills
+  ;; predicate `p`.
+  ;;
+  ;; ```(any (fn [x] (= x 1)) [1 2 3 4])```
+  ;; >> true
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return bool           `true` if at least one element in `xs` fulfills `p`.
   (defn any [p xs]
     (cond (empty? xs)  false
           (p (fst xs)) true
           else         (rec (any p (rst xs))) ))
+
+  ;; `reverse` returns a list with the elements in `xs` in reverse order.
+  ;;
+  ;; ```(reverse [1 2 3])```
+  ;; >> [3 2 1]
+  ;;
+  ;; @param  [T] xs  A list of elements.
+  ;; @return [T]     The list `xs` in reverse order.
+  ;; TODO: With reduce.
+  ; (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
 
   (defn _reverse [xs acc]
     (if (empty? xs)
@@ -352,9 +410,14 @@
 
   (defn reverse [xs] (_reverse xs []))
 
-  ;; TODO: With reduce.
-  ; (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
-
+  ;; `take` returns the first `n` elements of `xs` in a new list.
+  ;;
+  ;; ```(take 2 [9 8 7 6])```
+  ;; >> [9 8]
+  ;;
+  ;; @param  num n   The number of elements to take from the list `xs`.
+  ;; @param  [T] xs  A list of elements.
+  ;; @return [T]     The the frist `n` elements of the list `xs`.
   (defn _take [n xs acc]
     (cond (empty? xs) acc
           (<= n 0)    acc
@@ -362,11 +425,31 @@
 
   (defn take [n xs] (_take n xs []))
 
+  ;; `drop-while` drops the elements of `xs` from the beginning as long as
+  ;; the predicate `p` is fulfilled for the elements and returns the remaining
+  ;; list.
+  ;;
+  ;; ```(drop-while (fn [x] (< x 9)) [7 8 9 7])```
+  ;; >> [9 7]
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return [T]            The elements of `xs` after `p` is not fulfilled
+  ;;                        for the first time.
   (defn drop-while [p xs]
     (cond (empty? xs)  xs
           (p (fst xs)) (rec (drop-while p (rst xs)))
           else         xs ))
 
+  ;; `take-while` returns the elements of `xs` from the beginning as long as
+  ;; the predicate `p` is fulfilled for the elements.
+  ;;
+  ;; ```(take-while (fn [x] (< x 9)) [7 8 9 7])```
+  ;; >> [7 8]
+  ;;
+  ;; @param  fun(T)bool p   A unary test predicate.
+  ;; @param  [T]        xs  A list of elements.
+  ;; @return [T]            The elements of `xs` as long as `p` is fulfilled.
   (defn _take-while [p xs acc]
     (cond (empty? xs)  acc
           (p (fst xs)) (rec (_take-while p (rst xs) (:+ acc (fst xs))))
@@ -374,6 +457,17 @@
 
   (defn take-while [p xs] (_take-while p xs []))
 
+  ;; `zip-with` combines two separate lists `xs` and `ys` into a single list of
+  ;; elements by applying `f` element-wise to the first element of `xs` and
+  ;; `ys` and recurse on the rest of `xs` and `ys`.
+  ;;
+  ;; ```(zip-with (fn [x y] (vec x y)) [1 2 3] [9 8 7])```
+  ;; >> [[1 9] [2 8] [3 7]]
+  ;;
+  ;; @param  fun(T S)R p   A zipping function.
+  ;; @param  [T]       xs  A list of elements.
+  ;; @param  [S]       ys  A list of elements.
+  ;; @return [R]           The list of elements combined from `xs` and `ys`.
   (defn _zip-with [f xs ys acc]
     (cond (empty? xs) acc
           (empty? ys) acc
@@ -384,9 +478,41 @@
 
   (defn zip-with [f xs ys] (_zip-with f xs ys []))
 
+  ;; `zip` combines two list into a list of pairs of elements.
+  ;;
+  ;; ```(zip [1 2 3] [9 8 7])```
+  ;; >> [[1 9] [2 8] [3 7]]
+  ;;
+  ;; @param  [T]     xs  A list of elements.
+  ;; @param  [S]     ys  A list of elements.
+  ;; @return [[T S]]     The elements of `xs` and `ys` combined into pairs.
   (defn zip [xs ys] (zip-with vec xs ys))
 
   ;; (defn flatten [xs])
-  ; (use "core/math")
-  ; (use "core/io")
+
+  ; ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
+  ; ;; empty list.
+  ; ;;
+  ; ;; @param  (num) xs  A list of numbers.
+  ; ;; @return num       The sum of all values in `xs`.
+  ; ; (defn sum [xs] (+ @xs))
+
+  ; ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
+  ; ;; the empty list.
+  ; ;;
+  ; ;; @param  (num) xs  A list of numbers.
+  ; ;; @return num       The product of all values in `xs`.
+  ; ; (defn prod [xs] (* @xs))
+
+  ; (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
+  ;
+  ; (defn minimum [& xs] (minimumv xs))
+  ;
+  ; (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
+  ;
+  ; (defn maximum [& xs] (maximumv xs))
+  ;
+  ; (defn averagev [xs] (/ (+ @xs) (len xs)))
+  ;
+  ; (defn average [& xs] (averagev xs))
 )

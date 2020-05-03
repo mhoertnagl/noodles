@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -44,7 +45,11 @@ func (m *VM) Run(code Ins) {
 		//   m.push(nil)
 		case OpConst:
 			c := m.readInt64()
-			fmt.Printf("Const %d\n", c)
+			// fmt.Printf("Const %d\n", c)
+			m.push(c)
+		case OpConstF:
+			c := m.readFloat64()
+			// fmt.Printf("Const %d\n", c)
 			m.push(c)
 		case OpFalse:
 			m.push(false)
@@ -57,24 +62,40 @@ func (m *VM) Run(code Ins) {
 			m.push(m.readString(int64(l)))
 		case OpPop:
 			m.pop()
-			fmt.Printf("Pop\n")
+			// fmt.Printf("Pop\n")
 		case OpAdd:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l + r)
+			// r := m.popInt64()
+			// l := m.popInt64()
+			// m.push(l + r)
+			r := m.pop()
+			l := m.pop()
+			m.push(m.add(l, r))
 		case OpSub:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l - r)
+			// r := m.popInt64()
+			// l := m.popInt64()
+			// m.push(l - r)
+			r := m.pop()
+			l := m.pop()
+			m.push(m.sub(l, r))
 		case OpMul:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l * r)
+			// r := m.popInt64()
+			// l := m.popInt64()
+			// m.push(l * r)
+			r := m.pop()
+			l := m.pop()
+			m.push(m.mul(l, r))
 		case OpDiv:
+			// r := m.popInt64()
+			// l := m.popInt64()
+			// m.push(l / r)
+			r := m.pop()
+			l := m.pop()
+			m.push(m.div(l, r))
+			// fmt.Printf("Div\n")
+		case OpMod:
 			r := m.popInt64()
 			l := m.popInt64()
-			m.push(l / r)
-			fmt.Printf("Div\n")
+			m.push(l % r)
 		case OpNot:
 			v := m.popBool()
 			m.push(!v)
@@ -170,7 +191,7 @@ func (m *VM) Run(code Ins) {
 			m.push(m.le(l, r))
 		case OpJump:
 			m.ip = m.readInt64()
-			fmt.Printf("Jump\n")
+			// fmt.Printf("Jump\n")
 		case OpJumpIf:
 			ip := m.readInt64()
 			if m.popBool() {
@@ -187,7 +208,7 @@ func (m *VM) Run(code Ins) {
 			// This will reverse the order of the arguments.
 			n := m.readInt64()
 			// m.printFrames()
-			fmt.Printf("PushArgs %d\n", n)
+			// fmt.Printf("PushArgs %d\n", n)
 			for ; n > 0; n-- {
 				m.pushFrame(m.pop())
 			}
@@ -198,15 +219,15 @@ func (m *VM) Run(code Ins) {
 			// The first argument is at FRAMES[FP], the nth at FRAMES[FP + n].
 			d := m.readInt64()
 			a := m.fp + d
-			fmt.Printf("GetArg @[%d + %d] = %v\n", m.fp, d, m.frames[a])
+			// fmt.Printf("GetArg @[%d + %d] = %v\n", m.fp, d, m.frames[a])
 			// m.printFrames()
 			m.push(m.frames[a])
 		case OpSetGlobal:
 			m.defs[m.readInt64()] = m.pop()
-			fmt.Printf("SetGlobal\n")
+			// fmt.Printf("SetGlobal\n")
 		case OpGetGlobal:
 			m.push(m.defs[m.readInt64()])
-			fmt.Printf("GetGlobal\n")
+			// fmt.Printf("GetGlobal\n")
 		case OpRef:
 			n := m.readInt64()
 			a := m.readInt64()
@@ -216,7 +237,7 @@ func (m *VM) Run(code Ins) {
 			for ; n > 0; n-- {
 				r.Add(m.pop())
 			}
-			fmt.Printf("Ref %v @%v\n", r.cargs, r.addr)
+			// fmt.Printf("Ref %v @%v\n", r.cargs, r.addr)
 			m.push(r)
 		case OpCall:
 			m.pushFrame(m.ip) // Push IP.
@@ -226,7 +247,7 @@ func (m *VM) Run(code Ins) {
 			for _, carg := range r.cargs {
 				m.push(carg)
 			}
-			fmt.Printf("Call @%d\n", r.addr)
+			// fmt.Printf("Call @%d\n", r.addr)
 			// m.printStack()
 			// m.printFrames()
 			m.fp = m.fsp  // Set pointer to new frame.
@@ -243,10 +264,10 @@ func (m *VM) Run(code Ins) {
 			m.fsp = m.fp             // Drop arguments.
 			m.fp = m.popFrameInt64() // Restore pointer to previous frame.
 			m.ip = m.popFrameInt64() // Restore IP.
-			fmt.Printf("Return\n")
+			// fmt.Printf("Return\n")
 		case OpEnd:
 			m.push(end)
-			fmt.Printf("End\n")
+			// fmt.Printf("End\n")
 		case OpHalt:
 			return
 		case OpWrite:
@@ -268,9 +289,9 @@ func (m *VM) Run(code Ins) {
 		default:
 			panic("Unsupported operation.")
 		}
-		m.printStack()
-		m.printFrames()
-		fmt.Printf("---\n")
+		// m.printStack()
+		// m.printFrames()
+		// fmt.Printf("---\n")
 	}
 }
 
@@ -344,6 +365,12 @@ func (m *VM) readInt64() int64 {
 	return int64(v)
 }
 
+func (m *VM) readFloat64() float64 {
+	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
+	m.ip += 8
+	return math.Float64frombits(v) //float64(v)
+}
+
 func (m *VM) readString(l int64) string {
 	s := string(m.code[m.ip : m.ip+l])
 	m.ip += l
@@ -415,7 +442,7 @@ func (m *VM) div(l Val, r Val) Val {
 	case int64:
 		switch rr := r.(type) {
 		case int64:
-			return ll / rr
+			return float64(ll) / float64(rr)
 		case float64:
 			return float64(ll) / rr
 		}

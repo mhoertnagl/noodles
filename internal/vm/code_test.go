@@ -21,7 +21,7 @@ func TestInstr(t *testing.T) {
 func TestStr(t *testing.T) {
 	es := "Hello, World!"
 	a := vm.Str(es)
-	e := []byte{5, 0, 0, 0, 0, 0, 0, 0, 13, 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33}
+	e := []byte{6, 0, 0, 0, 0, 0, 0, 0, 13, 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33}
 	if bytes.Compare(a, e) != 0 {
 		t.Errorf("Expecting %v but got %v.", e, a)
 	}

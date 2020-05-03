@@ -2,16 +2,14 @@ package cmp
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/mhoertnagl/splis2/internal/asm"
 	"github.com/mhoertnagl/splis2/internal/util"
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-// TODO: floating point support.
-//       Combined operations with implicit convertions.
 // TODO: Variadic +, *
-// TODO: mod
 
 // TODO: prelude docs and unit tests.
 
@@ -23,8 +21,6 @@ import (
 // TODO: Primitives and special forms as arguments
 
 // TODO: Variadic list, ...
-// TODO: Special functions +, -, *, / as well as primitives need implementations
-//       as ordinary functions. This way they can be passed around as args.
 
 // TODO: let binding functions - see TestCompileLet5.
 // TODO: let bindings should have their own symbol table.
@@ -82,6 +78,7 @@ func NewCompiler() *Compiler {
 	c.prims.add(">=", vm.OpLE, 2, true)
 	c.prims.add("=", vm.OpEQ, 2, false)
 	c.prims.add("!=", vm.OpNE, 2, false)
+	c.prims.add("mod", vm.OpMod, 2, false)
 	c.prims.add("not", vm.OpNot, 1, false)
 	c.prims.add("+:", vm.OpCons, 2, true)
 	c.prims.add(":+", vm.OpAppend, 2, false)
@@ -113,6 +110,8 @@ func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 		}
 	case int64:
 		c.instr(vm.OpConst, uint64(n))
+	case float64:
+		c.instr(vm.OpConstF, math.Float64bits(n))
 	case string:
 		c.str(n)
 	case *SymbolNode:
