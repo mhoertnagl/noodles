@@ -38,43 +38,81 @@ func TestCompileFloat(t *testing.T) {
 	)
 }
 
+// --- STR ---
+
 func TestCompileString(t *testing.T) {
 	testc(t, `"Hello, World!"`,
 		asm.Str("Hello, World!"),
 	)
 }
 
+func TestCompileStringJoin(t *testing.T) {
+	testc(t, `(join "Hello, " "World!")`,
+		asm.Instr(vm.OpEnd),
+		asm.Str("World!"),
+		asm.Str("Hello, "),
+		asm.Instr(vm.OpJoin),
+	)
+}
+
+func TestCompileStringExplode(t *testing.T) {
+	testc(t, `(explode "xyz")`,
+		asm.Str("xyz"),
+		asm.Instr(vm.OpExplode),
+	)
+}
+
+func TestCompileStringJoinExplode(t *testing.T) {
+	testc(t, `(join @(explode "xyz"))`,
+		asm.Instr(vm.OpEnd),
+		asm.Str("xyz"),
+		asm.Instr(vm.OpExplode),
+		asm.Instr(vm.OpDissolve),
+		asm.Instr(vm.OpJoin),
+	)
+}
+
+// --- ARITH ---
+
 func TestCompileAdd(t *testing.T) {
 	testc(t, "(+)",
-		asm.Instr(vm.OpConst, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpAdd),
 	)
 	testc(t, "(+ 1)",
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
 	)
 	testc(t, "(+ 1 2)",
-		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
 	)
 	testc(t, "(+ 1 (+ 2 3))",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
 		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
 	)
 	testc(t, "(+ (+ 1 2) 3)",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
-		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpAdd),
 		asm.Instr(vm.OpAdd),
 	)
 	testc(t, "(+ 1 2 3)",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
-		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpAdd),
 	)
 }
@@ -111,35 +149,43 @@ func TestCompileSub(t *testing.T) {
 
 func TestCompileMul(t *testing.T) {
 	testc(t, "(*)",
-		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpMul),
 	)
 	testc(t, "(* 2)",
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpMul),
 	)
 	testc(t, "(* 1 2)",
-		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpMul),
 	)
 	testc(t, "(* 1 (* 2 3))",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
 		asm.Instr(vm.OpMul),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpMul),
 	)
 	testc(t, "(* (* 1 2) 3)",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
-		asm.Instr(vm.OpMul),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpMul),
 		asm.Instr(vm.OpMul),
 	)
 	testc(t, "(* 1 2 3)",
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpConst, 2),
-		asm.Instr(vm.OpMul),
+		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpConst, 1),
 		asm.Instr(vm.OpMul),
 	)
 }

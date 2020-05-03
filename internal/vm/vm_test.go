@@ -37,23 +37,24 @@ func TestPop(t *testing.T) {
 	)
 }
 
-// func TestAdd0(t *testing.T) {
-// 	testToS(t, uint64(1),
-// 		vm.Instr(vm.OpEnd),
-// 		vm.Instr(vm.OpAdd),
-// 	)
-// }
-//
-// func TestAdd1(t *testing.T) {
-// 	testToS(t, uint64(2),
-// 		vm.Instr(vm.OpEnd),
-// 		vm.Instr(vm.OpConst, 1),
-// 		vm.Instr(vm.OpAdd),
-// 	)
-// }
+func TestAdd0(t *testing.T) {
+	testToS(t, int64(0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestAdd1(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpAdd),
+	)
+}
 
 func TestAddII(t *testing.T) {
 	testToS(t, int64(42),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 19),
 		vm.Instr(vm.OpConst, 23),
 		vm.Instr(vm.OpAdd),
@@ -62,6 +63,7 @@ func TestAddII(t *testing.T) {
 
 func TestAddIF(t *testing.T) {
 	testToS(t, 4.1,
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
 		vm.Instr(vm.OpAdd),
@@ -70,6 +72,7 @@ func TestAddIF(t *testing.T) {
 
 func TestAddFI(t *testing.T) {
 	testToS(t, 4.1,
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
 		vm.Instr(vm.OpConst, 1),
 		vm.Instr(vm.OpAdd),
@@ -78,6 +81,7 @@ func TestAddFI(t *testing.T) {
 
 func TestAddFF(t *testing.T) {
 	testToS(t, 6.2,
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
 		vm.Instr(vm.OpConstF, math.Float64bits(3.1)),
 		vm.Instr(vm.OpAdd),
@@ -92,8 +96,24 @@ func TestSub2(t *testing.T) {
 	)
 }
 
-func TestMul2(t *testing.T) {
+func TestMul0(t *testing.T) {
+	testToS(t, int64(1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpMul),
+	)
+}
+
+func TestMul1(t *testing.T) {
+	testToS(t, int64(2),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpMul),
+	)
+}
+
+func TestMulII(t *testing.T) {
 	testToS(t, int64(42),
+		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 21),
 		vm.Instr(vm.OpConst, 2),
 		vm.Instr(vm.OpMul),
@@ -1248,6 +1268,32 @@ func TestRunStringConst(t *testing.T) {
 	testToS(t, "Hello, World!",
 		vm.Str("Hello, World!"),
 		vm.Instr(vm.OpHalt),
+	)
+}
+
+func TestRunStringJoin(t *testing.T) {
+	testToS(t, "Hello, World!",
+		vm.Instr(vm.OpEnd),
+		vm.Str("World!"),
+		vm.Str("Hello, "),
+		vm.Instr(vm.OpJoin),
+	)
+}
+
+func TestRunStringExplode(t *testing.T) {
+	testToS(t, []string{"x", "y", "z"},
+		vm.Str("xyz"),
+		vm.Instr(vm.OpExplode),
+	)
+}
+
+func TestRunStringExplodeAndJoin(t *testing.T) {
+	testToS(t, "xyz",
+		vm.Instr(vm.OpEnd),
+		vm.Str("xyz"),
+		vm.Instr(vm.OpExplode),
+		vm.Instr(vm.OpDissolve),
+		vm.Instr(vm.OpJoin),
 	)
 }
 

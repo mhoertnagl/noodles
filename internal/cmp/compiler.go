@@ -9,12 +9,7 @@ import (
 	"github.com/mhoertnagl/splis2/internal/vm"
 )
 
-// TODO: Variadic +, *
-
 // TODO: prelude docs and unit tests.
-
-// TODO: join (strings) -- concatenates strings
-// TODO: explode (strings) -- String to list of single character strings
 
 // TODO: Push everything in reverse order
 // TODO: Explicit GT and GE
@@ -35,6 +30,8 @@ import (
 
 // TODO: Feed global names to disassembler and any place where they make sense.
 
+// TODO: dissolve in various special forms like cond, if, let, def and, or will not work and should be disallowed.
+
 type Compiler struct {
 	specs    specDefs
 	prims    primDefs
@@ -54,9 +51,7 @@ func NewCompiler() *Compiler {
 
 	c.specs = specDefs{}
 	c.specs.add("debug", c.compileDebug)
-	c.specs.add("+", c.compileAdd)
 	c.specs.add("-", c.compileSub)
-	c.specs.add("*", c.compileMul)
 	c.specs.add("/", c.compileDiv)
 	c.specs.add("let", c.compileLet)
 	c.specs.add("def", c.compileDef)
@@ -84,10 +79,14 @@ func NewCompiler() *Compiler {
 	c.prims.add(":+", vm.OpAppend, 2, false)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
 	c.prims.add("halt", vm.OpHalt, 0, false)
+	c.prims.add("explode", vm.OpExplode, 1, false)
 
 	c.varPrims = varPrimDefs{}
+	c.varPrims.add("+", vm.OpAdd, 0)
+	c.varPrims.add("*", vm.OpMul, 0)
 	c.varPrims.add("write", vm.OpWrite, 1)
 	c.varPrims.add("::", vm.OpConcat, 0)
+	c.varPrims.add("join", vm.OpJoin, 0)
 
 	return c
 }
@@ -125,6 +124,8 @@ func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 	}
 }
 
+// compileSymbol compiles a symbol. The symbol can refer to a local variable or
+// a global definition.
 func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
 	// The symbol is locally bound. Load the bound value from the FRAMES stack.
 	if idx, ok := sym.IndexOf(n.Name); ok {
@@ -141,6 +142,9 @@ func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
 	panic(fmt.Sprintf("unknown symbol [%s]", n.Name))
 }
 
+// compileVector compiles a vector. If it is empty it will compile to a single
+// EmptyVector instruction. If there are elements they will be compiled in
+// reverse order and bracketed in End and List instructions.
 func (c *Compiler) compileVector(n []Node, sym *SymTable, ctx *Ctx) {
 	switch len(n) {
 	case 0:
@@ -152,9 +156,16 @@ func (c *Compiler) compileVector(n []Node, sym *SymTable, ctx *Ctx) {
 	}
 }
 
+// compileList compiles a function invocation. An empty list will compile to an
+// EmptyVector instruction. If there is at leas a single element in the list
+// and the first element of the list is a symbol, it will be matched with the
+// available special forms and primitive functions. The corresponding functions
+// will be compiled if there is a match. Else a function call will be compiled.
+//   If the first element is itself a list we compile ths list beforehand. The
+// result of that list call is expected to yield a function reference.
 func (c *Compiler) compileList(n *ListNode, sym *SymTable, ctx *Ctx) {
 	if n.Empty() {
-		panic("empty list")
+		c.instr(vm.OpEmptyVector)
 	}
 	switch x := n.First().(type) {
 	case *SymbolNode:
@@ -188,6 +199,7 @@ func (c *Compiler) compileList(n *ListNode, sym *SymTable, ctx *Ctx) {
 	}
 }
 
+// compilePrim compiles primitive functions with an exact number of arguments.
 func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != prim.nargs {
 		panic(fmt.Sprintf("[%s] requires exactly [%d] arguments", prim.name, prim.nargs))
@@ -200,6 +212,8 @@ func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ct
 	c.instr(prim.op)
 }
 
+// compileVarPrim compiles primitive functions with a variable number of
+// arguments. Optionally ther can be a lower limit on the number of arguments.
 func (c *Compiler) compileVarPrim(prim varPrimDef, args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) < prim.argsMin {
 		panic(fmt.Sprintf("[%s] requires at least [%d] arguments", prim.name, prim.argsMin))
@@ -212,30 +226,6 @@ func (c *Compiler) compileVarPrim(prim varPrimDef, args []Node, sym *SymTable, c
 
 func (c *Compiler) compileDebug(args []Node, sym *SymTable, ctx *Ctx) {
 	c.instr(vm.OpDebug, uint64(args[0].(int64)))
-}
-
-func (c *Compiler) compileAdd(args []Node, sym *SymTable, ctx *Ctx) {
-	switch len(args) {
-	case 0:
-		// Empty sum (+) yields 0.
-		c.instr(vm.OpConst, 0)
-	case 1:
-		// Singleton sum (+ x) yields x.
-		c.compile(args[0], sym, ctx)
-	default:
-		// Will compile this expression to a sequence of compiled subexpressions and
-		// addition operations except for the first pair. The resulting sequence of
-		// instructions is then:
-		//
-		//   <(+ x1 x2 x3 x4 ...)> :=
-		//     <x1>, <x2>, Add, <x3>, Add, <x4>, Add, ...
-		//
-		c.compile(args[0], sym, ctx)
-		for _, arg := range args[1:] {
-			c.compile(arg, sym, ctx)
-			c.instr(vm.OpAdd)
-		}
-	}
 }
 
 func (c *Compiler) compileSub(args []Node, sym *SymTable, ctx *Ctx) {
@@ -251,37 +241,16 @@ func (c *Compiler) compileSub(args []Node, sym *SymTable, ctx *Ctx) {
 	case 2:
 		// Only supports at most two operands and computes their difference.
 		//
-		//   <(- x1 x2)> := <x1>, <x2>, Sub
+		//   <(- x1 x2)> :=
+		//        <x1>
+		//        <x2>
+		//        Sub
 		//
 		c.compile(args[0], sym, ctx)
 		c.compile(args[1], sym, ctx)
 		c.instr(vm.OpSub)
 	default:
 		panic("[-] Too many arguments")
-	}
-}
-
-func (c *Compiler) compileMul(args []Node, sym *SymTable, ctx *Ctx) {
-	switch len(args) {
-	case 0:
-		// Empty product (*) yields 1.
-		c.instr(vm.OpConst, 1)
-	case 1:
-		// Singleton product (* x) yields x.
-		c.compile(args[0], sym, ctx)
-	default:
-		// Will compile this expression to a sequence of compiled subexpressions and
-		// multiplication operations except for the first pair. The resulting
-		// sequence of instructions is then:
-		//
-		//   <(* x1 x2 x3 x4 ...)> :=
-		//     <x1>, <x2>, Mul, <x3>, Mul, <x4>, Mul, ...
-		//
-		c.compile(args[0], sym, ctx)
-		for _, arg := range args[1:] {
-			c.compile(arg, sym, ctx)
-			c.instr(vm.OpMul)
-		}
 	}
 }
 
@@ -298,7 +267,10 @@ func (c *Compiler) compileDiv(args []Node, sym *SymTable, ctx *Ctx) {
 	case 2:
 		// Only supports at most two operands and computes their quotient.
 		//
-		//   <(/ x1 x2)> := <x1>, <x2>, Div
+		//   <(/ x1 x2)> :=
+		//        <x1>
+		//        <x2>
+		//        Div
 		//
 		c.compile(args[0], sym, ctx)
 		c.compile(args[1], sym, ctx)
@@ -472,8 +444,10 @@ func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 	}
 }
 
+// compileCond compiles a condition expression. It is expected to have an even
+// number of alternating condition and code block arguments.
 //
-//   <(cond cond1 block1 cond2 block2 ...)> :=
+//   <(cond cond1 block1 cond2 block2 ... condN blockN)> :=
 //       <cond1>
 //       JumpIfNot L0
 //       <block1>
@@ -677,6 +651,9 @@ func (c *Compiler) verifyParam(param Node, pos int) string {
 	}
 }
 
+// compileRec compiles a manual recursive call. In fact it will only set the
+// Recursive flag to true. Subsequent compilations of call and list call will
+// consider the set flag and compile a recursive call instead of a regular one.
 func (c *Compiler) compileRec(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 1 {
 		panic("[rec] expects exactly 1 argument")
@@ -696,19 +673,24 @@ func (c *Compiler) compileCall(s *SymbolNode, args []Node, sym *SymTable, ctx *C
 	// The calling function can be implemented either as a global definintion
 	// or passed as a local argument from a let binding.
 	c.compileSymbol(s, sym, ctx)
+	c.compileCallByCtx(ctx)
+}
 
+func (c *Compiler) compileListCall(lst *ListNode, args []Node, sym *SymTable, ctx *Ctx) {
+	c.instr(vm.OpEnd)
+	c.compileNodesReverse(args, sym, ctx.NewRecCtx(false))
+	c.compileList(lst, sym, ctx)
+	c.compileCallByCtx(ctx)
+}
+
+// compileCallByCtx compiles either a Call or a RecCall depending on the
+// Recursive flag in the context object.
+func (c *Compiler) compileCallByCtx(ctx *Ctx) {
 	if ctx.Recurse {
 		c.instr(vm.OpRecCall)
 	} else {
 		c.instr(vm.OpCall)
 	}
-}
-
-func (c *Compiler) compileListCall(lst *ListNode, args []Node, sym *SymTable, ctx *Ctx) {
-	c.instr(vm.OpEnd)
-	c.compileNodesReverse(args, sym, ctx)
-	c.compileList(lst, sym, ctx)
-	c.instr(vm.OpCall)
 }
 
 func (c *Compiler) compileNodes(nodes []Node, sym *SymTable, ctx *Ctx) {

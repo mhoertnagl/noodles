@@ -504,15 +504,15 @@
   ;; @return num       The product of all values in `xs`.
   (defn prod [xs] (* @xs))
 
-  ; (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
-  ;
-  ; (defn minimum [& xs] (minimumv xs))
-  ;
-  ; (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
-  ;
-  ; (defn maximum [& xs] (maximumv xs))
-  ;
-  ; (defn averagev [xs] (/ (+ @xs) (len xs)))
-  ;
-  ; (defn average [& xs] (averagev xs))
+  (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
+
+  (defn minimum [& xs] (minimumv xs))
+
+  (defn maximumv [xs] (fold (fn [a b] (if (> a b) a b)) xs))
+
+  (defn maximum [& xs] (maximumv xs))
+
+  (defn averagev [xs] (/ (+ @xs) (len xs)))
+
+  (defn average [& xs] (averagev xs))
 )

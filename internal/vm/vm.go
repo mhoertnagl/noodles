@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 )
 
 // This is a special marker that marks the end of a sequence on the stack.
@@ -64,30 +65,22 @@ func (m *VM) Run(code Ins) {
 			m.pop()
 			// fmt.Printf("Pop\n")
 		case OpAdd:
-			// r := m.popInt64()
-			// l := m.popInt64()
-			// m.push(l + r)
-			r := m.pop()
-			l := m.pop()
-			m.push(m.add(l, r))
+			var s Val = int64(0)
+			for v := m.pop(); v != end; v = m.pop() {
+				s = m.add(s, v)
+			}
+			m.push(s)
 		case OpSub:
-			// r := m.popInt64()
-			// l := m.popInt64()
-			// m.push(l - r)
 			r := m.pop()
 			l := m.pop()
 			m.push(m.sub(l, r))
 		case OpMul:
-			// r := m.popInt64()
-			// l := m.popInt64()
-			// m.push(l * r)
-			r := m.pop()
-			l := m.pop()
-			m.push(m.mul(l, r))
+			var s Val = int64(1)
+			for v := m.pop(); v != end; v = m.pop() {
+				s = m.mul(s, v)
+			}
+			m.push(s)
 		case OpDiv:
-			// r := m.popInt64()
-			// l := m.popInt64()
-			// m.push(l / r)
 			r := m.pop()
 			l := m.pop()
 			m.push(m.div(l, r))
@@ -134,7 +127,6 @@ func (m *VM) Run(code Ins) {
 			if len(l) == 0 {
 				// TODO: push fresh empty vector?
 				m.push(l)
-				// m.push(make([]Val, 0))
 			} else {
 				m.push(l[n:])
 			}
@@ -146,6 +138,24 @@ func (m *VM) Run(code Ins) {
 			for i := len(l) - 1; i >= 0; i-- {
 				m.push(l[i])
 			}
+		case OpJoin:
+			// str := ""
+			var sb strings.Builder
+			for v := m.pop(); v != end; v = m.pop() {
+				if s, ok := v.(string); ok {
+					sb.WriteString(s)
+					// str = s + str
+				}
+			}
+			// m.push(str)
+			m.push(sb.String())
+		case OpExplode:
+			s := m.popStr()
+			l := make([]Val, 0)
+			for _, c := range s {
+				l = append(l, string(c))
+			}
+			m.push(l)
 		// case OpAnd:
 		// 	a := ^int64(0)
 		// 	for v := m.pop(); v != end; v = m.pop() {
@@ -177,7 +187,6 @@ func (m *VM) Run(code Ins) {
 			l := m.pop()
 			m.push(m.eq(l, r))
 		case OpNE:
-			// TODO: Can be replaced with these two instructions OpEQ, OpNot
 			r := m.pop()
 			l := m.pop()
 			m.push(!m.eq(l, r))
@@ -321,6 +330,10 @@ func (m *VM) popUInt64() uint64 {
 	return m.pop().(uint64)
 }
 
+func (m *VM) popStr() string {
+	return m.pop().(string)
+}
+
 func (m *VM) popVector() []Val {
 	return m.pop().([]Val)
 }
@@ -368,7 +381,7 @@ func (m *VM) readInt64() int64 {
 func (m *VM) readFloat64() float64 {
 	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
 	m.ip += 8
-	return math.Float64frombits(v) //float64(v)
+	return math.Float64frombits(v)
 }
 
 func (m *VM) readString(l int64) string {
@@ -520,13 +533,3 @@ func (m *VM) le(l Val, r Val) bool {
 func prepend(v Val, l []Val) []Val {
 	return append([]Val{v}, l...)
 }
-
-// func join(e Evaluator, env data.Env, args []data.Node) data.Node {
-// 	var sb strings.Builder
-// 	for _, arg := range args {
-// 		if s, ok := arg.(string); ok {
-// 			sb.WriteString(s)
-// 		}
-// 	}
-// 	return sb.String()
-// }

@@ -45,6 +45,9 @@ const (
 	// OpSrl
 	// OpSra
 
+	OpJoin
+	OpExplode
+
 	OpNot
 	OpEQ
 	OpNE
@@ -118,6 +121,10 @@ var meta = map[Op]*OpMeta{
 	OpDrop:     {"Drop", []int{}},
 	OpLength:   {"Tail", []int{}},
 	OpDissolve: {"Dissolve", []int{}},
+
+	OpJoin:    {"Join", []int{}},
+	OpExplode: {"Explode", []int{}},
+
 	// OpAnd:         {"And", []int{}},
 	// OpOr:          {"Or", []int{}},
 	// OpInv:         {"Inv", []int{}},
