@@ -490,19 +490,19 @@
 
   ;; (defn flatten [xs])
 
-  ; ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
-  ; ;; empty list.
-  ; ;;
-  ; ;; @param  (num) xs  A list of numbers.
-  ; ;; @return num       The sum of all values in `xs`.
-  ; ; (defn sum [xs] (+ @xs))
+  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
+  ;; empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The sum of all values in `xs`.
+  (defn sum [xs] (+ @xs))
 
-  ; ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
-  ; ;; the empty list.
-  ; ;;
-  ; ;; @param  (num) xs  A list of numbers.
-  ; ;; @return num       The product of all values in `xs`.
-  ; ; (defn prod [xs] (* @xs))
+  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
+  ;; the empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The product of all values in `xs`.
+  (defn prod [xs] (* @xs))
 
   ; (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
   ;
