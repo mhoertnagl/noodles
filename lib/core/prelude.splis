@@ -45,10 +45,11 @@
   ;; @param any exp   The expected value.
   ;; @param any act   The actual value.
   (defmacro test [name exp act]
-    (if (!= act exp) (do
-      (println "FAILED: " name)
-      (println "  Expected: " exp)
-      (println "  Actual:   " act) )))
+    (if (!= act exp)
+      (do (println name " ... FAIL")
+          (println "  Actual:   " act)
+          (println "  Expected: " exp))
+      (println name " ... OK") ))
 
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
@@ -106,20 +107,34 @@
   (defn dec [n] (- n 1))
 
   ;; TODO: primitives passable as arguments.
-  ; (defn .+ [& args] (+ @args))
-  ; (defn .- [l r] (- l r))
-  ; (defn .* [& args] (* @args))
-  ; (defn ./ [l r] (/ l r))
-  ; (defn .< [a b] (< a b))
-  ; (defn .> [a b] (> a b))
-  ; (defn .<= [a b] (<= a b))
-  ; (defn .>= [a b] (>= a b))
-  ; (defn .= [a b] (= a b))
-  ; (defn .!= [a b] (!= a b))
+  (defn .+ [& args] (+ @args))
+  (defn .- [l r] (- l r))
+  (defn .* [& args] (* @args))
+  (defn ./ [l r] (/ l r))
+  (defn .< [a b] (< a b))
+  (defn .> [a b] (> a b))
+  (defn .<= [a b] (<= a b))
+  (defn .>= [a b] (>= a b))
+  (defn .= [a b] (= a b))
+  (defn .!= [a b] (!= a b))
 
-  ; (defn .:+ [l v] (:+ l v))
-  ; (defn .+: [v l] (+: v l))
-  ; (defn .:: [a b] (:: a b))
+  (defn .:+ [l v] (:+ l v))
+  (defn .+: [v l] (+: v l))
+  (defn .:: [a b] (:: a b))
+
+  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
+  ;; empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The sum of all values in `xs`.
+  (defn sum [xs] (+ @xs))
+
+  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
+  ;; the empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The product of all values in `xs`.
+  (defn prod [xs] (* @xs))
 
   ;; `pos?` returns `true` if the value `n` is greater than `0`; `false`
   ;; otherwise.
@@ -218,22 +233,22 @@
 
   ;; `range` returns the list of numbers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
-  ;; `step` denotes the increment added to `start` until it is greater or equal
-  ;; to `end`.
+  ;; `succ` denotes the successor function repeatedly applied to `start` until
+  ;; it is greater or equal to `end`.
   ;;
-  ;; ```(reduce (fn [x b] (+ x b)) 0 [1 2 3 4 5])```
-  ;; >> 15
+  ;; ```(range '(+ ~x 2) 0 5)```
+  ;; >> [0 2 4]
   ;;
-  ;; @param  num start  The start number (included).
-  ;; @param  num end    The end number (excluded).
-  ;; @param  num step   The increment step size.
-  ;; @return [num]      The sequence of numbers from `a` up to `b`.
-  (defn _range [start end step acc]
+  ;; @param  fn(num)num succ   The successor function.
+  ;; @param  num        start  The start number (included).
+  ;; @param  num        end    The end number (excluded).
+  ;; @return [num]             The sequence of numbers from `a` up to `b`.
+  (defn _range [succ start end acc]
     (if (> start end)
       acc
-      (rec (_range (+ start 1) end step (:+ acc start))) ))
+      (rec (_range succ (succ start) end (:+ acc start))) ))
 
-  (defn range [start end step] (_range start (- end 1) step []))
+  (defn range [succ start end] (_range succ start (- end 1) []))
 
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
@@ -242,7 +257,7 @@
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).
   ;; @return [num]      The sequence of integers from `a` up to `b`.
-  (defn irange [start end] (range start end 1))
+  (defn irange [start end] (range inc start end))
 
   ;; `repeat` returns a list that contains the element `v` exactly `n` times.
   ;;
@@ -303,15 +318,7 @@
   ;; @param  fun(T)S f   A unary function.
   ;; @param  [T]     xs  A list of elements.
   ;; @return [S]         The list of elements applied to `f` individually.
-  (defn _map [f xs acc]
-    (if (empty? xs)
-      acc
-      (rec (_map f (rst xs) (:+ acc (f (fst xs))) )) ))
-
-  (defn map [f xs] (_map f xs []))
-
-  ;; TODO: Reduce version.
-  ; (defn map [f xs] (reduce (fn [v b] (:+ b (f v))) [] xs))
+  (defn map [f xs] (reduce (fn [v b] (:+ b (f v))) [] xs))
 
   ;; `flat-map` applies to unary function `f` to each element of the list `xs`
   ;; and flattens the list of lists as `f` is required to return a list.
@@ -323,14 +330,7 @@
   ;; @param  [T]       xs  A list of elements.
   ;; @return [S]           The list of elements applied to `f` and then
   ;;                       flattened into a single list.
-  ;; TODO: Reduce version.
-  ; (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
-  (defn _flat-map [f xs acc]
-    (if (empty? xs)
-      acc
-      (rec (_flat-map f (rst xs) (:: acc (f (fst xs))) )) ))
-
-  (defn flat-map [f xs] (_flat-map f xs []))
+  (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
 
   ;; `filter` retains all elements from `xs` for which the predicate `p`
   ;; returns `true`. Preserves the order of the elements.
@@ -341,12 +341,7 @@
   ;; @param  fun(T)bool p   A unary test predicate.
   ;; @param  [T]        xs  A list of elements.
   ;; @return [T]            The elements in `xs` that fulfill predicate `p`.
-  (defn _filter [p xs acc]
-    (cond (empty? xs)  acc
-          (p (fst xs)) (rec (_filter p (rst xs) (:+ acc (fst xs))))
-          else         (rec (_filter p (rst xs) acc)) ))
-
-  (defn filter [p xs] (_filter p xs []))
+  (defn filter [p xs] (reduce (fn [v b] (if (p v) (:+ b v) b)) [] xs))
 
   ;; `remove` discards all elements that fulfill predicate `p` from list `xs`.
   ;;
@@ -356,15 +351,7 @@
   ;; @param  fun(T)bool p   A unary test predicate.
   ;; @param  [T]        xs  A list of elements.
   ;; @return [T]            The elements in `xs` that do not fulfill `p`.
-  ; TODO: Should work now.
-  ; (defn remove [p xs] (filter '(not (p ~x)) xs))
-  ; (defn remove [p xs] (filter (fn [x] (not (p x))) xs))
-  (defn _remove [p xs acc]
-    (cond (empty? xs)  acc
-          (p (fst xs)) (rec (_remove p (rst xs) acc))
-          else         (rec (_remove p (rst xs) (:+ acc (fst xs)))) ))
-
-  (defn remove [p xs] (_remove p xs []))
+  (defn remove [p xs] (filter '(not (p ~x)) xs))
 
   ;; `all` returns `true` if all elements in list `xs` fulfill predicate `p`.
   ;;
@@ -375,9 +362,9 @@
   ;; @param  [T]        xs  A list of elements.
   ;; @return bool           `true` if all elements in `xs` fulfill `p`.
   (defn all [p xs]
-    (cond (empty? xs)        true
-          (not (p (fst xs))) false
-          else               (rec (all p (rst xs))) ))
+    (cond (empty? xs)  true
+          (p (fst xs)) (rec (all p (rst xs)))
+          else         false ))
 
   ;; `any` returns `true` if at least one element in list `xs` fulfills
   ;; predicate `p`.
@@ -400,15 +387,7 @@
   ;;
   ;; @param  [T] xs  A list of elements.
   ;; @return [T]     The list `xs` in reverse order.
-  ;; TODO: With reduce.
-  ; (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
-
-  (defn _reverse [xs acc]
-    (if (empty? xs)
-      acc
-      (rec (_reverse (rst xs) (+: (fst xs) acc) )) ))
-
-  (defn reverse [xs] (_reverse xs []))
+  (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
 
   ;; `take` returns the first `n` elements of `xs` in a new list.
   ;;
@@ -489,20 +468,6 @@
   (defn zip [xs ys] (zip-with vec xs ys))
 
   ;; (defn flatten [xs])
-
-  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
-  ;; empty list.
-  ;;
-  ;; @param  (num) xs  A list of numbers.
-  ;; @return num       The sum of all values in `xs`.
-  (defn sum [xs] (+ @xs))
-
-  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
-  ;; the empty list.
-  ;;
-  ;; @param  (num) xs  A list of numbers.
-  ;; @return num       The product of all values in `xs`.
-  (defn prod [xs] (* @xs))
 
   (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
 

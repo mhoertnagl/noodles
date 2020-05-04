@@ -398,6 +398,8 @@ func (m *VM) add(l Val, r Val) Val {
 			return ll + rr
 		case float64:
 			return float64(ll) + rr
+		default:
+			panic(fmt.Sprintf("Cannot add %v", rr))
 		}
 	case float64:
 		switch rr := r.(type) {
@@ -405,9 +407,12 @@ func (m *VM) add(l Val, r Val) Val {
 			return ll + float64(rr)
 		case float64:
 			return ll + rr
+		default:
+			panic(fmt.Sprintf("Cannot add %v", rr))
 		}
+	default:
+		panic(fmt.Sprintf("Cannot add %v", ll))
 	}
-	panic("cannot add non-number")
 }
 
 func (m *VM) sub(l Val, r Val) Val {
@@ -418,6 +423,8 @@ func (m *VM) sub(l Val, r Val) Val {
 			return ll - rr
 		case float64:
 			return float64(ll) - rr
+		default:
+			panic(fmt.Sprintf("Cannot subtract %v", rr))
 		}
 	case float64:
 		switch rr := r.(type) {
@@ -425,9 +432,12 @@ func (m *VM) sub(l Val, r Val) Val {
 			return ll - float64(rr)
 		case float64:
 			return ll - rr
+		default:
+			panic(fmt.Sprintf("Cannot subtract %v", rr))
 		}
+	default:
+		panic(fmt.Sprintf("Cannot subtract %v", ll))
 	}
-	panic("cannot subtract non-number")
 }
 
 func (m *VM) mul(l Val, r Val) Val {
@@ -438,6 +448,8 @@ func (m *VM) mul(l Val, r Val) Val {
 			return ll * rr
 		case float64:
 			return float64(ll) * rr
+		default:
+			panic(fmt.Sprintf("Cannot multiply %v", rr))
 		}
 	case float64:
 		switch rr := r.(type) {
@@ -445,9 +457,12 @@ func (m *VM) mul(l Val, r Val) Val {
 			return ll * float64(rr)
 		case float64:
 			return ll * rr
+		default:
+			panic(fmt.Sprintf("Cannot multiply %v", rr))
 		}
+	default:
+		panic(fmt.Sprintf("Cannot multiply %v", ll))
 	}
-	panic("cannot multiply non-number")
 }
 
 func (m *VM) div(l Val, r Val) Val {
@@ -458,6 +473,8 @@ func (m *VM) div(l Val, r Val) Val {
 			return float64(ll) / float64(rr)
 		case float64:
 			return float64(ll) / rr
+		default:
+			panic(fmt.Sprintf("Cannot divide %v", rr))
 		}
 	case float64:
 		switch rr := r.(type) {
@@ -465,9 +482,12 @@ func (m *VM) div(l Val, r Val) Val {
 			return ll / float64(rr)
 		case float64:
 			return ll / rr
+		default:
+			panic(fmt.Sprintf("Cannot divide %v", rr))
 		}
+	default:
+		panic(fmt.Sprintf("Cannot divide %v", ll))
 	}
-	panic("cannot divide non-number")
 }
 
 func (m *VM) eq(l Val, r Val) bool {
@@ -480,6 +500,15 @@ func (m *VM) eq(l Val, r Val) bool {
 	case int64:
 		switch rr := r.(type) {
 		case int64:
+			return ll == rr
+		case float64:
+			return float64(ll) == rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll == float64(rr)
+		case float64:
 			return ll == rr
 		}
 	case string:
@@ -514,9 +543,23 @@ func (m *VM) lt(l Val, r Val) bool {
 		switch rr := r.(type) {
 		case int64:
 			return ll < rr
+		case float64:
+			return float64(ll) < rr
+		default:
+			panic(fmt.Sprintf("Cannot < %v", rr))
 		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll < float64(rr)
+		case float64:
+			return ll < rr
+		default:
+			panic(fmt.Sprintf("Cannot < %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot < %v", ll))
 	}
-	return false
 }
 
 func (m *VM) le(l Val, r Val) bool {
@@ -525,9 +568,23 @@ func (m *VM) le(l Val, r Val) bool {
 		switch rr := r.(type) {
 		case int64:
 			return ll <= rr
+		case float64:
+			return float64(ll) <= rr
+		default:
+			panic(fmt.Sprintf("Cannot <= %v", rr))
 		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll <= float64(rr)
+		case float64:
+			return ll <= rr
+		default:
+			panic(fmt.Sprintf("Cannot <= %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot <= %v", ll))
 	}
-	return false
 }
 
 func prepend(v Val, l []Val) []Val {

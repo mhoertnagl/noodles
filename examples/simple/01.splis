@@ -8,9 +8,6 @@
 
   (println (let (a [1 2 3] b 4) (:+ a b)))
 
-  (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
-    (println (b 1) ))
-
   ; (defn repeat2 [n v]
   ;   (let (_repeat2 (fn [n v acc] (if (<= n 0) acc (_repeat2 (- n 1) v (:+ acc v)) )))
   ;   (_repeat2 n v []) ))
@@ -22,5 +19,6 @@
   ; (println (repeat2 3 0))
 
   (println (map (fn [x] (irange 0 x)) [1 2 3]))
+  
   (println (flat-map (fn [x] (irange 0 x)) [1 2 3]))
 )

@@ -7,10 +7,10 @@ CORE=$(LIB)/core
 all: build run
 
 build:
-	$(SPLIC) 01.splis
+	$(SPLIC) ch01.splis
 
 run:
-	$(SPLIS) 01.nob
+	$(SPLIS) ch01.nob
 
 .PHONY: clean
 
