@@ -582,6 +582,41 @@ func TestRunNE3(t *testing.T) {
 // 	)
 // }
 
+// --- SET ---
+
+func TestRunSet1(t *testing.T) {
+	testToS(t, int64(4),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpAdd),
+	)
+}
+
+func TestRunSet2(t *testing.T) {
+	testToS(t, int64(5),
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpJump, 58),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpRef, 1, 27),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+	)
+}
+
 // --- LET ---
 
 func TestRunLet1(t *testing.T) {
@@ -1243,6 +1278,60 @@ func TestRunTailFac(t *testing.T) {
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 5),
 		vm.Instr(vm.OpGetGlobal, 1),
+		vm.Instr(vm.OpCall),
+	)
+}
+
+func TestRunClosure1(t *testing.T) {
+	testToS(t, int64(6),
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpJump, 48),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpRef, 1, 28),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 0, 9),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpCall),
+	)
+}
+
+func TestRunClosure2(t *testing.T) {
+	testToS(t, int64(7),
+		vm.Instr(vm.OpJump, 115),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpJump, 87),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpRef, 1, 56),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 0, 9),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 	)
 }

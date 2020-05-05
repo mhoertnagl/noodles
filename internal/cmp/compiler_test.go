@@ -283,6 +283,52 @@ func TestCompileNE(t *testing.T) {
 	)
 }
 
+// --- SET ---
+
+func TestCompileSet1(t *testing.T) {
+	testc(t, `(do
+      (set x 2)
+      (+ x x)
+    )`,
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpAdd),
+	)
+}
+
+func TestCompileSet2(t *testing.T) {
+	testc(t, `(do
+      (set x 2)
+      (def f (fn [y] (+ x y)))
+      (f 3)
+    )`,
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Ref(1, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+	)
+}
+
+// --- LET ---
+
 func TestCompileLet1(t *testing.T) {
 	testc(t, "(let (a (+ 1 1)) (+ a a))",
 		asm.Instr(vm.OpEnd),
@@ -1062,7 +1108,124 @@ func TestCompileTailFac(t *testing.T) {
 	)
 }
 
+func TestCompileClosure1(t *testing.T) {
+	testc(t, `
+    (do
+      (def ggg (fn [n] (fn [] n)) )
+      ((ggg 6))
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Ref(1, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Ref(0, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	)
+}
+
+func TestCompileClosure2(t *testing.T) {
+	testc(t, `
+    (do
+      (def m2
+        (fn [n]
+          (do (set min 1)
+              ((fn [x] (+ x min)) n) )))
+      (m2 6)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Ref(1, "L3"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Ref(0, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+	)
+}
+
+func TestCompileClosure3(t *testing.T) {
+	fmt.Println("\n\n=== Closure 3")
+	testc(t, `
+    (do
+      (def setclosure1 (fn [a b c]
+        (do (set lst [a b c])
+            (set min (nth 0 lst))
+            (set f (fn [x] (= x min) ))
+            (f (nth 0 lst)))))
+      (setclosure1 1 2 3)
+    )`,
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Ref(1, "L3"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Ref(0, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+	)
+}
+
 func TestCompileClosure(t *testing.T) {
+	fmt.Println("--- Closure")
 	testc(t, `
     (do
       (def divN (fn [n]

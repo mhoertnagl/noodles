@@ -9,10 +9,6 @@
   (test ".+ 1" 1 (.+ 1))
   (test ".+ 1 2 3 4 5" 15 (.+ 1 2 3 4 5))
 
-  (test "sum [1 2 3 4 5]" 15 (sum [1 2 3 4 5]))
-
-  (test "prod [1 2 3 4 5]" 120 (prod [1 2 3 4 5]))
-
   (test "even? 0" true (even? 0))
   (test "even? 1" false (even? 1))
 
@@ -39,6 +35,10 @@
   (test "take 3 [1 2 3 4 5]" [1 2 3] (take 3 [1 2 3 4 5]))
 
   (test "zip [1 2 3] [9 8 7]" [[1 9] [2 8] [3 7]] (zip [1 2 3] [9 8 7]))
+
+  (test "sum [1 2 3 4 5]" 15 (sum [1 2 3 4 5]))
+
+  (test "prod [1 2 3 4 5]" 120 (prod [1 2 3 4 5]))
 
   (test "minimum 1 2 3 4 5" 1 (minimum 1 2 3 4 5))
 

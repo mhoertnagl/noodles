@@ -106,35 +106,32 @@
   ;; @return num    `n - 1`.
   (defn dec [n] (- n 1))
 
-  ;; TODO: primitives passable as arguments.
-  (defn .+ [& args] (+ @args))
-  (defn .- [l r] (- l r))
-  (defn .* [& args] (* @args))
-  (defn ./ [l r] (/ l r))
-  (defn .< [a b] (< a b))
-  (defn .> [a b] (> a b))
-  (defn .<= [a b] (<= a b))
-  (defn .>= [a b] (>= a b))
-  (defn .= [a b] (= a b))
-  (defn .!= [a b] (!= a b))
+  (defn :+ [& args] (+ @args))
+  (defn :- [l r] (- l r))
+  (defn :* [& args] (* @args))
+  (defn :/ [l r] (/ l r))
 
-  (defn .:+ [l v] (:+ l v))
-  (defn .+: [v l] (+: v l))
-  (defn .:: [a b] (:: a b))
+  (defn :mod [a b] (mod a b))
 
-  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
-  ;; empty list.
-  ;;
-  ;; @param  (num) xs  A list of numbers.
-  ;; @return num       The sum of all values in `xs`.
-  (defn sum [xs] (+ @xs))
+  (defn :< [a b] (< a b))
+  (defn :> [a b] (> a b))
+  (defn :<= [a b] (<= a b))
+  (defn :>= [a b] (>= a b))
+  (defn := [a b] (= a b))
+  (defn :!= [a b] (!= a b))
+  (defn :not [a] (not a))
 
-  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
-  ;; the empty list.
-  ;;
-  ;; @param  (num) xs  A list of numbers.
-  ;; @return num       The product of all values in `xs`.
-  (defn prod [xs] (* @xs))
+  (defn ::+ [l v] (:+ l v))
+  (defn :+: [v l] (+: v l))
+  (defn ::: [a b] (:: a b))
+  (defn :nth [n xs] (nth n xs))
+  (defn :drop [n xs] (drop n xs))
+  (defn :len [xs] (len xs))
+  (defn :@ [xs] @xs)
+
+  (defn :explode [s] (explode s))
+  (defn :join [& ss] (join @ss))
+  (defn :joinv [ss] (join @ss))
 
   ;; `pos?` returns `true` if the value `n` is greater than `0`; `false`
   ;; otherwise.
@@ -469,6 +466,20 @@
 
   ;; (defn flatten [xs])
 
+  ;; `sum` computes the sum of all elements of `xs`. Returns `0` if `xs` is the
+  ;; empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The sum of all values in `xs`.
+  (defn sum [xs] (reduce :+ 0 xs))
+
+  ;; `prod` computes the product of all elements of `xs`. Returns `1` if `xs` is
+  ;; the empty list.
+  ;;
+  ;; @param  (num) xs  A list of numbers.
+  ;; @return num       The product of all values in `xs`.
+  (defn prod [xs] (reduce :* 1 xs))
+
   (defn minimumv [xs] (fold (fn [a b] (if (< a b) a b)) xs))
 
   (defn minimum [& xs] (minimumv xs))
@@ -477,7 +488,7 @@
 
   (defn maximum [& xs] (maximumv xs))
 
-  (defn averagev [xs] (/ (+ @xs) (len xs)))
+  (defn averagev [xs] (/ (sum xs) (len xs)))
 
   (defn average [& xs] (averagev xs))
 )

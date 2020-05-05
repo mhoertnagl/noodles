@@ -329,6 +329,52 @@ func TestAssembleVectorConcat(t *testing.T) {
 	testa(t, i, e)
 }
 
+// --- SET ---
+
+func TestAssembleSet2(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpConst, 2),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Ref(1, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 3),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpJump, 58),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpRef, 1, 27),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 3),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+	)
+	testa(t, i, e)
+}
+
 // --- LET ---
 
 func TestAssembleLet5(t *testing.T) {
@@ -899,6 +945,118 @@ func TestAssembleTailFac(t *testing.T) {
 		vm.Instr(vm.OpEnd),
 		vm.Instr(vm.OpConst, 5),
 		vm.Instr(vm.OpGetGlobal, 1),
+		vm.Instr(vm.OpCall),
+	)
+	testa(t, i, e)
+}
+
+func TestAssembleClosure1(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Ref(1, "L3"),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Ref(0, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpCall),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 75),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpJump, 48),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpRef, 1, 28),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 0, 9),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpGetGlobal, 0),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpCall),
+	)
+	testa(t, i, e)
+}
+
+func TestAssembleClosure2(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Labeled(vm.OpJump, "L0"),
+		asm.Label("L1"),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpConst, 1),
+		asm.Instr(vm.OpPushArgs, 1),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Labeled(vm.OpJump, "L2"),
+		asm.Label("L3"),
+		asm.Instr(vm.OpPushArgs, 2),
+		asm.Instr(vm.OpPop),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpGetArg, 0),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Instr(vm.OpAdd),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L2"),
+		asm.Instr(vm.OpGetArg, 1),
+		asm.Ref(1, "L3"),
+		asm.Instr(vm.OpCall),
+		asm.Instr(vm.OpReturn),
+		asm.Label("L0"),
+		asm.Ref(0, "L1"),
+		asm.Instr(vm.OpSetGlobal, 0),
+		asm.Instr(vm.OpEnd),
+		asm.Instr(vm.OpConst, 6),
+		asm.Instr(vm.OpGetGlobal, 0),
+		asm.Instr(vm.OpCall),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpJump, 115),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpConst, 1),
+		vm.Instr(vm.OpPushArgs, 1),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpJump, 87),
+		vm.Instr(vm.OpPushArgs, 2),
+		vm.Instr(vm.OpPop),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpGetArg, 0),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpAdd),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpGetArg, 1),
+		vm.Instr(vm.OpRef, 1, 56),
+		vm.Instr(vm.OpCall),
+		vm.Instr(vm.OpReturn),
+		vm.Instr(vm.OpRef, 0, 9),
+		vm.Instr(vm.OpSetGlobal, 0),
+		vm.Instr(vm.OpEnd),
+		vm.Instr(vm.OpConst, 6),
+		vm.Instr(vm.OpGetGlobal, 0),
 		vm.Instr(vm.OpCall),
 	)
 	testa(t, i, e)

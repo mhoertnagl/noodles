@@ -13,24 +13,26 @@ import (
 
 // TODO: Push everything in reverse order
 // TODO: Explicit GT and GE
-// TODO: Primitives and special forms as arguments
 
 // TODO: Variadic list, ...
-
-// TODO: let binding functions - see TestCompileLet5.
-// TODO: let bindings should have their own symbol table.
-//       Fix Indexof to account for this fact.
-
-// TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
-//       unterschiedliche Größe haben kann.
 
 // TODO: *STDIN*
 // TODO: read
 // TODO: parse?
 
+// TODO: Alternative syntax for :+ +: ? .+ == cons, +. == append, ++ == concat
+
+// TODO: Should we keep let bindings?
+// TODO: let binding functions - see TestCompileLet5.
+// TODO: let bindings should have their own symbol table.
+//       Fix Indexof to account for this fact.
+
 // TODO: Feed global names to disassembler and any place where they make sense.
 
 // TODO: dissolve in various special forms like cond, if, let, def and, or will not work and should be disallowed.
+
+// TODO: FRAMES Debug funzt nicht für beliebige Funktionsaufrufe da jeder FRAME
+//       unterschiedliche Größe haben kann.
 
 type Compiler struct {
 	specs    specDefs
@@ -53,6 +55,7 @@ func NewCompiler() *Compiler {
 	c.specs.add("debug", c.compileDebug)
 	c.specs.add("-", c.compileSub)
 	c.specs.add("/", c.compileDiv)
+	c.specs.add("set", c.compileSet)
 	c.specs.add("let", c.compileLet)
 	c.specs.add("def", c.compileDef)
 	c.specs.add("if", c.compileIf)
@@ -129,6 +132,7 @@ func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
 	// The symbol is locally bound. Load the bound value from the FRAMES stack.
 	if idx, ok := sym.IndexOf(n.Name); ok {
+		// fmt.Printf("GET %s @ %d\n", n.Name, idx)
 		c.instr(vm.OpGetArg, uint64(idx))
 		return
 	}
@@ -337,6 +341,25 @@ func (c *Compiler) compileOr(args []Node, sym *SymTable, ctx *Ctx) {
 	}
 }
 
+func (c *Compiler) compileSet(args []Node, sym *SymTable, ctx *Ctx) {
+	if len(args) != 2 {
+		panic("[set] requires exactly two arguments")
+	}
+	s, ok := args[0].(*SymbolNode)
+	if !ok {
+		panic("[set] requires first argument to be a symbol")
+	}
+
+	// Add the local binding to the symbol table. We do this before we compile
+	// the body. This permits recursive definitions.
+	sym.AddVar(s.Name)
+	// n, _ := sym.IndexOf(s.Name)
+	// fmt.Printf("SET %s @ %d\n", s.Name, n)
+
+	c.compile(args[1], sym, ctx)
+	c.instr(vm.OpPushArgs, 1)
+}
+
 func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
 		panic("[let] requires exactly two arguments")
@@ -502,12 +525,16 @@ func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 }
 
 func (c *Compiler) compileFn2(params []Node, body Node, sym *SymTable, ctx *Ctx) {
-	// FInd all closure parameters.
+	// fmt.Printf("OLD PARAMS %v\n", params)
+	// fmt.Println(sym)
+	// Find all closure parameters.
 	eps := c.listClosureParamsForSub(params, body, sym)
-	// Prepend closure parameters.
+	// Prepend closure paramesters.
 	newParams := []Node{}
 	newParams = append(newParams, eps...)
 	newParams = append(newParams, params...)
+
+	// fmt.Printf("NEW PARAMS %v\n", newParams)
 
 	sub := sym.NewSymTable()
 
@@ -517,15 +544,19 @@ func (c *Compiler) compileFn2(params []Node, body Node, sym *SymTable, ctx *Ctx)
 	// Jump over the function implementation.
 	c.labeled(vm.OpJump, skp)
 	// The function entry point.
+	// fmt.Println("BODY")
 	c.label(fen)
 	// Compile the acutal function code.
 	c.compileFnBody(newParams, body, sub, ctx)
 	// This marks the end of the function.
+	// fmt.Println("BODY END")
 	c.label(skp)
 	// Push the extern arguments on the stack for the closure.
+	// fmt.Println("CLOSURE CALL")
 	for _, ep := range eps {
-		c.compileSymbol(ep.(*SymbolNode), sub, ctx)
+		c.compileSymbol(ep.(*SymbolNode), sym, ctx)
 	}
+	// fmt.Println("CLOSURE CALL END")
 	// Return a closure to the function.
 	c.ref(len(eps), fen)
 }
@@ -562,32 +593,35 @@ func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *C
 }
 
 func (c *Compiler) listClosureParamsForSub(params []Node, node Node, sym *SymTable) []Node {
-	switch len(params) {
-	case 0:
-		return []Node{}
-	default:
-		sub := sym.NewSymTable()
-		man, opt := c.extractParams(params)
-
-		// Add the mandatory arguments to the local symbol table.
-		sub.Add(man)
-		// Check for an optional argument.
-		if opt != "" {
-			// Add the optional argument to the local symbol table.
-			sub.AddVar(opt)
-		}
-
-		return c.listClosureParams(node, sub)
+	sub := sym.NewSymTable()
+	man, opt := c.extractParams(params)
+	// fmt.Printf("PARAMS %v, %s\n", man, opt)
+	// Add the mandatory arguments to the local symbol table.
+	sub.Add(man)
+	// Check for an optional argument.
+	if opt != "" {
+		// Add the optional argument to the local symbol table.
+		sub.AddVar(opt)
 	}
+
+	// fmt.Println(sub)
+
+	return c.listClosureParams(node, sub)
 }
 
 func (c *Compiler) listClosureParams(node Node, sym *SymTable) []Node {
 	switch n := node.(type) {
 	case *SymbolNode:
-		// Check if it is a local symbol that is external to the current scope.
-		if idx, ok := sym.IndexOf(n.Name); ok && idx < 0 {
+		idx, ok := sym.IndexOf(n.Name)
+		// fmt.Printf("POT SYM %s @ %d\n", n.Name, idx)
+		if ok && idx < 0 {
 			return []Node{n}
 		}
+		// Check if it is a local symbol that is external to the current scope.
+		// if idx, ok := sym.IndexOf(n.Name); ok && idx < 0 {
+		// 	fmt.Printf("CLOS SYM %s\n", n.Name)
+		// 	return []Node{n}
+		// }
 	case []Node:
 		return c.listClosureParamsList(n, sym)
 	case *ListNode:

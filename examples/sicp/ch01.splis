@@ -50,6 +50,10 @@
 
   (defn max-2 [a b c]
     (remove (fn [x] (= x (minimum a b c))) [a b c]))
+  ; (defn max-2 [& args]
+  ;   (set min (minimumv args))
+  ;   (set f (fn [x] (= x min)))
+  ;   (remove f args))
   ;; TODO: min is not available in closure - why?
   ; (defn max-2 [a b c]
   ;   (let (min (minimum a b c))

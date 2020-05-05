@@ -1,5 +1,10 @@
 package cmp
 
+import (
+	"fmt"
+	"strings"
+)
+
 type SymEntry struct {
 	idx int
 }
@@ -26,19 +31,19 @@ func (s *SymTable) NewSymTable() *SymTable {
 	}
 }
 
-func (s *SymTable) NewClosureSymTable(eps []*SymbolNode) *SymTable {
-	cs := &SymTable{
-		parent:  s,
-		entries: make(symMap),
-	}
-	// Add all the new closure parameters beginning at index 0.
-	for idx, ps := range eps {
-		cs.entries[ps.Name] = &SymEntry{
-			idx: idx,
-		}
-	}
-	return cs
-}
+// func (s *SymTable) NewClosureSymTable(eps []*SymbolNode) *SymTable {
+// 	cs := &SymTable{
+// 		parent:  s,
+// 		entries: make(symMap),
+// 	}
+// 	// Add all the new closure parameters beginning at index 0.
+// 	for idx, ps := range eps {
+// 		cs.entries[ps.Name] = &SymEntry{
+// 			idx: idx,
+// 		}
+// 	}
+// 	return cs
+// }
 
 // // NewClosureSymTable create a closure symbol table. This table has the same
 // // parent as sym itself. It is NOT a child of sym. The closure table contains
@@ -124,7 +129,27 @@ func (s *SymTable) IndexOf(n string) (int, bool) {
 		}
 		// Subtract the FP and the RP cell as well as the number of arguments
 		// of the current frame.
-		dfp -= 2 + c.Size()
+		if c.parent != nil {
+			dfp -= (2 + c.parent.Size())
+		}
 	}
 	return 0, false
+}
+
+func (s *SymTable) String() string {
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintln("-- SYMBOLS --"))
+	s.BufString(&buf)
+	buf.WriteString(fmt.Sprintln("-- END SYMBOLS --"))
+	return buf.String()
+}
+
+func (s *SymTable) BufString(buf *strings.Builder) {
+	if s.parent != nil {
+		s.parent.BufString(buf)
+		buf.WriteString(fmt.Sprintln("----------"))
+	}
+	for name, entry := range s.entries {
+		buf.WriteString(fmt.Sprintf("SYM %s @ %d\n", name, entry.idx))
+	}
 }
