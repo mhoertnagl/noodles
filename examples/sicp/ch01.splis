@@ -1,5 +1,6 @@
 (do
   (use "core/prelude")
+  (use "core/math")
 
   (println "Chapter 1")
   (println "=========")
@@ -48,16 +49,10 @@
   (defn square [x] (* x x))
   (defn sum-of-squares [xs] (sum (map square xs)))
 
-  (defn max-2 [a b c]
-    (remove (fn [x] (= x (minimum a b c))) [a b c]))
-  ; (defn max-2 [& args]
-  ;   (set min (minimumv args))
-  ;   (set f (fn [x] (= x min)))
-  ;   (remove f args))
-  ;; TODO: min is not available in closure - why?
-  ; (defn max-2 [a b c]
-  ;   (let (min (minimum a b c))
-  ;     (remove (fn [x] (= x min)) [a b c]) ))
+  (defn max-2 [& args]
+    (set min (minimumv args))
+    (set f (fn [x] (= x min)))
+    (remove f args))
 
   (println (max-2 1 2 3) " should be [2 3].")
   (println (max-2 4 3 7) " should be [4 7].")
@@ -105,26 +100,28 @@
   (println "(sqrt (+ (sqrt 2) (sqrt 3))) = " (sqrt (+ (sqrt 2) (sqrt 3))))
   (println "(square (sqrt 1000)) = " (square (sqrt 1000)))
 
-  (println)
-  (println "Exercise 1.6")
-  (println "------------")
-  (println "sqrt-iter will recurse infinitely because all arguments to new-if\n"
-           "will be evaluated before the invocation of new-if. This includes\n"
-           "the else-clause which is a recursive call to sqrt-iter.")
+  ;; Exercise 1.6
+  ;; ------------
+  ;; sqrt-iter will recurse infinitely because all arguments to new-if will be
+  ;; evaluated before the invocation of new-if. This includes the else-clause
+  ;; which is a recursive call to sqrt-iter.
+
+  ;; TODO: (/ 1000) will be 0 because its acutally an integer division. The
+  ;;       correct way to obtain the reciprocial 0.001 is (/ 1000.0).
 
   (println)
   (println "Exercise 1.7")
   (println "------------")
-  (println "(sqrt (/ 1000)) = " (sqrt (/ 1000)))
+  (println "(sqrt (/ 1000.0)) = " (sqrt (/ 1000.0)))
   (println "The correct value would be 0.031622777 but\n"
-           "(- (square (sqrt (/ 1000))) (/ 1000)) = "
-           (- (square (sqrt (/ 1000))) (/ 1000))
+           "(- (square (sqrt (/ 1000.0))) (/ 1000.0)) = "
+           (- (square (sqrt (/ 1000.0))) (/ 1000.0))
            " < 0.001 \nwhich is already 'good enough'.")
   ; TODO: The following loops forever.
   ; (println "(sqrt 99999999999999999999999) = " (sqrt 99999999999999999999999))
 
   (defn sqrt2-good-enough? [g2 g1]
-    (< (abs (- g2 g1)) (/ g1 1000)))
+    (< (abs (- g2 g1)) (/ g1 1000.0)))
   (defn sqrt2-iter [g2 g1 x]
     (if (sqrt2-good-enough? g2 g1)
       g2
@@ -135,7 +132,7 @@
   (println "(sqrt2 (+ 100 37)) = " (sqrt2 (+ 100 37)))
   (println "(sqrt2 (+ (sqrt2 2) (sqrt2 3))) = " (sqrt2 (+ (sqrt2 2) (sqrt2 3))))
   (println "(square (sqrt2 1000)) = " (square (sqrt2 1000)))
-  (println "(sqrt2 (/ 1000)) = " (sqrt2 (/ 1000)))
+  (println "(sqrt2 (/ 1000)) = " (sqrt2 (/ 1000.0)))
   (println "sqrt2 performs better on small numbers.")
 
   (println)
@@ -143,7 +140,7 @@
   (println "------------")
   ;; TODO: Loops forever.
   (defn good-enough? [g2 g1]
-    (< (abs (- g2 g1)) (/ g1 1000)))
+    (< (abs (- g2 g1)) (/ g1 1000.0)))
   (defn improve [guess x]
     (average guess guess (/ x (square guess))))
   (defn iter [g2 g1 x]
@@ -153,7 +150,7 @@
   (defn curt [x] (iter (improve 1.0 x) 1.0 x))
 
   (println "(curt 27) = " (curt 27))
-  (println "(curt (/ 1000)) = " (curt (/ 1000)))
+  (println "(curt (/ 1000)) = " (curt (/ 1000.0)))
 
   ;; Exercise 1.9
   ;; ------------
@@ -296,6 +293,53 @@
   ;;          = phi^n - psi^n
   ;;
   ;;                                                                          □
+
+  ;; Exercise 1.14
+  ;; -------------
+  ;; Time and Space Order of Growth is both Theta(2^n). In the worst case for
+  ;; every invocation of < cc > there are two recursive invocations of < cc >.
+
+  (println)
+  (println "Exercise 1.15")
+  (println "-------------")
+  (defn report [mark v]
+    (println mark)
+    v)
+  (defn cube [x] (* x x x))
+  (defn p [x] (- (* 3 x) (* 4 (cube x))))
+  (defn sin [angle]
+    (if (< (abs angle) 0.1)
+        angle
+        (p (sin (/ angle 3.0)))))
+        ; (p (report "sin" (sin (/ angle 3.0))))))
+
+  (println "(sin 0) = " (sin 0))
+  (println "(sin (/ *PI* 4)) = " (sin (/ *PI* 4)))
+  (println "(sin (/ *PI* 2)) = " (sin (/ *PI* 2)))
+  (println "(sin *PI*) = " (sin *PI*))
+  (println "(sin (* 3 (/ *PI* 2))) = " (sin (* 3 (/ *PI* 2))))
+  (println "(sin 12.15) = " (sin 12.15))
+  (println "(sin (* 2 12.15)) = " (sin (* 2 12.15)))
+  (println "(sin (* 4 12.15)) = " (sin (* 4 12.15)))
+  (println "(sin (* 8 12.15)) = " (sin (* 8 12.15)))
+  (println "(sin (* 16 12.15)) = " (sin (* 16 12.15)))
+  (println "(sin (* 32 12.15)) = " (sin (* 32 12.15)))
+  (println "(sin (* 64 12.15)) = " (sin (* 64 12.15)))
+
+  ;; a) 6 times.
+  ;; b)
+  ;;     Value      | # applications
+  ;;    ------------+---------------
+  ;;      1 * 12.15 | 6
+  ;;      2 * 12.15 | 6
+  ;;      4 * 12.15 | 7
+  ;;      8 * 12.15 | 8
+  ;;     16 * 12.15 | 8
+  ;;     32 * 12.15 | 9
+  ;;     64 * 12.15 | 10
+  ;;
+  ;;    Order of Growth in Time:  Theta(log(n))
+  ;;    Order of Growth in Space: Theta(n)
 
   (println)
   (println "Chapter 1 completed.")

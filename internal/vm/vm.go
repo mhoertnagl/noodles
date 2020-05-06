@@ -470,7 +470,7 @@ func (m *VM) div(l Val, r Val) Val {
 	case int64:
 		switch rr := r.(type) {
 		case int64:
-			return float64(ll) / float64(rr)
+			return ll / rr //float64(ll) / float64(rr)
 		case float64:
 			return float64(ll) / rr
 		default:

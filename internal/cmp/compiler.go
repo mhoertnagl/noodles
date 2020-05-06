@@ -23,7 +23,7 @@ import (
 // TODO: Alternative syntax for :+ +: ? .+ == cons, +. == append, ++ == concat
 
 // TODO: Should we keep let bindings?
-// TODO: let binding functions - see TestCompileLet5.
+// TODO: let binding recursive functions - see TestCompileLet5.
 // TODO: let bindings should have their own symbol table.
 //       Fix Indexof to account for this fact.
 

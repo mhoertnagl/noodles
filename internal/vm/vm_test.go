@@ -123,7 +123,7 @@ func TestMulII(t *testing.T) {
 func TestDiv(t *testing.T) {
 	testToS(t, 3.5,
 		vm.Instr(vm.OpConst, 7),
-		vm.Instr(vm.OpConst, 2),
+		vm.Instr(vm.OpConstF, math.Float64bits(2.0)),
 		vm.Instr(vm.OpDiv),
 	)
 }
@@ -702,7 +702,7 @@ func TestRunLet4(t *testing.T) {
 		vm.Instr(vm.OpDropArgs, 1),
 		vm.Instr(vm.OpHalt),
 	)
-	testVal(t, 3.0, m.InspectStack(0))
+	testVal(t, int64(3), m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
 	testVal(t, nil, m.InspectFrames(0))
 }
@@ -1134,7 +1134,7 @@ func TestRunAnonymousNestedFun(t *testing.T) {
 		vm.Instr(vm.OpRef, 0, 19),
 		vm.Instr(vm.OpCall),
 	)
-	testVal(t, 2.0, m.InspectStack(0))
+	testVal(t, int64(2), m.InspectStack(0))
 	testVal(t, nil, m.InspectStack(1))
 	testVal(t, nil, m.InspectFrames(0))
 }
@@ -1337,7 +1337,7 @@ func TestRunClosure2(t *testing.T) {
 }
 
 func TestRunClosure(t *testing.T) {
-	testToS(t, 3.0,
+	testToS(t, int64(3),
 		vm.Instr(vm.OpJump, 85),
 		vm.Instr(vm.OpPushArgs, 1),
 		vm.Instr(vm.OpPop),

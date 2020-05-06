@@ -51,6 +51,9 @@
           (println "  Expected: " exp))
       (println name " ... OK") ))
 
+  ;; TODO: Some procedures to investigate program execution like < report > in
+  ;;       ch01.splis
+
   ;; `nil?` returns true if and only if `x` is `nil`.
   ;;
   ;; @param  any x  A value.
@@ -90,9 +93,6 @@
   ;; @param  any x  Any argument.
   ;; @return any    `x` itself.
   (defn identity [x] x)
-
-  ;; The constant PI.
-  (def *PI* 3.141592653589793)
 
   ;; `inc` increments the number `n` by one.
   ;;
