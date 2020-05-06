@@ -227,9 +227,9 @@
   (println "(tib 5) = " (tib 5))
   (println "(tib 6) = " (tib 6))
 
-  ; (println)
-  ; (println "Exercise 1.12")
-  ; (println "-------------")
+  (println)
+  (println "Exercise 1.12")
+  (println "-------------")
   (defn _sum-pairs [xs acc]
     (if (< (len xs) 2)
         acc
@@ -244,6 +244,12 @@
     (if (= n 0)
       [1]
       (:: [1] (sum-pairs (pascal (dec n))) [1]) ))
+
+  (println "(pascal 0) = " (pascal 0))
+  (println "(pascal 1) = " (pascal 1))
+  (println "(pascal 2) = " (pascal 2))
+  (println "(pascal 3) = " (pascal 3))
+  (println "(pascal 4) = " (pascal 4))
 
   ;; Exercise 1.13
   ;; -------------
