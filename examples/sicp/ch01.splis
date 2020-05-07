@@ -366,5 +366,21 @@
   (println "(fast-expt 2 33) = " (fast-expt 2 33))
 
   (println)
+  (println "Exercise 1.17")
+  (println "-------------")
+  (defn double [x] (* 2 x))
+  (defn halve [x] (/ x 2))
+  (defn mul [a b]
+    (cond (= b 0)   0
+          (even? b) (double (mul a (halve b)))
+          else      (+ a (mul a (- b 1))) ))
+
+  (println "(mul 2 0) = " (mul 2 0))
+  (println "(mul 2 1) = " (mul 2 1))
+  (println "(mul 2 2) = " (mul 2 2))
+  (println "(mul 2 3) = " (mul 2 3))
+  (println "(mul 12 13) = " (mul 12 13))
+
+  (println)
   (println "Chapter 1 completed.")
 )
