@@ -382,5 +382,21 @@
   (println "(mul 12 13) = " (mul 12 13))
 
   (println)
+  (println "Exercise 1.18")
+  (println "-------------")
+  (defn _fast-mul [b n acc]
+    (cond (= n 0)   acc
+          (even? n) (rec (_fast-mul (double b) (halve n) acc))
+          else      (rec (_fast-mul b (- n 1) (+ b acc))) ))
+
+  (defn fast-mul [b n] (_fast-mul b n 0))
+
+  (println "(fast-mul 2 0) = " (fast-mul 2 0))
+  (println "(fast-mul 2 1) = " (fast-mul 2 1))
+  (println "(fast-mul 2 2) = " (fast-mul 2 2))
+  (println "(fast-mul 2 3) = " (fast-mul 2 3))
+  (println "(fast-mul 12 13) = " (fast-mul 12 13))
+
+  (println)
   (println "Chapter 1 completed.")
 )
