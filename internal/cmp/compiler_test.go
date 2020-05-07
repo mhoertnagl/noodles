@@ -701,7 +701,7 @@ func TestCompileVector1(t *testing.T) {
 }
 
 func TestCompileVector2(t *testing.T) {
-	testc(t, "(+: 1 (+: 2 (+: 3 [])))",
+	testc(t, "(.+ 1 (.+ 2 (.+ 3 [])))",
 		asm.Instr(vm.OpEmptyVector),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpCons),
@@ -713,7 +713,7 @@ func TestCompileVector2(t *testing.T) {
 }
 
 func TestCompileVectorAppend(t *testing.T) {
-	testc(t, "(:+ [1 2 3] 4)",
+	testc(t, "(+. [1 2 3] 4)",
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 3),
 		asm.Instr(vm.OpConst, 2),
@@ -725,7 +725,7 @@ func TestCompileVectorAppend(t *testing.T) {
 }
 
 func TestCompileVectorConcat(t *testing.T) {
-	testc(t, "(:: [1 2] [3 4] [5 6])",
+	testc(t, "(++ [1 2] [3 4] [5 6])",
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 6),
@@ -978,7 +978,7 @@ func TestCompileVariadicFun1(t *testing.T) {
 }
 
 func TestCompileVariadicFun2(t *testing.T) {
-	testc(t, `((fn [x & xs] (+: x xs)) 1 2 3 4)`,
+	testc(t, `((fn [x & xs] (.+ x xs)) 1 2 3 4)`,
 		asm.Instr(vm.OpEnd),
 		asm.Instr(vm.OpConst, 4),
 		asm.Instr(vm.OpConst, 3),

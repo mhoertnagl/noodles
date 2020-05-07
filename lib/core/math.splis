@@ -2,4 +2,20 @@
 (do
   ;; The constant PI.
   (def *PI* 3.141592653589793)
+
+  ;; The machine epsilon.
+  (def *EPS* 0.000000000001)
+
+  (defn sin [angle]
+    (if (< (abs angle) *EPS*)
+        angle
+        (do (set x (sin (/ angle 3.0)))
+            (- (* 3 x) (* 4 x x x))) ))
+
+  (defn _pow [b n acc]
+    (cond (= n 0)   acc
+          (even? n) (rec (_pow (* b b) (/ n 2) acc))
+          else      (rec (_pow b (- n 1) (* b acc))) ))
+
+  (defn pow [b n] (_pow b n 1))
 )

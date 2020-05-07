@@ -21,6 +21,13 @@ func TestParseNumbers(t *testing.T) {
 	testpw(t, " -1 ", "-1")
 	testpw(t, " 0.3 ", "0.3")
 	testpw(t, " -0.3 ", "-0.3")
+
+	testpi(t, " 0 ", 0)
+	testpi(t, " 1 ", 1)
+	testpi(t, " -1 ", -1)
+
+	testpf(t, " 0.3 ", 0.3)
+	testpf(t, " -0.3 ", -0.3)
 }
 
 func TestParseInvalidNumbers(t *testing.T) {
@@ -112,5 +119,25 @@ func testpw(t *testing.T, i string, e string) {
 	a := cmp.PrintAst(n)
 	if a != e {
 		t.Errorf("Expecting [%s] but got [%s]", e, a)
+	}
+}
+
+func testpi(t *testing.T, i string, e int64) {
+	r := cmp.NewReader()
+	r.Load(i)
+	p := cmp.NewParser()
+	n := p.Parse(r)
+	if a, ok := n.(int64); !ok || a != e {
+		t.Errorf("Expecting [%d] but got [%d]", e, a)
+	}
+}
+
+func testpf(t *testing.T, i string, e float64) {
+	r := cmp.NewReader()
+	r.Load(i)
+	p := cmp.NewParser()
+	n := p.Parse(r)
+	if a, ok := n.(float64); !ok || a != e {
+		t.Errorf("Expecting [%v] but got [%v]", e, a)
 	}
 }

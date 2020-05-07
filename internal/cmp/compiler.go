@@ -78,8 +78,8 @@ func NewCompiler() *Compiler {
 	c.prims.add("!=", vm.OpNE, 2, false)
 	c.prims.add("mod", vm.OpMod, 2, false)
 	c.prims.add("not", vm.OpNot, 1, false)
-	c.prims.add("+:", vm.OpCons, 2, true)
-	c.prims.add(":+", vm.OpAppend, 2, false)
+	c.prims.add(".+", vm.OpCons, 2, true)
+	c.prims.add("+.", vm.OpAppend, 2, false)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
 	c.prims.add("halt", vm.OpHalt, 0, false)
 	c.prims.add("explode", vm.OpExplode, 1, false)
@@ -88,7 +88,7 @@ func NewCompiler() *Compiler {
 	c.varPrims.add("+", vm.OpAdd, 0)
 	c.varPrims.add("*", vm.OpMul, 0)
 	c.varPrims.add("write", vm.OpWrite, 1)
-	c.varPrims.add("::", vm.OpConcat, 0)
+	c.varPrims.add("++", vm.OpConcat, 0)
 	c.varPrims.add("join", vm.OpJoin, 0)
 
 	return c

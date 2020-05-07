@@ -231,7 +231,7 @@
     (if (< (len xs) 2)
         acc
         (rec (_sum-pairs (rst xs)
-                         (:+ acc
+                         (+. acc
                              (+ (fst xs)
                                 (snd xs)) ))) ))
 
@@ -240,7 +240,7 @@
   (defn pascal [n]
     (if (= n 0)
       [1]
-      (:: [1] (sum-pairs (pascal (dec n))) [1]) ))
+      (++ [1] (sum-pairs (pascal (dec n))) [1]) ))
 
   (println "(pascal 0) = " (pascal 0))
   (println "(pascal 1) = " (pascal 1))
@@ -307,24 +307,24 @@
     v)
   (defn cube [x] (* x x x))
   (defn p [x] (- (* 3 x) (* 4 (cube x))))
-  (defn sin [angle]
+  (defn sine [angle]
     (if (< (abs angle) 0.1)
         angle
-        (p (sin (/ angle 3.0)))))
-        ; (p (report "sin" (sin (/ angle 3.0))))))
+        (p (sine (/ angle 3.0)))))
+        ; (p (report "sine" (sine (/ angle 3.0))))))
 
-  (println "(sin 0) = " (sin 0))
-  (println "(sin (/ *PI* 4)) = " (sin (/ *PI* 4)))
-  (println "(sin (/ *PI* 2)) = " (sin (/ *PI* 2)))
-  (println "(sin *PI*) = " (sin *PI*))
-  (println "(sin (* 3 (/ *PI* 2))) = " (sin (* 3 (/ *PI* 2))))
-  (println "(sin 12.15) = " (sin 12.15))
-  (println "(sin (* 2 12.15)) = " (sin (* 2 12.15)))
-  (println "(sin (* 4 12.15)) = " (sin (* 4 12.15)))
-  (println "(sin (* 8 12.15)) = " (sin (* 8 12.15)))
-  (println "(sin (* 16 12.15)) = " (sin (* 16 12.15)))
-  (println "(sin (* 32 12.15)) = " (sin (* 32 12.15)))
-  (println "(sin (* 64 12.15)) = " (sin (* 64 12.15)))
+  (println "(sine 0) = " (sine 0))
+  (println "(sine (/ *PI* 4)) = " (sine (/ *PI* 4)))
+  (println "(sine (/ *PI* 2)) = " (sine (/ *PI* 2)))
+  (println "(sine *PI*) = " (sine *PI*))
+  (println "(sine (* 3 (/ *PI* 2))) = " (sine (* 3 (/ *PI* 2))))
+  (println "(sine 12.15) = " (sine 12.15))
+  (println "(sine (* 2 12.15)) = " (sine (* 2 12.15)))
+  (println "(sine (* 4 12.15)) = " (sine (* 4 12.15)))
+  (println "(sine (* 8 12.15)) = " (sine (* 8 12.15)))
+  (println "(sine (* 16 12.15)) = " (sine (* 16 12.15)))
+  (println "(sine (* 32 12.15)) = " (sine (* 32 12.15)))
+  (println "(sine (* 64 12.15)) = " (sine (* 64 12.15)))
 
   ;; a) 6 times.
   ;; b)
@@ -340,6 +340,30 @@
   ;;
   ;;    Order of Growth in Time:  Theta(log(n))
   ;;    Order of Growth in Space: Theta(n)
+
+  (println)
+  (println "Exercise 1.16")
+  (println "-------------")
+  (defn _fast-expt [b n acc]
+    (cond (= n 0)   acc
+          (even? n) (rec (_fast-expt (* b b) (/ n 2) acc))
+          else      (rec (_fast-expt b (- n 1) (* b acc))) ))
+
+  (defn fast-expt [b n] (_fast-expt b n 1))
+
+  ; (defn fast-expt [b n]
+  ;   (cond (= n 0) 1
+  ;         (even? n) (do (set x (fast-expt b (/ n 2)))
+  ;                       (* x x))
+  ;         else (* b (fast-expt b (- n 1))) ))
+
+  (println "(fast-expt 2 0) = " (fast-expt 2 0))
+  (println "(fast-expt 2 1) = " (fast-expt 2 1))
+  (println "(fast-expt 2 2) = " (fast-expt 2 2))
+  (println "(fast-expt 2 3) = " (fast-expt 2 3))
+  (println "(fast-expt 2 31) = " (fast-expt 2 31))
+  (println "(fast-expt 2 32) = " (fast-expt 2 32))
+  (println "(fast-expt 2 33) = " (fast-expt 2 33))
 
   (println)
   (println "Chapter 1 completed.")

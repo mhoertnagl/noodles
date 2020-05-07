@@ -121,9 +121,9 @@
   (defn :!= [a b] (!= a b))
   (defn :not [a] (not a))
 
-  (defn ::+ [l v] (:+ l v))
-  (defn :+: [v l] (+: v l))
-  (defn ::: [a b] (:: a b))
+  (defn :.+ [v l] (.+ v l))
+  (defn :+. [l v] (+. l v))
+  (defn :++ [a b] (++ a b))
   (defn :nth [n xs] (nth n xs))
   (defn :drop [n xs] (drop n xs))
   (defn :len [xs] (len xs))
@@ -243,7 +243,7 @@
   (defn _range [succ start end acc]
     (if (> start end)
       acc
-      (rec (_range succ (succ start) end (:+ acc start))) ))
+      (rec (_range succ (succ start) end (+. acc start))) ))
 
   (defn range [succ start end] (_range succ start (- end 1) []))
 
@@ -267,7 +267,7 @@
   (defn _repeat [n v acc]
     (if (<= n 0)
       acc
-      (rec (_repeat (- n 1) v (:+ acc v))) ))
+      (rec (_repeat (- n 1) v (+. acc v))) ))
 
   (defn repeat [n v] (_repeat n v []) )
 
@@ -315,7 +315,7 @@
   ;; @param  fun(T)S f   A unary function.
   ;; @param  [T]     xs  A list of elements.
   ;; @return [S]         The list of elements applied to `f` individually.
-  (defn map [f xs] (reduce (fn [v b] (:+ b (f v))) [] xs))
+  (defn map [f xs] (reduce (fn [v b] (+. b (f v))) [] xs))
 
   ;; `flat-map` applies to unary function `f` to each element of the list `xs`
   ;; and flattens the list of lists as `f` is required to return a list.
@@ -327,7 +327,7 @@
   ;; @param  [T]       xs  A list of elements.
   ;; @return [S]           The list of elements applied to `f` and then
   ;;                       flattened into a single list.
-  (defn flat-map [f xs] (reduce (fn [v b] (:: b (f v))) [] xs))
+  (defn flat-map [f xs] (reduce (fn [v b] (++ b (f v))) [] xs))
 
   ;; `filter` retains all elements from `xs` for which the predicate `p`
   ;; returns `true`. Preserves the order of the elements.
@@ -338,7 +338,7 @@
   ;; @param  fun(T)bool p   A unary test predicate.
   ;; @param  [T]        xs  A list of elements.
   ;; @return [T]            The elements in `xs` that fulfill predicate `p`.
-  (defn filter [p xs] (reduce (fn [v b] (if (p v) (:+ b v) b)) [] xs))
+  (defn filter [p xs] (reduce (fn [v b] (if (p v) (+. b v) b)) [] xs))
 
   ;; `remove` discards all elements that fulfill predicate `p` from list `xs`.
   ;;
@@ -384,7 +384,7 @@
   ;;
   ;; @param  [T] xs  A list of elements.
   ;; @return [T]     The list `xs` in reverse order.
-  (defn reverse [xs] (reduce '(+: ~v ~b) [] xs))
+  (defn reverse [xs] (reduce '(.+ ~v ~b) [] xs))
 
   ;; `take` returns the first `n` elements of `xs` in a new list.
   ;;
@@ -397,7 +397,7 @@
   (defn _take [n xs acc]
     (cond (empty? xs) acc
           (<= n 0)    acc
-          else        (rec (_take (- n 1) (rst xs) (:+ acc (fst xs)))) ))
+          else        (rec (_take (- n 1) (rst xs) (+. acc (fst xs)))) ))
 
   (defn take [n xs] (_take n xs []))
 
@@ -428,7 +428,7 @@
   ;; @return [T]            The elements of `xs` as long as `p` is fulfilled.
   (defn _take-while [p xs acc]
     (cond (empty? xs)  acc
-          (p (fst xs)) (rec (_take-while p (rst xs) (:+ acc (fst xs))))
+          (p (fst xs)) (rec (_take-while p (rst xs) (+. acc (fst xs))))
           else         acc ))
 
   (defn take-while [p xs] (_take-while p xs []))
@@ -450,7 +450,7 @@
           else        (rec (_zip-with f
                                       (rst xs)
                                       (rst ys)
-                                      (:+ acc (f (fst xs) (fst ys))) )) ))
+                                      (+. acc (f (fst xs) (fst ys))) )) ))
 
   (defn zip-with [f xs ys] (_zip-with f xs ys []))
 

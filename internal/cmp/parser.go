@@ -150,7 +150,14 @@ func (p *Parser) parseNumber() Node {
 }
 
 func isNumber(tok string) bool {
-	return len(tok) > 0 && '0' <= tok[0] && tok[0] <= '9'
+	ln := len(tok)
+	isPosNum := ln > 0 && isDigit(tok[0])
+	isNegNum := ln > 1 && tok[0] == '-' && isDigit(tok[1])
+	return isPosNum || isNegNum
+}
+
+func isDigit(tok byte) bool {
+	return '0' <= tok && tok <= '9'
 }
 
 // TODO: Keywords :<x> <-> ʞ<x>
