@@ -28,6 +28,7 @@ const (
 	OpMul
 	OpDiv
 	OpMod
+	OpRand
 
 	OpList
 	OpCons
@@ -79,6 +80,7 @@ const (
 	OpWrite
 
 	OpHalt
+	OpRuntime
 	OpDebug
 )
 
@@ -107,11 +109,12 @@ var meta = map[Op]*OpMeta{
 	OpEmptyVector: {"EmptyVector", []int{}},
 	OpStr:         {"String", []int{8}},
 
-	OpAdd: {"Add", []int{}},
-	OpSub: {"Sub", []int{}},
-	OpMul: {"Mul", []int{}},
-	OpDiv: {"Div", []int{}},
-	OpMod: {"Mod", []int{}},
+	OpAdd:  {"Add", []int{}},
+	OpSub:  {"Sub", []int{}},
+	OpMul:  {"Mul", []int{}},
+	OpDiv:  {"Div", []int{}},
+	OpMod:  {"Mod", []int{}},
+	OpRand: {"Rand", []int{}},
 
 	OpList:     {"List", []int{}},
 	OpCons:     {"Cons", []int{}},
@@ -157,9 +160,10 @@ var meta = map[Op]*OpMeta{
 	OpRead:  {"Read", []int{}},
 	OpWrite: {"Write", []int{}},
 
-	OpEnd:   {"End", []int{}},
-	OpHalt:  {"Halt", []int{}},
-	OpDebug: {"Debug", []int{8}},
+	OpEnd:     {"End", []int{}},
+	OpHalt:    {"Halt", []int{}},
+	OpRuntime: {"Runtime", []int{}},
+	OpDebug:   {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.

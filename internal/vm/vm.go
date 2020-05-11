@@ -4,8 +4,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 // This is a special marker that marks the end of a sequence on the stack.
@@ -89,6 +91,10 @@ func (m *VM) Run(code Ins) {
 			r := m.popInt64()
 			l := m.popInt64()
 			m.push(l % r)
+		case OpRand:
+			rand.Seed(time.Now().UnixNano())
+			n := m.popInt64()
+			m.push(rand.Int63n(n))
 		case OpNot:
 			v := m.popBool()
 			m.push(!v)
@@ -284,6 +290,8 @@ func (m *VM) Run(code Ins) {
 			for v := m.pop(); v != end; v = m.pop() {
 				fmt.Fprint(f, v)
 			}
+		case OpRuntime:
+			m.push(time.Now().UnixNano())
 		case OpDebug:
 			mode := m.readUint64()
 			// Bit 0 show stack.

@@ -51,6 +51,12 @@
           (println "  Expected: " exp))
       (println name " ... OK") ))
 
+  (defmacro measure-runtime [fun] (do (set start (runtime))
+                                      fun
+                                      (println "Runtime: "
+                                               (- (runtime) start)
+                                               " ns")))
+
   ;; TODO: Some procedures to investigate program execution like < report > in
   ;;       ch01.splis
 

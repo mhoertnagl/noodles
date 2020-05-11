@@ -228,6 +228,13 @@ func TestCompileMod(t *testing.T) {
 	)
 }
 
+func TestCompileRandom(t *testing.T) {
+	testc(t, "(random 100)",
+		asm.Instr(vm.OpConst, 100),
+		asm.Instr(vm.OpRand),
+	)
+}
+
 func TestCompileNot(t *testing.T) {
 	testc(t, "(not true)",
 		asm.Instr(vm.OpTrue),

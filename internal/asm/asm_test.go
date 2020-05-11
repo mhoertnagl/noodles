@@ -39,6 +39,18 @@ func TestAssembleInteger(t *testing.T) {
 	testa(t, i, e)
 }
 
+func TestAssembleRandom(t *testing.T) {
+	i := []asm.AsmCmd{
+		asm.Instr(vm.OpConst, 100),
+		asm.Instr(vm.OpRand),
+	}
+	e := vm.ConcatVar(
+		vm.Instr(vm.OpConst, 100),
+		vm.Instr(vm.OpRand),
+	)
+	testa(t, i, e)
+}
+
 // --- IF ---
 
 func TestAssembleIf1(t *testing.T) {

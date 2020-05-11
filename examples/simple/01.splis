@@ -1,80 +1,14 @@
 (do
   (use "core/prelude")
 
-  ; (defn max-2 [& args]
-  ;   (set min (minimumv args))
-  ;   (println "min = " min)
-  ;   (set f (fn [x] (= x min)))
-  ;   (println "f a = " (f (fst args)))
-  ;   (println "f b = " (f (snd args)))
-  ;   (println "f c = " (f (trd args)))
-  ;   (remove f args))
-
-  ; (defn max-2 [& args]
-  ;   (set min (minimumv args))
-  ;   (remove (fn [x] (= x min)) args))
-
-  ; (defn max-2 [a b c]
-  ;   (set lst [a b c])
-  ;   (println "lst = " lst)
-  ;   (set min (minimumv lst))
-  ;   ;(debug 2)
-  ;   (println "min = " min)
-  ;   (set f (fn [x]
-  ;     (do ;(debug 2)
-  ;         (= x min) )))
-  ;   (println "f a = " (f (fst lst)))
-  ;   (println "f b = " (f (snd lst)))
-  ;   (println "f c = " (f (trd lst)))
-  ;   (remove f lst))
-
-  ; (def setclosure1 (fn [a b c]
-  ;   (do (set lst [a b c])
-  ;       (set min (fst lst))
-  ;       (set f (fn [x] (= x min) ))
-  ;       (f (fst lst)))))
-  ;
-  ; (println (setclosure1 1 2 3) " should be [2 3].")
-
-  ; (defn max-2 [a b c]
-  ;   (let (min (minimum a b c))
-  ;     (remove (fn [x] (= x min)) [a b c]) ))
-
-  ; (defn max-2 [a b c]
-  ;   (set min (minimum a b c))
-  ;   (remove (fn [x] (= x min)) [a b c]))
-
-  ; (defn ddd [a b c] (remove (fn [x] (or (= x b) (= x a))) [a b c]))
-  ; (println (ddd 1 2 3))
-
-  ; (defn max-2 [a b c]
-  ;   (set min (minimum a b c))
-  ;   (println "min = " min)
-  ;   (set f (fn [x] (= x min)))
-  ;   (println "f a = " (f a))
-  ;   (println "f b = " (f b))
-  ;   (println "f c = " (f c))
-  ;   (remove f [a b c]))
-
-  ; (println (max-2 1 2 3) " should be [2 3].")
-  ; (println (max-2 4 3 7) " should be [4 7].")
-
-  ; Funz nicht
-  ; (defn ddd [x]
-  ;   (set f (fn [n acc]
-  ;     (if (= n 0)
-  ;       acc
-  ;       (f (- n 1) (+ acc 1))) ))
-  ;   (f x 0))
-  ;
-  ; (println (ddd 5))
-
   ; Funz nicht
   ; (println (map .@ [[1 2 3] [2 3 4] [3 4 5]]))
   ; Das schon
-  (println (map :@ [[1] [2] [3]]))
-  (println (flat-map identity [[1 2 3] [2 3 4] [3 4 5]]))
+  ; (println (map :@ [[1] [2] [3]]))
+  ; (println (flat-map identity [[1 2 3] [2 3 4] [3 4 5]]))
+  ;
+  ; (println (join "a" "b"))
+  ; (println (map :joinv [["a" "b"] ["c" "d"]]))
 
-  (println (join "a" "b"))
-  (println (map :joinv [["a" "b"] ["c" "d"]]))
+  (measure-runtime (println (random 1000)))  
 )

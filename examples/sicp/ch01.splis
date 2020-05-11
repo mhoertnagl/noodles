@@ -425,6 +425,43 @@
   (println "(fib 7) = " (fib 7))
   (println "(fib 8) = " (fib 8))
 
+  ;; Exercise 1.20
+  ;; -------------
+  ;; Normal order evaluation
+  ;; (gcd 206 40)
+  ;; (gcd (mod 206 40) (mod 206 (gcd 206 40)))
+  ;; (gcd (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))
+  ;; (gcd (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))))
+  ;; (gcd (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))) (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))))
+  ;; (gcd (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))) (mod (mod (mod 206 (mod 206 40)) (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))))))
+  ;; 2
+  ;, calls mod 28 times (if i did count and substitute correctly).
+  ;;
+  ;; Applcative order evaluation
+  ;; (gcd 206 40)
+  ;; (gcd 40 (mod 206 40))
+  ;; (gcd 6 (mod 40 6))
+  ;; (gcd 4 (mod 6 4))
+  ;; (gcd 2 (mod 4 2))
+  ;; (gcd 0 (mod 2 0))
+  ;; 2
+  ;; calls mod 5 times.
+
+  (println)
+  (println "Exercise 1.21")
+  (println "-------------")
+  (defn divides? [a b] (= (mod b a) 0))
+  (defn find-divisor [n test-divisor]
+    (cond (> (square test-divisor) n) n
+          (divides? test-divisor n)   test-divisor
+          else (rec (find-divisor n (inc test-divisor))) ))
+  (defn smallest-divisor [n] (find-divisor n 2))
+  (defn prime? [n] (= n (smallest-divisor n)))
+
+  (println "(smallest-divisor 199) = " (smallest-divisor 199))
+  (println "(smallest-divisor 1999) = " (smallest-divisor 1999))
+  (println "(smallest-divisor 19999) = " (smallest-divisor 19999))
+
   (println)
   (println "Chapter 1 completed.")
 )

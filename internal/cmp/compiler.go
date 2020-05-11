@@ -77,12 +77,14 @@ func NewCompiler() *Compiler {
 	c.prims.add("=", vm.OpEQ, 2, false)
 	c.prims.add("!=", vm.OpNE, 2, false)
 	c.prims.add("mod", vm.OpMod, 2, false)
+	c.prims.add("random", vm.OpRand, 1, false)
 	c.prims.add("not", vm.OpNot, 1, false)
 	c.prims.add(".+", vm.OpCons, 2, true)
 	c.prims.add("+.", vm.OpAppend, 2, false)
 	c.prims.add("dissolve", vm.OpDissolve, 1, false)
-	c.prims.add("halt", vm.OpHalt, 0, false)
 	c.prims.add("explode", vm.OpExplode, 1, false)
+	c.prims.add("runtime", vm.OpRuntime, 0, false)
+	c.prims.add("halt", vm.OpHalt, 0, false)
 
 	c.varPrims = varPrimDefs{}
 	c.varPrims.add("+", vm.OpAdd, 0)
