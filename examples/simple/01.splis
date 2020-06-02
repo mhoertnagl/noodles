@@ -10,5 +10,14 @@
   ; (println (join "a" "b"))
   ; (println (map :joinv [["a" "b"] ["c" "d"]]))
 
-  (measure-runtime (println (random 1000)))  
+  ; (measure-runtime (println (random 1000)))
+
+  ; (def setclosure1 (fn [a b c]
+  ;   (do (set lst [a b c])
+  ;       (set min (nth 0 lst))
+  ;       (set f (fn [x] (= x min) ))
+  ;       (f (nth 0 lst)))))
+  ; (println (setclosure1 1 2 3))
+
+  (println (nrange 1 10 2))
 )

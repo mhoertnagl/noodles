@@ -20,8 +20,6 @@ import (
 // TODO: read
 // TODO: parse?
 
-// TODO: Alternative syntax for :+ +: ? .+ == cons, +. == append, ++ == concat
-
 // TODO: Should we keep let bindings?
 // TODO: let binding recursive functions - see TestCompileLet5.
 // TODO: let bindings should have their own symbol table.

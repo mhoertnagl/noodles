@@ -1188,48 +1188,72 @@ func TestCompileClosure2(t *testing.T) {
 	)
 }
 
-func TestCompileClosure3(t *testing.T) {
-	fmt.Println("\n\n=== Closure 3")
-	testc(t, `
-    (do
-      (def setclosure1 (fn [a b c]
-        (do (set lst [a b c])
-            (set min (nth 0 lst))
-            (set f (fn [x] (= x min) ))
-            (f (nth 0 lst)))))
-      (setclosure1 1 2 3)
-    )`,
-		asm.Labeled(vm.OpJump, "L0"),
-		asm.Label("L1"),
-		asm.Instr(vm.OpPushArgs, 1),
-		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpConst, 1),
-		asm.Instr(vm.OpPushArgs, 1),
-		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpGetArg, 0),
-		asm.Labeled(vm.OpJump, "L2"),
-		asm.Label("L3"),
-		asm.Instr(vm.OpPushArgs, 2),
-		asm.Instr(vm.OpPop),
-		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpGetArg, 0),
-		asm.Instr(vm.OpGetArg, 1),
-		asm.Instr(vm.OpAdd),
-		asm.Instr(vm.OpReturn),
-		asm.Label("L2"),
-		asm.Instr(vm.OpGetArg, 1),
-		asm.Ref(1, "L3"),
-		asm.Instr(vm.OpCall),
-		asm.Instr(vm.OpReturn),
-		asm.Label("L0"),
-		asm.Ref(0, "L1"),
-		asm.Instr(vm.OpSetGlobal, 0),
-		asm.Instr(vm.OpEnd),
-		asm.Instr(vm.OpConst, 6),
-		asm.Instr(vm.OpGetGlobal, 0),
-		asm.Instr(vm.OpCall),
-	)
-}
+//
+// func TestCompileClosure3(t *testing.T) {
+// 	fmt.Println("\n\n=== Closure 3")
+// 	testc(t, `
+//     (do
+//       (def setclosure1 (fn [a b c]
+//         (do (set lst [a b c])
+//             (set min (nth 0 lst))
+//             (set f (fn [x] (= x min) ))
+//             (f (nth 0 lst)))))
+//       (setclosure1 1 2 3)
+//     )`,
+// 		asm.Labeled(vm.OpJump, "L0"),
+// 		asm.Label("L1"),
+// 		asm.Instr(vm.OpPushArgs, 3),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpGetArg, 2),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpList),
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Instr(vm.OpConst, 0),
+// 		asm.Instr(vm.OpGetArg, 3),
+// 		asm.Instr(vm.OpNth),
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Labeled(vm.OpJump, "L2"),
+// 		asm.Label("L3"),
+// 		asm.Instr(vm.OpPushArgs, 2),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpEQ),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L2"),
+// 		asm.Instr(vm.OpGetArg, 4),
+// 		asm.Ref(1, "L3"),
+// 		asm.Instr(vm.OpPushArgs, 1),
+//
+// 		asm.Instr(vm.OpConst, 1),
+// 		asm.Instr(vm.OpPushArgs, 1),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Labeled(vm.OpJump, "L2"),
+// 		asm.Label("L3"),
+// 		asm.Instr(vm.OpPushArgs, 2),
+// 		asm.Instr(vm.OpPop),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpGetArg, 0),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Instr(vm.OpAdd),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L2"),
+// 		asm.Instr(vm.OpGetArg, 1),
+// 		asm.Ref(1, "L3"),
+// 		asm.Instr(vm.OpCall),
+// 		asm.Instr(vm.OpReturn),
+// 		asm.Label("L0"),
+// 		asm.Ref(0, "L1"),
+// 		asm.Instr(vm.OpSetGlobal, 0),
+// 		asm.Instr(vm.OpEnd),
+// 		asm.Instr(vm.OpConst, 6),
+// 		asm.Instr(vm.OpGetGlobal, 0),
+// 		asm.Instr(vm.OpCall),
+// 	)
+// }
 
 func TestCompileClosure(t *testing.T) {
 	fmt.Println("--- Closure")

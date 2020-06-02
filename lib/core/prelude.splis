@@ -51,11 +51,15 @@
           (println "  Expected: " exp))
       (println name " ... OK") ))
 
+  ;; `measure-runtime` reports the running time of function `fun` in
+  ;; nanoseconds.
+  ;;
+  ;; @param any fun  The function for which to evaluate the running time.
   (defmacro measure-runtime [fun] (do (set start (runtime))
                                       fun
                                       (println "Runtime: "
                                                (- (runtime) start)
-                                               " ns")))
+                                               " ns") ))
 
   ;; TODO: Some procedures to investigate program execution like < report > in
   ;;       ch01.splis
@@ -253,9 +257,20 @@
 
   (defn range [succ start end] (_range succ start (- end 1) []))
 
+  ;; `nrange` returns the list of integers from `start` (inclusive) adding
+  ;; `step` until it hits or esceeds `end` (exclusive). If `start >= end` it
+  ;; will return the empty list.
+  ;; This is the same as `(range '(+ ~x step) start end)`.
+  ;;
+  ;; @param  num start  The start number (included).
+  ;; @param  num end    The end number (excluded).
+  ;; @param  num step   The step size.
+  ;; @return [num]      The sequence of integers from `a` up to `b`.
+  (defn nrange [start end step] (range '(+ ~x step) start end))
+
   ;; `irange` returns the list of integers from `start` (inclusive) to `end`
   ;; (exclusive). If `start >= end` it will return the empty list.
-  ;; This is the same as `(range start end 1)`.
+  ;; This is the same as `(range inc start end)`.
   ;;
   ;; @param  num start  The start number (included).
   ;; @param  num end    The end number (excluded).

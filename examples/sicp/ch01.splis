@@ -462,6 +462,55 @@
   (println "(smallest-divisor 1999) = " (smallest-divisor 1999))
   (println "(smallest-divisor 19999) = " (smallest-divisor 19999))
 
+  (println "(prime? 2) = " (prime? 2))
+  (println "(prime? 3) = " (prime? 3))
+  (println "(prime? 4) = " (prime? 4))
+  (println "(prime? 5) = " (prime? 5))
+
+  (println)
+  (println "Exercise 1.22")
+  (println "-------------")
+  (defn _search-for-primes [start end limit, primes]
+    (cond (= limit 1) primes
+          (> start end) primes
+          (prime? start) (rec (_search-for-primes (+ start 2)
+                                                  end
+                                                  (- limit 1)
+                                                  (+. primes start) ))
+          else (rec (_search-for-primes (+ start 2)
+                                        end
+                                        limit
+                                        primes )) ))
+  (defn search-for-primes [start end]
+    (_search-for-primes start end 3 []))
+
+  ; Runtime: 146511 ns
+  (measure-runtime
+    (println "(search-for-primes 1001 10000) = "
+             (search-for-primes 1001 10000)))
+  ; Runtime: 342442 ns
+  (measure-runtime
+    (println "(search-for-primes 10001 100000) = "
+             (search-for-primes 10001 100000)))
+  ; Runtime: 642997 ns
+  (measure-runtime
+    (println "(search-for-primes 100001 1000000) = "
+             (search-for-primes 100001 1000000)))
+  ; Runtime: 3188368 ns
+  (measure-runtime
+    (println "(search-for-primes 1000001 10000000) = "
+             (search-for-primes 1000001 10000000)))
+
+  (println "(sqrt 10) = " (sqrt2 10))
+  (println "(/ 342442 146511) = " (/ 342442.0 146511))
+  (println "(/ 642997 342442) = " (/ 642997.0 342442))
+  (println "(/ 3188368 642997) = " (/ 3188368.0 642997))
+
+  (println)
+  (println "Exercise 1.23")
+  (println "-------------")
+
+
   (println)
   (println "Chapter 1 completed.")
 )
