@@ -40,6 +40,7 @@ type Compiler struct {
 	defs     *defMap
 	code     asm.AsmCode
 	lblId    int
+	err      []string
 }
 
 func NewCompiler() *Compiler {
@@ -47,6 +48,7 @@ func NewCompiler() *Compiler {
 		fns:   make(fnDefs, 0),
 		defs:  newDefMap(),
 		lblId: 0,
+		err:   make([]string, 0),
 	}
 
 	c.specs = specDefs{}
@@ -94,6 +96,15 @@ func NewCompiler() *Compiler {
 	return c
 }
 
+func (c *Compiler) Errors() []string {
+	return c.err
+}
+
+func (c *Compiler) error(format string, args ...interface{}) {
+	e := fmt.Sprintf(format, args...)
+	c.err = append(c.err, e)
+}
+
 func (c *Compiler) Compile(node Node) asm.AsmCode {
 	sym := NewSymTable()
 	ctx := NewCtx()
@@ -123,7 +134,7 @@ func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 	case *ListNode:
 		c.compileList(n, sym, ctx)
 	default:
-		panic(fmt.Sprintf("unsupported node [%v:%T]", node, node))
+		c.error("unsupported node [%v:%T]", node, node)
 	}
 }
 
@@ -132,7 +143,6 @@ func (c *Compiler) compile(node Node, sym *SymTable, ctx *Ctx) {
 func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
 	// The symbol is locally bound. Load the bound value from the FRAMES stack.
 	if idx, ok := sym.IndexOf(n.Name); ok {
-		// fmt.Printf("GET %s @ %d\n", n.Name, idx)
 		c.instr(vm.OpGetArg, uint64(idx))
 		return
 	}
@@ -143,7 +153,7 @@ func (c *Compiler) compileSymbol(n *SymbolNode, sym *SymTable, ctx *Ctx) {
 		return
 	}
 	// The symbol is neither a local argument nor a global value.
-	panic(fmt.Sprintf("unknown symbol [%s]", n.Name))
+	c.error("unknown symbol [%s]", n.Name)
 }
 
 // compileVector compiles a vector. If it is empty it will compile to a single
@@ -199,14 +209,14 @@ func (c *Compiler) compileList(n *ListNode, sym *SymTable, ctx *Ctx) {
 		// REF value which we can then call.
 		c.compileListCall(x, n.Rest(), sym, ctx)
 	default:
-		panic(fmt.Sprintf("Cannot compile list head [%v:%T]", x, x))
+		c.error("Cannot compile list head [%v:%T]", x, x)
 	}
 }
 
 // compilePrim compiles primitive functions with an exact number of arguments.
 func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != prim.nargs {
-		panic(fmt.Sprintf("[%s] requires exactly [%d] arguments", prim.name, prim.nargs))
+		c.error("[%s] requires exactly [%d] arguments", prim.name, prim.nargs)
 	}
 	if prim.rev {
 		c.compileNodesReverse(args, sym, ctx)
@@ -220,7 +230,7 @@ func (c *Compiler) compilePrim(prim primDef, args []Node, sym *SymTable, ctx *Ct
 // arguments. Optionally ther can be a lower limit on the number of arguments.
 func (c *Compiler) compileVarPrim(prim varPrimDef, args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) < prim.argsMin {
-		panic(fmt.Sprintf("[%s] requires at least [%d] arguments", prim.name, prim.argsMin))
+		c.error("[%s] requires at least [%d] arguments", prim.name, prim.argsMin)
 	}
 
 	c.instr(vm.OpEnd)
@@ -254,7 +264,7 @@ func (c *Compiler) compileSub(args []Node, sym *SymTable, ctx *Ctx) {
 		c.compile(args[1], sym, ctx)
 		c.instr(vm.OpSub)
 	default:
-		panic("[-] Too many arguments")
+		c.error("[-] Too many arguments")
 	}
 }
 
@@ -280,7 +290,7 @@ func (c *Compiler) compileDiv(args []Node, sym *SymTable, ctx *Ctx) {
 		c.compile(args[1], sym, ctx)
 		c.instr(vm.OpDiv)
 	default:
-		panic("[/] Too many arguments")
+		c.error("[/] Too many arguments")
 	}
 }
 
@@ -343,11 +353,13 @@ func (c *Compiler) compileOr(args []Node, sym *SymTable, ctx *Ctx) {
 
 func (c *Compiler) compileSet(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
-		panic("[set] requires exactly two arguments")
+		c.error("[set] requires exactly two arguments")
+		return
 	}
 	s, ok := args[0].(*SymbolNode)
 	if !ok {
-		panic("[set] requires first argument to be a symbol")
+		c.error("[set] requires first argument to be a symbol")
+		return
 	}
 
 	// Add the local binding to the symbol table. We do this before we compile
@@ -362,15 +374,18 @@ func (c *Compiler) compileSet(args []Node, sym *SymTable, ctx *Ctx) {
 
 func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
-		panic("[let] requires exactly two arguments")
+		c.error("[let] requires exactly two arguments")
+		return
 	}
 
 	bs, ok := args[0].(*ListNode)
 	if !ok {
-		panic("[let] requires first argument to be a list of bindings")
+		c.error("[let] requires first argument to be a list of bindings")
+		return
 	}
 	if len(bs.Items)%2 == 1 {
-		panic("[let] reqires an even number of bindings")
+		c.error("[let] reqires an even number of bindings")
+		return
 	}
 
 	// TODO: separate symbol table would be better.
@@ -379,7 +394,8 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 	for i := 0; i < len(bs.Items); i += 2 {
 		s, ok := bs.Items[i].(*SymbolNode)
 		if !ok {
-			panic(fmt.Sprintf("[let] cannot bind to [%v]", s))
+			c.error(fmt.Sprintf("[let] cannot bind to [%v]", s))
+			return
 		}
 		// Keep track of the let bindings. We will remove them when we fall
 		// out of scope.
@@ -412,12 +428,14 @@ func (c *Compiler) compileLet(args []Node, sym *SymTable, ctx *Ctx) {
 //
 func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
-		panic("[def] requires exactly two arguments")
+		c.error("[def] requires exactly two arguments")
+		return
 	}
 
 	s, ok := args[0].(*SymbolNode)
 	if !ok {
-		panic("[def] requires first argument to be a symbol")
+		c.error("[def] requires first argument to be a symbol")
+		return
 	}
 	// Assing a new ID to the definition name. It's required to do this before
 	// compiling the body of the definition in order to make the symbol available
@@ -445,8 +463,10 @@ func (c *Compiler) compileDef(args []Node, sym *SymTable, ctx *Ctx) {
 //
 func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 && len(args) != 3 {
-		panic("[if] requires either two or three arguments")
+		c.error("[if] requires either two or three arguments")
+		return
 	}
+
 	switch len(args) {
 	case 2:
 		end := c.newLbl()
@@ -488,10 +508,13 @@ func (c *Compiler) compileIf(args []Node, sym *SymTable, ctx *Ctx) {
 //
 func (c *Compiler) compileCond(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args)%2 == 1 {
-		panic("[cond] reqires an even number of case-block pairs")
+		c.error("[cond] reqires an even number of case-block pairs")
+		return
 	}
+
 	len := len(args)
 	end := c.newLbl()
+
 	for i := 0; i < len-2; i += 2 {
 		nxt := c.newLbl()
 		c.compile(args[i], sym, ctx)
@@ -510,7 +533,8 @@ func (c *Compiler) compileCond(args []Node, sym *SymTable, ctx *Ctx) {
 
 func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 2 {
-		panic("[fn] expects exactly 2 arguments")
+		c.error("[fn] expects exactly 2 arguments")
+		return
 	}
 	// Accept parameter lists either as (a1 a2 ..) or as [a1 a2 ...] though it
 	// is customary to use the second notational form through out.
@@ -520,7 +544,7 @@ func (c *Compiler) compileFn(args []Node, sym *SymTable, ctx *Ctx) {
 	case []Node:
 		c.compileFn2(x, args[1], sym, ctx)
 	default:
-		panic("[fn] first argument must be a list or vector")
+		c.error("[fn] first argument must be a list or vector")
 	}
 }
 
@@ -595,7 +619,6 @@ func (c *Compiler) compileFnBody(params []Node, body Node, sym *SymTable, ctx *C
 func (c *Compiler) listClosureParamsForSub(params []Node, node Node, sym *SymTable) []Node {
 	sub := sym.NewSymTable()
 	man, opt := c.extractParams(params)
-	// fmt.Printf("PARAMS %v, %s\n", man, opt)
 	// Add the mandatory arguments to the local symbol table.
 	sub.Add(man)
 	// Check for an optional argument.
@@ -603,9 +626,6 @@ func (c *Compiler) listClosureParamsForSub(params []Node, node Node, sym *SymTab
 		// Add the optional argument to the local symbol table.
 		sub.AddVar(opt)
 	}
-
-	// fmt.Println(sub)
-
 	return c.listClosureParams(node, sub)
 }
 
@@ -613,15 +633,9 @@ func (c *Compiler) listClosureParams(node Node, sym *SymTable) []Node {
 	switch n := node.(type) {
 	case *SymbolNode:
 		idx, ok := sym.IndexOf(n.Name)
-		// fmt.Printf("POT SYM %s @ %d\n", n.Name, idx)
 		if ok && idx < 0 {
 			return []Node{n}
 		}
-		// Check if it is a local symbol that is external to the current scope.
-		// if idx, ok := sym.IndexOf(n.Name); ok && idx < 0 {
-		// 	fmt.Printf("CLOS SYM %s\n", n.Name)
-		// 	return []Node{n}
-		// }
 	case []Node:
 		return c.listClosureParamsList(n, sym)
 	case *ListNode:
@@ -660,10 +674,12 @@ func (c *Compiler) extractParams(params []Node) ([]string, string) {
 		return names, ""
 	}
 	if len(names) == pos+1 {
-		panic("[fn] missing optional parameter")
+		c.error("[fn] missing optional parameter")
+		return names, ""
 	}
 	if len(names) > pos+2 {
-		panic("[fn] excess optional parameter")
+		c.error("[fn] excess optional parameter")
+		return names, ""
 	}
 	return names[:pos], names[pos+1]
 }
@@ -681,7 +697,8 @@ func (c *Compiler) verifyParam(param Node, pos int) string {
 	case *SymbolNode:
 		return sym.Name
 	default:
-		panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
+		c.error("[fn] parameter [%d] is not a symbol", pos)
+		return ""
 	}
 }
 
@@ -690,13 +707,14 @@ func (c *Compiler) verifyParam(param Node, pos int) string {
 // consider the set flag and compile a recursive call instead of a regular one.
 func (c *Compiler) compileRec(args []Node, sym *SymTable, ctx *Ctx) {
 	if len(args) != 1 {
-		panic("[rec] expects exactly 1 argument")
+		c.error("[rec] expects exactly 1 argument")
+		return
 	}
 
 	if x, ok := args[0].(*ListNode); ok {
 		c.compileList(x, sym, ctx.NewRecCtx(true))
 	} else {
-		panic("[rec] argument must be a list call")
+		c.error("[rec] argument must be a list call")
 	}
 }
 

@@ -454,7 +454,8 @@
   (defn find-divisor [n test-divisor]
     (cond (> (square test-divisor) n) n
           (divides? test-divisor n)   test-divisor
-          else (rec (find-divisor n (inc test-divisor))) ))
+          else                        (rec (find-divisor n
+                                                         (inc test-divisor))) ))
   (defn smallest-divisor [n] (find-divisor n 2))
   (defn prime? [n] (= n (smallest-divisor n)))
 
@@ -471,7 +472,7 @@
   (println "Exercise 1.22")
   (println "-------------")
   (defn _search-for-primes [start end limit, primes]
-    (cond (= limit 1) primes
+    (cond (= limit 0) primes
           (> start end) primes
           (prime? start) (rec (_search-for-primes (+ start 2)
                                                   end
@@ -484,32 +485,122 @@
   (defn search-for-primes [start end]
     (_search-for-primes start end 3 []))
 
-  ; Runtime: 146511 ns
-  (measure-runtime
-    (println "(search-for-primes 1001 10000) = "
-             (search-for-primes 1001 10000)))
-  ; Runtime: 342442 ns
-  (measure-runtime
-    (println "(search-for-primes 10001 100000) = "
-             (search-for-primes 10001 100000)))
-  ; Runtime: 642997 ns
-  (measure-runtime
-    (println "(search-for-primes 100001 1000000) = "
-             (search-for-primes 100001 1000000)))
-  ; Runtime: 3188368 ns
-  (measure-runtime
-    (println "(search-for-primes 1000001 10000000) = "
-             (search-for-primes 1000001 10000000)))
+  ; (measure-runtime
+  ;   (println "(search-for-primes 1001 10000) = "
+  ;            (search-for-primes 1001 10000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 10001 100000) = "
+  ;            (search-for-primes 10001 100000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 100001 1000000) = "
+  ;            (search-for-primes 100001 1000000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 1000001 10000000) = "
+  ;            (search-for-primes 1000001 10000000)))
 
-  (println "(sqrt 10) = " (sqrt2 10))
-  (println "(/ 342442 146511) = " (/ 342442.0 146511))
-  (println "(/ 642997 342442) = " (/ 642997.0 342442))
-  (println "(/ 3188368 642997) = " (/ 3188368.0 642997))
+  (set primes [1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037])
+
+  ; (measure-runtime (map prime? primes))
+  (map '(measure-runtime (prime? ~x)) primes)
 
   (println)
   (println "Exercise 1.23")
   (println "-------------")
+  (defn next-2 [n] (if (= n 2) 3 (+ n 2) ))
+  (defn find-divisor-2 [n d]
+    (cond (> (square d) n) n
+          (divides? d n)   d
+          else             (rec (find-divisor-2 n (next-2 d))) ))
+  (defn smallest-divisor-2 [n] (find-divisor-2 n 2))
+  (defn prime-2? [n] (= n (smallest-divisor-2 n)))
 
+  (defn _search-for-primes-2 [start end limit, primes]
+    (cond (= limit 0) primes
+          (> start end) primes
+          (prime? start) (rec (_search-for-primes-2 (+ start 2)
+                                                    end
+                                                    (- limit 1)
+                                                    (+. primes start) ))
+          else (rec (_search-for-primes-2 (+ start 2)
+                                          end
+                                          limit
+                                          primes )) ))
+  (defn search-for-primes-2 [start end]
+    (_search-for-primes-2 start end 3 []))
+
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 1001 10000) = "
+  ;            (search-for-primes-2 1001 10000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 10001 100000) = "
+  ;            (search-for-primes-2 10001 100000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 100001 1000000) = "
+  ;            (search-for-primes-2 100001 1000000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 1000001 10000000) = "
+  ;            (search-for-primes-2 1000001 10000000)))
+
+  ; Unfortunately the garbage collector interferes here and we cannot compare
+  ; runtimes. If we comment the prime test of Ex 1.22 this tests here run a lot
+  ; faster.
+
+  ; (measure-runtime (map prime-2? primes))
+  (map '(measure-runtime (prime-2? ~x)) primes)
+
+  (println)
+  (println "Exercise 1.24")
+  (println "-------------")
+  (defn expmod [base exp m]
+    (cond (= exp 0)   1
+          (even? exp) (mod (square (expmod base (/ exp 2) m)) m)
+          else        (mod (* base (expmod base (- exp 1) m)) m) ))
+  (defn fermat-test [n]
+    (set a (+ 1 (random (- n 1))))
+    (= (expmod a n n) a))
+  (defn fast-prime? [n times]
+    (cond (= times 0)     true
+          (fermat-test n) (rec (fast-prime? n (- times 1)))
+          else            false ))
+
+  ; (measure-runtime (map '(fast-prime? ~x 1) primes))
+  (map '(measure-runtime (fast-prime? ~x 1)) primes)
+
+
+  ;; Exercise 1.25
+  ;; -------------
+  ;; Without repeated remainder calculation the number would either overflow or
+  ;; if the system supports bignums, the size of the number would grow rapidly.
+
+
+  ;; Exercise 1.26
+  ;; -------------
+  ;; With the explicit multiplication we do the same work twice when we call
+  ;; (expmod base (/ exp 2) m) twice. This way we do not gain any advantage of
+  ;; halving the exponent and squaring the result.
+
+
+  (println)
+  (println "Exercise 1.27")
+  (println "-------------")
+  (defn _fermat-run [n a]
+    (cond (= a 1)              true
+          (= (expmod a n n) a) (rec (_fermat-run n (- a 1)))
+          else                 false ))
+  (defn fermat-run [n] (_fermat-run n (- n 1)))
+
+  (println "(fermat-run 561) = " (fermat-run 561))
+  (println "(fermat-run 1105) = " (fermat-run 1105))
+  (println "(fermat-run 1729) = " (fermat-run 1729))
+  (println "(fermat-run 2465) = " (fermat-run 2465))
+  (println "(fermat-run 2821) = " (fermat-run 2821))
+  (println "(fermat-run 6601) = " (fermat-run 6601))
 
   (println)
   (println "Chapter 1 completed.")

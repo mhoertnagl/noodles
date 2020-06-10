@@ -15,6 +15,7 @@ type UseRewriter struct {
 	usings usingsSet
 	rdr    *cmp.Reader
 	prs    *cmp.Parser
+	err    []string
 }
 
 func NewUseRewriter(paths []string) *UseRewriter {
@@ -23,7 +24,17 @@ func NewUseRewriter(paths []string) *UseRewriter {
 		usings: usingsSet{},
 		rdr:    cmp.NewReader(),
 		prs:    cmp.NewParser(),
+		err:    make([]string, 0),
 	}
+}
+
+func (r *UseRewriter) Errors() []string {
+	return r.err
+}
+
+func (r *UseRewriter) error(format string, args ...interface{}) {
+	e := fmt.Sprintf(format, args...)
+	r.err = append(r.err, e)
 }
 
 func (r *UseRewriter) Rewrite(n cmp.Node) cmp.Node {
@@ -56,18 +67,19 @@ func (r *UseRewriter) rewriteList(n *cmp.ListNode) cmp.Node {
 }
 
 func (r *UseRewriter) loadUse(mod string) cmp.Node {
-	s := loadModule(r.paths, mod)
+	s := r.loadModule(r.paths, mod)
 	r.rdr.Load(s)
 	c := r.prs.Parse(r.rdr)
 	return r.Rewrite(c)
 }
 
-func loadModule(dirs []string, mod string) string {
+func (r *UseRewriter) loadModule(dirs []string, mod string) string {
 	for _, dir := range dirs {
 		modBytes, err := ioutil.ReadFile(path.Join(dir, mod+".splis"))
 		if err == nil {
 			return string(modBytes)
 		}
 	}
-	panic(fmt.Sprintf("Could not find module [%s] in %v.", mod, dirs))
+	r.error("Could not find module [%s] in %v.", mod, dirs)
+	return ""
 }

@@ -1,5 +1,6 @@
 (do
   (use "core/prelude")
+  (use "test")
 
   ; Funz nicht
   ; (println (map .@ [[1 2 3] [2 3 4] [3 4 5]]))
@@ -19,5 +20,5 @@
   ;       (f (nth 0 lst)))))
   ; (println (setclosure1 1 2 3))
 
-  (println (nrange 1 10 2))
+  (println (hui 4))
 )
