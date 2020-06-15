@@ -1,4 +1,4 @@
-# splis 2
+# noodles
 
 Implementation of [Make-A-Lisp](https://github.com/kanaka/mal).
 
