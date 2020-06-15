@@ -589,18 +589,18 @@
   (println)
   (println "Exercise 1.27")
   (println "-------------")
-  (defn _fermat-run [n a]
+  (defn _carmichael-run [n a]
     (cond (= a 1)              true
-          (= (expmod a n n) a) (rec (_fermat-run n (- a 1)))
+          (= (expmod a n n) a) (rec (_carmichael-run n (- a 1)))
           else                 false ))
-  (defn fermat-run [n] (_fermat-run n (- n 1)))
+  (defn carmichael-run [n] (_carmichael-run n (- n 1)))
 
-  (println "(fermat-run 561) = " (fermat-run 561))
-  (println "(fermat-run 1105) = " (fermat-run 1105))
-  (println "(fermat-run 1729) = " (fermat-run 1729))
-  (println "(fermat-run 2465) = " (fermat-run 2465))
-  (println "(fermat-run 2821) = " (fermat-run 2821))
-  (println "(fermat-run 6601) = " (fermat-run 6601))
+  (println "(carmichael-run 561) = " (carmichael-run 561))
+  (println "(carmichael-run 1105) = " (carmichael-run 1105))
+  (println "(carmichael-run 1729) = " (carmichael-run 1729))
+  (println "(carmichael-run 2465) = " (carmichael-run 2465))
+  (println "(carmichael-run 2821) = " (carmichael-run 2821))
+  (println "(carmichael-run 6601) = " (carmichael-run 6601))
 
   (println)
   (println "Chapter 1 completed.")
