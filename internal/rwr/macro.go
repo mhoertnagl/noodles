@@ -17,12 +17,23 @@ type macroDef struct {
 
 type MacroRewriter struct {
 	macros macroDefs
+	err    []string
 }
 
 func NewMacroRewriter() *MacroRewriter {
 	return &MacroRewriter{
 		macros: macroDefs{},
+		err:    make([]string, 0),
 	}
+}
+
+func (r *MacroRewriter) Errors() []string {
+	return r.err
+}
+
+func (r *MacroRewriter) error(format string, args ...interface{}) {
+	e := fmt.Sprintf(format, args...)
+	r.err = append(r.err, e)
 }
 
 func (r *MacroRewriter) Rewrite(n cmp.Node) cmp.Node {
@@ -66,16 +77,16 @@ func (r *MacroRewriter) addMacro(name cmp.Node, pars cmp.Node, body cmp.Node) {
 	if sym, ok := name.(*cmp.SymbolNode); ok {
 		r.addMacro2(sym.Name, pars, body)
 	} else {
-		panic(fmt.Sprintf("[defmacro] argument 1 has to be a symbol but is [%T]", name))
+		r.error("[defmacro] argument 1 has to be a symbol but is [%T]", name)
 	}
 }
 
 func (r *MacroRewriter) addMacro2(name string, pars cmp.Node, body cmp.Node) {
 	if _, found := r.macros[name]; found {
-		panic(fmt.Sprintf("[defmacro] macro [%s] redefined", name))
+		r.error("[defmacro] macro [%s] redefined", name)
 	}
 
-	man, opt := getParamNames(pars)
+	man, opt := r.getParamNames(pars)
 
 	r.macros[name] = &macroDef{
 		man:  man,
@@ -84,41 +95,45 @@ func (r *MacroRewriter) addMacro2(name string, pars cmp.Node, body cmp.Node) {
 	}
 }
 
-func getParamNames(parsNode cmp.Node) ([]string, string) {
+func (r *MacroRewriter) getParamNames(parsNode cmp.Node) ([]string, string) {
 	if params, ok := parsNode.([]cmp.Node); ok {
-		return extractParams(params)
+		return r.extractParams(params)
 	}
-	panic(fmt.Sprintf("[defmacro] argument 2 has to be a vector of symbols"))
+	r.error("[defmacro] argument 2 has to be a vector of symbols")
+	return []string{}, ""
 }
 
-func extractParams(params []cmp.Node) ([]string, string) {
-	names := verifyParams(params)
+func (r *MacroRewriter) extractParams(params []cmp.Node) ([]string, string) {
+	names := r.verifyParams(params)
 	pos := util.IndexOf(names, "&")
 	if pos == -1 {
 		return names, ""
 	}
 	if len(names) == pos+1 {
-		panic("[fn] missing optional parameter")
+		r.error("[fn] missing optional parameter in %v", names)
+		return []string{}, ""
 	}
 	if len(names) > pos+2 {
-		panic("[fn] excess optional parameter")
+		r.error("[fn] excess optional parameter in %v", names)
+		return []string{}, ""
 	}
 	return names[:pos], names[pos+1]
 }
 
-func verifyParams(params []cmp.Node) []string {
+func (r *MacroRewriter) verifyParams(params []cmp.Node) []string {
 	names := make([]string, 0)
 	for pos, param := range params {
-		names = append(names, verifyParam(param, pos))
+		names = append(names, r.verifyParam(param, pos))
 	}
 	return names
 }
 
-func verifyParam(param cmp.Node, pos int) string {
+func (r *MacroRewriter) verifyParam(param cmp.Node, pos int) string {
 	switch sym := param.(type) {
 	case *cmp.SymbolNode:
 		return sym.Name
 	default:
-		panic(fmt.Sprintf("[fn] parameter [%d] is not a symbol", pos))
+		r.error(fmt.Sprintf("[fn] parameter at position [%d] is not a symbol", pos))
+		return ""
 	}
 }

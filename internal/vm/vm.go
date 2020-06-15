@@ -3,7 +3,11 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
+	"math/rand"
 	"os"
+	"strings"
+	"time"
 )
 
 // This is a special marker that marks the end of a sequence on the stack.
@@ -43,9 +47,13 @@ func (m *VM) Run(code Ins) {
 		// case OpNil:
 		//   m.push(nil)
 		case OpConst:
-			m.push(m.readInt64())
-		case OpRef:
-			m.push(m.readInt64())
+			c := m.readInt64()
+			// fmt.Printf("Const %d\n", c)
+			m.push(c)
+		case OpConstF:
+			c := m.readFloat64()
+			// fmt.Printf("Const %d\n", c)
+			m.push(c)
 		case OpFalse:
 			m.push(false)
 		case OpTrue:
@@ -57,22 +65,36 @@ func (m *VM) Run(code Ins) {
 			m.push(m.readString(int64(l)))
 		case OpPop:
 			m.pop()
+			// fmt.Printf("Pop\n")
 		case OpAdd:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l + r)
+			var s Val = int64(0)
+			for v := m.pop(); v != end; v = m.pop() {
+				s = m.add(s, v)
+			}
+			m.push(s)
 		case OpSub:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l - r)
+			r := m.pop()
+			l := m.pop()
+			m.push(m.sub(l, r))
 		case OpMul:
-			r := m.popInt64()
-			l := m.popInt64()
-			m.push(l * r)
+			var s Val = int64(1)
+			for v := m.pop(); v != end; v = m.pop() {
+				s = m.mul(s, v)
+			}
+			m.push(s)
 		case OpDiv:
+			r := m.pop()
+			l := m.pop()
+			m.push(m.div(l, r))
+			// fmt.Printf("Div\n")
+		case OpMod:
 			r := m.popInt64()
 			l := m.popInt64()
-			m.push(l / r)
+			m.push(l % r)
+		case OpRand:
+			rand.Seed(time.Now().UnixNano())
+			n := m.popInt64()
+			m.push(rand.Int63n(n))
 		case OpNot:
 			v := m.popBool()
 			m.push(!v)
@@ -111,7 +133,6 @@ func (m *VM) Run(code Ins) {
 			if len(l) == 0 {
 				// TODO: push fresh empty vector?
 				m.push(l)
-				// m.push(make([]Val, 0))
 			} else {
 				m.push(l[n:])
 			}
@@ -123,6 +144,24 @@ func (m *VM) Run(code Ins) {
 			for i := len(l) - 1; i >= 0; i-- {
 				m.push(l[i])
 			}
+		case OpJoin:
+			// str := ""
+			var sb strings.Builder
+			for v := m.pop(); v != end; v = m.pop() {
+				if s, ok := v.(string); ok {
+					sb.WriteString(s)
+					// str = s + str
+				}
+			}
+			// m.push(str)
+			m.push(sb.String())
+		case OpExplode:
+			s := m.popStr()
+			l := make([]Val, 0)
+			for _, c := range s {
+				l = append(l, string(c))
+			}
+			m.push(l)
 		// case OpAnd:
 		// 	a := ^int64(0)
 		// 	for v := m.pop(); v != end; v = m.pop() {
@@ -154,7 +193,6 @@ func (m *VM) Run(code Ins) {
 			l := m.pop()
 			m.push(m.eq(l, r))
 		case OpNE:
-			// TODO: Can be replaced with these two instructions OpEQ, OpNot
 			r := m.pop()
 			l := m.pop()
 			m.push(!m.eq(l, r))
@@ -168,6 +206,7 @@ func (m *VM) Run(code Ins) {
 			m.push(m.le(l, r))
 		case OpJump:
 			m.ip = m.readInt64()
+			// fmt.Printf("Jump\n")
 		case OpJumpIf:
 			ip := m.readInt64()
 			if m.popBool() {
@@ -183,33 +222,67 @@ func (m *VM) Run(code Ins) {
 			// Pops n arguments from the stack and pushes them onto the frames stack.
 			// This will reverse the order of the arguments.
 			n := m.readInt64()
+			// m.printFrames()
+			// fmt.Printf("PushArgs %d\n", n)
 			for ; n > 0; n-- {
 				m.pushFrame(m.pop())
 			}
+			// m.printFrames()
 		case OpDropArgs:
 			m.fsp -= m.readInt64()
 		case OpGetArg:
 			// The first argument is at FRAMES[FP], the nth at FRAMES[FP + n].
-			a := m.fp + m.readInt64()
+			d := m.readInt64()
+			a := m.fp + d
+			// fmt.Printf("GetArg @[%d + %d] = %v\n", m.fp, d, m.frames[a])
+			// m.printFrames()
 			m.push(m.frames[a])
 		case OpSetGlobal:
 			m.defs[m.readInt64()] = m.pop()
+			// fmt.Printf("SetGlobal\n")
 		case OpGetGlobal:
 			m.push(m.defs[m.readInt64()])
+			// fmt.Printf("GetGlobal\n")
+		case OpRef:
+			n := m.readInt64()
+			a := m.readInt64()
+			r := NewRef(a)
+			// Pop n closure arguments from the stack. We will save them in the Ref
+			// struct and push them on the stack whenever the closure gets called.
+			for ; n > 0; n-- {
+				r.Add(m.pop())
+			}
+			// fmt.Printf("Ref %v @%v\n", r.cargs, r.addr)
+			m.push(r)
 		case OpCall:
-			m.pushFrame(m.ip)   // Push IP.
-			m.pushFrame(m.fp)   // Push pointer to previous frame.
-			m.fp = m.fsp        // Set pointer to new frame.
-			m.ip = m.popInt64() // Call function.
+			m.pushFrame(m.ip) // Push IP.
+			m.pushFrame(m.fp) // Push pointer to previous frame.
+			r := m.popRef()
+			// Push closue arguments.
+			for _, carg := range r.cargs {
+				m.push(carg)
+			}
+			// fmt.Printf("Call @%d\n", r.addr)
+			// m.printStack()
+			// m.printFrames()
+			m.fp = m.fsp  // Set pointer to new frame.
+			m.ip = r.addr // Call function.
 		case OpRecCall:
-			m.fsp = m.fp        // Drop arguments.
-			m.ip = m.popInt64() // Call function.
+			r := m.popRef()
+			// Push closue arguments.
+			for _, carg := range r.cargs {
+				m.push(carg)
+			}
+			m.fsp = m.fp  // Drop arguments.
+			m.ip = r.addr // Call function.
 		case OpReturn:
 			m.fsp = m.fp             // Drop arguments.
 			m.fp = m.popFrameInt64() // Restore pointer to previous frame.
 			m.ip = m.popFrameInt64() // Restore IP.
+			// fmt.Printf("Return\n")
 		case OpEnd:
 			m.push(end)
+			// fmt.Printf("End\n")
 		case OpHalt:
 			return
 		case OpWrite:
@@ -217,6 +290,8 @@ func (m *VM) Run(code Ins) {
 			for v := m.pop(); v != end; v = m.pop() {
 				fmt.Fprint(f, v)
 			}
+		case OpRuntime:
+			m.push(time.Now().UnixNano())
 		case OpDebug:
 			mode := m.readUint64()
 			// Bit 0 show stack.
@@ -231,6 +306,9 @@ func (m *VM) Run(code Ins) {
 		default:
 			panic("Unsupported operation.")
 		}
+		// m.printStack()
+		// m.printFrames()
+		// fmt.Printf("---\n")
 	}
 }
 
@@ -260,12 +338,20 @@ func (m *VM) popUInt64() uint64 {
 	return m.pop().(uint64)
 }
 
+func (m *VM) popStr() string {
+	return m.pop().(string)
+}
+
 func (m *VM) popVector() []Val {
 	return m.pop().([]Val)
 }
 
 func (m *VM) popFileDesc() *os.File {
 	return m.pop().(*os.File)
+}
+
+func (m *VM) popRef() *Ref {
+	return m.pop().(*Ref)
 }
 
 func (m *VM) pushFrame(v Val) {
@@ -300,10 +386,116 @@ func (m *VM) readInt64() int64 {
 	return int64(v)
 }
 
+func (m *VM) readFloat64() float64 {
+	v := binary.BigEndian.Uint64(m.code[m.ip : m.ip+8])
+	m.ip += 8
+	return math.Float64frombits(v)
+}
+
 func (m *VM) readString(l int64) string {
 	s := string(m.code[m.ip : m.ip+l])
 	m.ip += l
 	return s
+}
+
+func (m *VM) add(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll + rr
+		case float64:
+			return float64(ll) + rr
+		default:
+			panic(fmt.Sprintf("Cannot add %v", rr))
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll + float64(rr)
+		case float64:
+			return ll + rr
+		default:
+			panic(fmt.Sprintf("Cannot add %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot add %v", ll))
+	}
+}
+
+func (m *VM) sub(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll - rr
+		case float64:
+			return float64(ll) - rr
+		default:
+			panic(fmt.Sprintf("Cannot subtract %v", rr))
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll - float64(rr)
+		case float64:
+			return ll - rr
+		default:
+			panic(fmt.Sprintf("Cannot subtract %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot subtract %v", ll))
+	}
+}
+
+func (m *VM) mul(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll * rr
+		case float64:
+			return float64(ll) * rr
+		default:
+			panic(fmt.Sprintf("Cannot multiply %v", rr))
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll * float64(rr)
+		case float64:
+			return ll * rr
+		default:
+			panic(fmt.Sprintf("Cannot multiply %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot multiply %v", ll))
+	}
+}
+
+func (m *VM) div(l Val, r Val) Val {
+	switch ll := l.(type) {
+	case int64:
+		switch rr := r.(type) {
+		case int64:
+			return ll / rr //float64(ll) / float64(rr)
+		case float64:
+			return float64(ll) / rr
+		default:
+			panic(fmt.Sprintf("Cannot divide %v", rr))
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll / float64(rr)
+		case float64:
+			return ll / rr
+		default:
+			panic(fmt.Sprintf("Cannot divide %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot divide %v", ll))
+	}
 }
 
 func (m *VM) eq(l Val, r Val) bool {
@@ -316,6 +508,15 @@ func (m *VM) eq(l Val, r Val) bool {
 	case int64:
 		switch rr := r.(type) {
 		case int64:
+			return ll == rr
+		case float64:
+			return float64(ll) == rr
+		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll == float64(rr)
+		case float64:
 			return ll == rr
 		}
 	case string:
@@ -350,9 +551,23 @@ func (m *VM) lt(l Val, r Val) bool {
 		switch rr := r.(type) {
 		case int64:
 			return ll < rr
+		case float64:
+			return float64(ll) < rr
+		default:
+			panic(fmt.Sprintf("Cannot < %v", rr))
 		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll < float64(rr)
+		case float64:
+			return ll < rr
+		default:
+			panic(fmt.Sprintf("Cannot < %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot < %v", ll))
 	}
-	return false
 }
 
 func (m *VM) le(l Val, r Val) bool {
@@ -361,21 +576,25 @@ func (m *VM) le(l Val, r Val) bool {
 		switch rr := r.(type) {
 		case int64:
 			return ll <= rr
+		case float64:
+			return float64(ll) <= rr
+		default:
+			panic(fmt.Sprintf("Cannot <= %v", rr))
 		}
+	case float64:
+		switch rr := r.(type) {
+		case int64:
+			return ll <= float64(rr)
+		case float64:
+			return ll <= rr
+		default:
+			panic(fmt.Sprintf("Cannot <= %v", rr))
+		}
+	default:
+		panic(fmt.Sprintf("Cannot <= %v", ll))
 	}
-	return false
 }
 
 func prepend(v Val, l []Val) []Val {
 	return append([]Val{v}, l...)
 }
-
-// func join(e Evaluator, env data.Env, args []data.Node) data.Node {
-// 	var sb strings.Builder
-// 	for _, arg := range args {
-// 		if s, ok := arg.(string); ok {
-// 			sb.WriteString(s)
-// 		}
-// 	}
-// 	return sb.String()
-// }

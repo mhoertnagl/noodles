@@ -24,6 +24,8 @@ func (m *AsmPrinter) Print(code AsmCode) []string {
 			m.write("%s:", x.Name)
 		case *AsmLabeled:
 			m.write("  %s %s", m.opName(x.Op), x.Name)
+		case *AsmRef:
+			m.write("  %s %d %s", m.opName(vm.OpRef), x.Cargs, x.Name)
 		case *AsmIns:
 			m.writeInstr(x)
 		case *AsmStr:

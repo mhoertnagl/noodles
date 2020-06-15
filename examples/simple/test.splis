@@ -1,0 +1,3 @@
+(do
+  (defn hui [c] (* c c c c))
+)

@@ -1,26 +1,24 @@
 (do
   (use "core/prelude")
+  (use "test")
 
-  ; (defn b [n acc]
-  ;   (if (= n 0)
-  ;     acc
-  ;     (b (dec n) (inc acc))))
-
-  (println (let (a [1 2 3] b 4) (:+ a b)))
-
-  (let (b (fn [m] (if (= m 0) 1 (b (- m 1)) ) ) )
-    (println (b 1) ))
-
-  ; (defn repeat2 [n v]
-  ;   (let (_repeat2 (fn [n v acc] (if (<= n 0) acc (_repeat2 (- n 1) v (:+ acc v)) )))
-  ;   (_repeat2 n v []) ))
-
-  ; (defn repeat2 [n v]
-  ;   (let (_repeat2 repeat)
-  ;   (_repeat2 n v) ))
+  ; Funz nicht
+  ; (println (map .@ [[1 2 3] [2 3 4] [3 4 5]]))
+  ; Das schon
+  ; (println (map :@ [[1] [2] [3]]))
+  ; (println (flat-map identity [[1 2 3] [2 3 4] [3 4 5]]))
   ;
-  ; (println (repeat2 3 0))
+  ; (println (join "a" "b"))
+  ; (println (map :joinv [["a" "b"] ["c" "d"]]))
 
-  (println (map (fn [x] (irange 0 x)) [1 2 3]))
-  (println (flat-map (fn [x] (irange 0 x)) [1 2 3]))
+  ; (measure-runtime (println (random 1000)))
+
+  ; (def setclosure1 (fn [a b c]
+  ;   (do (set lst [a b c])
+  ;       (set min (nth 0 lst))
+  ;       (set f (fn [x] (= x min) ))
+  ;       (f (nth 0 lst)))))
+  ; (println (setclosure1 1 2 3))
+
+  (println (hui 4))
 )

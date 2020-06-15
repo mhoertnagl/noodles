@@ -63,9 +63,34 @@ func main() {
 	}
 
 	n = urw.Rewrite(n)
+
+	if len(urw.Errors()) > 0 {
+		for _, err := range urw.Errors() {
+			fmt.Println(err)
+		}
+		os.Exit(-1)
+	}
+
 	n = qrw.Rewrite(n)
+
 	n = mrw.Rewrite(n)
+
+	if len(mrw.Errors()) > 0 {
+		for _, err := range mrw.Errors() {
+			fmt.Println(err)
+		}
+		os.Exit(-1)
+	}
+
 	a := cmp.Compile(n)
+
+	if len(cmp.Errors()) > 0 {
+		for _, err := range cmp.Errors() {
+			fmt.Println(err)
+		}
+		os.Exit(-1)
+	}
+
 	c := asm.Assemble(a)
 
 	outPath := util.FilePathWithoutExt(srcPath)

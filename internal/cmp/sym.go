@@ -1,5 +1,10 @@
 package cmp
 
+import (
+	"fmt"
+	"strings"
+)
+
 type SymEntry struct {
 	idx int
 }
@@ -26,6 +31,46 @@ func (s *SymTable) NewSymTable() *SymTable {
 	}
 }
 
+// func (s *SymTable) NewClosureSymTable(eps []*SymbolNode) *SymTable {
+// 	cs := &SymTable{
+// 		parent:  s,
+// 		entries: make(symMap),
+// 	}
+// 	// Add all the new closure parameters beginning at index 0.
+// 	for idx, ps := range eps {
+// 		cs.entries[ps.Name] = &SymEntry{
+// 			idx: idx,
+// 		}
+// 	}
+// 	return cs
+// }
+
+// // NewClosureSymTable create a closure symbol table. This table has the same
+// // parent as sym itself. It is NOT a child of sym. The closure table contains
+// // the closure params beginning with index 0 and then all params that are in
+// // sym shifted in index by the number of closure params.
+// func NewClosureSymTable(s *SymTable, eps []*SymbolNode) *SymTable {
+// 	// The closure symbol table is NOT a child of s but of the parent of s.
+// 	cs := &SymTable{
+// 		parent:  s.parent,
+// 		entries: make(symMap),
+// 	}
+// 	// Add all the new closure parameters beginning at index 0.
+// 	for idx, ps := range eps {
+// 		cs.entries[ps.Name] = &SymEntry{
+// 			idx: idx,
+// 		}
+// 	}
+// 	// Shift all local parameter indexes by the number of closure parameters.
+// 	cargs := len(eps)
+// 	for name, n := range s.entries {
+// 		cs.entries[name] = &SymEntry{
+// 			idx: cargs + n.idx,
+// 		}
+// 	}
+// 	return cs
+// }
+
 func (s *SymTable) Size() int {
 	return len(s.entries)
 }
@@ -42,6 +87,20 @@ func (s *SymTable) Add(ns []string) {
 		}
 	}
 }
+
+// func (s *SymTable) AddClosureParams(ns []*SymbolNode) {
+// 	cargs := len(ns)
+// 	// Shift all local parameter indexes by the number of closure parameters.
+// 	for _, n := range s.entries {
+// 		n.idx += cargs
+// 	}
+// 	// Add all the new closure parameters beginning at index 0.
+// 	for idx, n := range ns {
+// 		s.entries[n.Name] = &SymEntry{
+// 			idx: idx,
+// 		}
+// 	}
+// }
 
 func (s *SymTable) RemoveVar(ns ...string) {
 	s.Remove(ns)
@@ -70,7 +129,27 @@ func (s *SymTable) IndexOf(n string) (int, bool) {
 		}
 		// Subtract the FP and the RP cell as well as the number of arguments
 		// of the current frame.
-		dfp -= 2 + c.Size()
+		if c.parent != nil {
+			dfp -= (2 + c.parent.Size())
+		}
 	}
 	return 0, false
+}
+
+func (s *SymTable) String() string {
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintln("-- SYMBOLS --"))
+	s.BufString(&buf)
+	buf.WriteString(fmt.Sprintln("-- END SYMBOLS --"))
+	return buf.String()
+}
+
+func (s *SymTable) BufString(buf *strings.Builder) {
+	if s.parent != nil {
+		s.parent.BufString(buf)
+		buf.WriteString(fmt.Sprintln("----------"))
+	}
+	for name, entry := range s.entries {
+		buf.WriteString(fmt.Sprintf("SYM %s @ %d\n", name, entry.idx))
+	}
 }

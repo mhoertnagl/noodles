@@ -1,4 +1,7 @@
 (do
+  (use "core/prelude")
+  (use "core/math")
+
   (println "Chapter 1")
   (println "=========")
 
@@ -46,10 +49,10 @@
   (defn square [x] (* x x))
   (defn sum-of-squares [xs] (sum (map square xs)))
 
-  (defn max-2 [a b c]
-    (let (lst [a b c]
-          min (minimumv lst))
-      (remove (fn [x] (= x min)) lst)))
+  (defn max-2 [& args]
+    (set min (minimumv args))
+    (set f (fn [x] (= x min)))
+    (remove f args))
 
   (println (max-2 1 2 3) " should be [2 3].")
   (println (max-2 4 3 7) " should be [4 7].")
@@ -65,7 +68,7 @@
   (println "------------")
   ; Depending on the value of b we will either add or subtract it from a.
   ; If b < 0 we subtract a negative number yielding the absolute value of b.
-  (defn a-plus-abs-b [a b] ((if (> b 0) + -) a b))
+  (defn a-plus-abs-b [a b] ((if (> b 0) :+ :-) a b))
 
   (println (a-plus-abs-b 1 2) " should be 3.")
   (println (a-plus-abs-b 1 (- 2)) " should be 3.")
@@ -73,13 +76,11 @@
   (println)
   (println "Exercise 1.5")
   (println "------------")
-  (defn p [] (p))
-  (defn test [x y] (if (= x 0) 0 y))
+  (defn p [] (rec (p)))
+  (defn test2 [x y] (if (= x 0) 0 y))
   ; Splis uses applicative-order evaluation.
-  ; The call (test 0 p) will loop forever...
-  (println (test 0 p))
-  ; ...well, or not.
-  ; Why is it printing the 0 and stopping?
+  ; The call (test2 0 (p)) will loop forever...
+  ; (println (test2 0 (p)))
 
   (println)
   (println "1.1.7 Example: Square Roots by Newton's Method")
@@ -91,7 +92,7 @@
   (defn sqrt-iter [guess x]
     (if (sqrt-good-enough? guess x)
       guess
-      (sqrt-iter (sqrt-improve guess x) x) ))
+      (rec (sqrt-iter (sqrt-improve guess x) x) )))
   (defn sqrt [x] (sqrt-iter 1.0 x))
 
   (println "(sqrt 9) = " (sqrt 9))
@@ -99,50 +100,57 @@
   (println "(sqrt (+ (sqrt 2) (sqrt 3))) = " (sqrt (+ (sqrt 2) (sqrt 3))))
   (println "(square (sqrt 1000)) = " (square (sqrt 1000)))
 
-  (println)
-  (println "Exercise 1.6")
-  (println "------------")
-  (println "sqrt-iter will recurse infinitely because all arguments to new-if\n"
-           "will be evaluated before the invocation of new-if. This includes\n"
-           "the else-clause which is a recursive call to sqrt-iter.")
+  ;; Exercise 1.6
+  ;; ------------
+  ;; sqrt-iter will recurse infinitely because all arguments to new-if will be
+  ;; evaluated before the invocation of new-if. This includes the else-clause
+  ;; which is a recursive call to sqrt-iter.
+
+  ;; TODO: (/ 1000) will be 0 because its acutally an integer division. The
+  ;;       correct way to obtain the reciprocial 0.001 is (/ 1000.0).
 
   (println)
   (println "Exercise 1.7")
   (println "------------")
-  (println "(sqrt (/ 1000)) = " (sqrt (/ 1000)))
+  (println "(sqrt (/ 1000.0)) = " (sqrt (/ 1000.0)))
   (println "The correct value would be 0.031622777 but\n"
-           "(- (square (sqrt (/ 1000))) (/ 1000)) = "
-           (- (square (sqrt (/ 1000))) (/ 1000))
+           "(- (square (sqrt (/ 1000.0))) (/ 1000.0)) = "
+           (- (square (sqrt (/ 1000.0))) (/ 1000.0))
            " < 0.001 \nwhich is already 'good enough'.")
-  ; The following loops forever.
+  ; TODO: The following loops forever.
   ; (println "(sqrt 99999999999999999999999) = " (sqrt 99999999999999999999999))
 
   (defn sqrt2-good-enough? [g2 g1]
-    (< (abs (- g2 g1)) (/ g1 1000)))
+    (< (abs (- g2 g1)) (/ g1 1000.0)))
   (defn sqrt2-iter [g2 g1 x]
     (if (sqrt2-good-enough? g2 g1)
       g2
-      (sqrt2-iter (sqrt-improve g2 x) g2 x) ))
+      (rec (sqrt2-iter (sqrt-improve g2 x) g2 x)) ))
   (defn sqrt2 [x] (sqrt2-iter (sqrt-improve 1.0 x) 1.0 x))
 
   (println "(sqrt2 9) = " (sqrt2 9))
   (println "(sqrt2 (+ 100 37)) = " (sqrt2 (+ 100 37)))
   (println "(sqrt2 (+ (sqrt2 2) (sqrt2 3))) = " (sqrt2 (+ (sqrt2 2) (sqrt2 3))))
   (println "(square (sqrt2 1000)) = " (square (sqrt2 1000)))
-  (println "(sqrt2 (/ 1000)) = " (sqrt2 (/ 1000)))
+  (println "(sqrt2 (/ 1000)) = " (sqrt2 (/ 1000.0)))
   (println "sqrt2 performs better on small numbers.")
 
   (println)
   (println "Exercise 1.8")
   (println "------------")
-  (defn curt [x] (let (
-    good-enough? (fn [g2 g1] (< (abs (- g2 g1)) (/ g1 1000)))
-    improve (fn [guess x] (average guess guess (/ x (square guess))))
-    iter (fn [g2 g1 x] (if (good-enough? g2 g1) g2 (iter (improve g2 x) g2 x))))
-    (iter (improve 1.0 x) 1.0 x)))
+  ;; TODO: Loops forever.
+  (defn good-enough? [g2 g1]
+    (< (abs (- g2 g1)) (/ g1 1000.0)))
+  (defn improve [guess x]
+    (average guess guess (/ x (square guess))))
+  (defn iter [g2 g1 x]
+    (if (good-enough? g2 g1)
+      g2
+      (rec (iter (improve g2 x) g2 x))))
+  (defn curt [x] (iter (improve 1.0 x) 1.0 x))
 
   (println "(curt 27) = " (curt 27))
-  (println "(curt (/ 1000)) = " (curt (/ 1000)))
+  (println "(curt (/ 1000)) = " (curt (/ 1000.0)))
 
   ;; Exercise 1.9
   ;; ------------
@@ -174,8 +182,8 @@
     (cond (= y 0) 0
           (= x 0) (* 2 y)
           (= y 1) 2
-          else (ackermann (- x 1)
-                          (ackermann x (- y 1))) ))
+          else (ackermann (dec x)
+                          (ackermann x (dec y))) ))
 
   (println "(ackermann 1 10) = " (ackermann 1 10))
   (println "(ackermann 2 4) = " (ackermann 2 4))
@@ -202,12 +210,12 @@
   (println "(tib-rec 5) = " (tib-rec 5))
   (println "(tib-rec 6) = " (tib-rec 6))
 
-  (defn tib [n] (let (
-    tib-iter (fn [a b c n]
-      (if (= n 0)
-        c
-        (tib-iter (+ a b c) a b (- n 1)) )))
-    (tib-iter 2 1 0 n)))
+  (defn tib-iter [a b c n]
+    (if (= n 0)
+      c
+      (rec (tib-iter (+ a b c) a b (- n 1))) ))
+
+  (defn tib [n] (tib-iter 2 1 0 n))
 
   (println "(tib 1) = " (tib 1))
   (println "(tib 2) = " (tib 2))
@@ -219,11 +227,380 @@
   (println)
   (println "Exercise 1.12")
   (println "-------------")
+  (defn _sum-pairs [xs acc]
+    (if (< (len xs) 2)
+        acc
+        (rec (_sum-pairs (rst xs)
+                         (+. acc
+                             (+ (fst xs)
+                                (snd xs)) ))) ))
+
+  (defn sum-pairs [xs] (_sum-pairs xs []))
+
+  (defn pascal [n]
+    (if (= n 0)
+      [1]
+      (++ [1] (sum-pairs (pascal (dec n))) [1]) ))
+
+  (println "(pascal 0) = " (pascal 0))
+  (println "(pascal 1) = " (pascal 1))
+  (println "(pascal 2) = " (pascal 2))
+  (println "(pascal 3) = " (pascal 3))
+  (println "(pascal 4) = " (pascal 4))
 
   ;; Exercise 1.13
   ;; -------------
+  ;; Define fib(n) := sqrt(5) * Fib(n). We then need to show that
   ;;
+  ;;   fib(n) = phi^n - psi^n.
   ;;
+  ;; This will prove that Fib(n) = 1/sqrt(5)*(phi^n - psi^n).
+  ;;
+  ;; Base case n = 0: fib(n) = fib(0) = 0 and
+  ;;
+  ;;   phi^n - psi^n = phi^0 - psi^0
+  ;;                 = 0.
+  ;;
+  ;; Base case n = 1: fib(n) = fib(1) = sqrt(5) and
+  ;;
+  ;;   phi^n - psi^n = phi^1 - psi^1
+  ;;                 = 1/2*(1 + sqrt(5) - 1 + sqrt(5))
+  ;;                 = sqrt(5)
+  ;;
+  ;; Step case:
+  ;;
+  ;; First note that
+  ;;
+  ;;   phi + 1 = 1/2*(1 + sqrt(5) + 2)
+  ;;           = 1/4*(2 + 2*sqrt(5) + 4)
+  ;;           = 1/4*(1 + 2*sqrt(5) + 5)
+  ;;           = (1/2*(1 + sqrt(5)))^2
+  ;;           = phi^2
+  ;;
+  ;; and
+  ;;
+  ;;   psi + 1 = 1/2*(1 - sqrt(5) + 2)
+  ;;           = 1/4*(2 - 2*sqrt(5) + 4)
+  ;;           = 1/4*(1 - 2*sqrt(5) + 5)
+  ;;           = (1/2*(1 - sqrt(5)))^2
+  ;;           = psi^2
+  ;;
+  ;;   fib(n) = fib(n-1) + fib(n-2)
+  ;;          = (phi^(n-1) - psi^(n-1)) + (phi^(n-2) - psi^(n-2))
+  ;;          = (phi^(n-1) + phi^(n-2)) - (psi^(n-1) + psi^(n-2))
+  ;;          = (phi + 1)*phi^(n-2) - (psi + 1)*psi^(n-2)
+  ;;          = phi^2*phi^(n-2) - psi^2*psi^(n-2)
+  ;;          = phi^n - psi^n
+  ;;
+  ;;                                                                          □
+
+  ;; Exercise 1.14
+  ;; -------------
+  ;; Time and Space Order of Growth is both Theta(2^n). In the worst case for
+  ;; every invocation of < cc > there are two recursive invocations of < cc >.
+
+  (println)
+  (println "Exercise 1.15")
+  (println "-------------")
+  (defn report [mark v]
+    (println mark)
+    v)
+  (defn cube [x] (* x x x))
+  (defn p [x] (- (* 3 x) (* 4 (cube x))))
+  (defn sine [angle]
+    (if (< (abs angle) 0.1)
+        angle
+        (p (sine (/ angle 3.0)))))
+        ; (p (report "sine" (sine (/ angle 3.0))))))
+
+  (println "(sine 0) = " (sine 0))
+  (println "(sine (/ *PI* 4)) = " (sine (/ *PI* 4)))
+  (println "(sine (/ *PI* 2)) = " (sine (/ *PI* 2)))
+  (println "(sine *PI*) = " (sine *PI*))
+  (println "(sine (* 3 (/ *PI* 2))) = " (sine (* 3 (/ *PI* 2))))
+  (println "(sine 12.15) = " (sine 12.15))
+  (println "(sine (* 2 12.15)) = " (sine (* 2 12.15)))
+  (println "(sine (* 4 12.15)) = " (sine (* 4 12.15)))
+  (println "(sine (* 8 12.15)) = " (sine (* 8 12.15)))
+  (println "(sine (* 16 12.15)) = " (sine (* 16 12.15)))
+  (println "(sine (* 32 12.15)) = " (sine (* 32 12.15)))
+  (println "(sine (* 64 12.15)) = " (sine (* 64 12.15)))
+
+  ;; a) 6 times.
+  ;; b)
+  ;;     Value      | # applications
+  ;;    ------------+---------------
+  ;;      1 * 12.15 | 6
+  ;;      2 * 12.15 | 6
+  ;;      4 * 12.15 | 7
+  ;;      8 * 12.15 | 8
+  ;;     16 * 12.15 | 8
+  ;;     32 * 12.15 | 9
+  ;;     64 * 12.15 | 10
+  ;;
+  ;;    Order of Growth in Time:  Theta(log(n))
+  ;;    Order of Growth in Space: Theta(n)
+
+  (println)
+  (println "Exercise 1.16")
+  (println "-------------")
+  (defn _fast-expt [b n acc]
+    (cond (= n 0)   acc
+          (even? n) (rec (_fast-expt (* b b) (/ n 2) acc))
+          else      (rec (_fast-expt b (- n 1) (* b acc))) ))
+
+  (defn fast-expt [b n] (_fast-expt b n 1))
+
+  ; (defn fast-expt [b n]
+  ;   (cond (= n 0) 1
+  ;         (even? n) (do (set x (fast-expt b (/ n 2)))
+  ;                       (* x x))
+  ;         else (* b (fast-expt b (- n 1))) ))
+
+  (println "(fast-expt 2 0) = " (fast-expt 2 0))
+  (println "(fast-expt 2 1) = " (fast-expt 2 1))
+  (println "(fast-expt 2 2) = " (fast-expt 2 2))
+  (println "(fast-expt 2 3) = " (fast-expt 2 3))
+  (println "(fast-expt 2 31) = " (fast-expt 2 31))
+  (println "(fast-expt 2 32) = " (fast-expt 2 32))
+  (println "(fast-expt 2 33) = " (fast-expt 2 33))
+
+  (println)
+  (println "Exercise 1.17")
+  (println "-------------")
+  (defn double [x] (* 2 x))
+  (defn halve [x] (/ x 2))
+  (defn mul [a b]
+    (cond (= b 0)   0
+          (even? b) (double (mul a (halve b)))
+          else      (+ a (mul a (- b 1))) ))
+
+  (println "(mul 2 0) = " (mul 2 0))
+  (println "(mul 2 1) = " (mul 2 1))
+  (println "(mul 2 2) = " (mul 2 2))
+  (println "(mul 2 3) = " (mul 2 3))
+  (println "(mul 12 13) = " (mul 12 13))
+
+  (println)
+  (println "Exercise 1.18")
+  (println "-------------")
+  (defn _fast-mul [b n acc]
+    (cond (= n 0)   acc
+          (even? n) (rec (_fast-mul (double b) (halve n) acc))
+          else      (rec (_fast-mul b (- n 1) (+ b acc))) ))
+
+  (defn fast-mul [b n] (_fast-mul b n 0))
+
+  (println "(fast-mul 2 0) = " (fast-mul 2 0))
+  (println "(fast-mul 2 1) = " (fast-mul 2 1))
+  (println "(fast-mul 2 2) = " (fast-mul 2 2))
+  (println "(fast-mul 2 3) = " (fast-mul 2 3))
+  (println "(fast-mul 12 13) = " (fast-mul 12 13))
+
+  (println)
+  (println "Exercise 1.19")
+  (println "-------------")
+  (defn fib-iter [a b p q count]
+    (cond (= count 0)   b
+          (even? count) (fib-iter a
+                                  b
+                                  (+ (* p p) (* q q))
+                                  (+ (* 2 p q) (* q q))
+                                  (/ count 2))
+          else (fib-iter (+ (* b q) (* a q) (* a p))
+                         (+ (* b p) (* a q))
+                         p
+                         q
+                         (- count 1)) ))
+
+  (defn fib [n] (fib-iter 1 0 0 1 n))
+
+  (println "(fib 0) = " (fib 0))
+  (println "(fib 1) = " (fib 1))
+  (println "(fib 2) = " (fib 2))
+  (println "(fib 3) = " (fib 3))
+  (println "(fib 4) = " (fib 4))
+  (println "(fib 5) = " (fib 5))
+  (println "(fib 6) = " (fib 6))
+  (println "(fib 7) = " (fib 7))
+  (println "(fib 8) = " (fib 8))
+
+  ;; Exercise 1.20
+  ;; -------------
+  ;; Normal order evaluation
+  ;; (gcd 206 40)
+  ;; (gcd (mod 206 40) (mod 206 (gcd 206 40)))
+  ;; (gcd (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))
+  ;; (gcd (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))))
+  ;; (gcd (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))) (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))))
+  ;; (gcd (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40))))) (mod (mod (mod 206 (mod 206 40)) (mod (mod (mod 206 40) (mod 206 (mod 206 40))) (mod (mod 206 (mod 206 40)) (mod (mod 206 40) (mod 206 (mod 206 40)))))))
+  ;; 2
+  ;, calls mod 28 times (if i did count and substitute correctly).
+  ;;
+  ;; Applcative order evaluation
+  ;; (gcd 206 40)
+  ;; (gcd 40 (mod 206 40))
+  ;; (gcd 6 (mod 40 6))
+  ;; (gcd 4 (mod 6 4))
+  ;; (gcd 2 (mod 4 2))
+  ;; (gcd 0 (mod 2 0))
+  ;; 2
+  ;; calls mod 5 times.
+
+  (println)
+  (println "Exercise 1.21")
+  (println "-------------")
+  (defn divides? [a b] (= (mod b a) 0))
+  (defn find-divisor [n test-divisor]
+    (cond (> (square test-divisor) n) n
+          (divides? test-divisor n)   test-divisor
+          else                        (rec (find-divisor n
+                                                         (inc test-divisor))) ))
+  (defn smallest-divisor [n] (find-divisor n 2))
+  (defn prime? [n] (= n (smallest-divisor n)))
+
+  (println "(smallest-divisor 199) = " (smallest-divisor 199))
+  (println "(smallest-divisor 1999) = " (smallest-divisor 1999))
+  (println "(smallest-divisor 19999) = " (smallest-divisor 19999))
+
+  (println "(prime? 2) = " (prime? 2))
+  (println "(prime? 3) = " (prime? 3))
+  (println "(prime? 4) = " (prime? 4))
+  (println "(prime? 5) = " (prime? 5))
+
+  (println)
+  (println "Exercise 1.22")
+  (println "-------------")
+  (defn _search-for-primes [start end limit, primes]
+    (cond (= limit 0) primes
+          (> start end) primes
+          (prime? start) (rec (_search-for-primes (+ start 2)
+                                                  end
+                                                  (- limit 1)
+                                                  (+. primes start) ))
+          else (rec (_search-for-primes (+ start 2)
+                                        end
+                                        limit
+                                        primes )) ))
+  (defn search-for-primes [start end]
+    (_search-for-primes start end 3 []))
+
+  ; (measure-runtime
+  ;   (println "(search-for-primes 1001 10000) = "
+  ;            (search-for-primes 1001 10000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 10001 100000) = "
+  ;            (search-for-primes 10001 100000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 100001 1000000) = "
+  ;            (search-for-primes 100001 1000000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes 1000001 10000000) = "
+  ;            (search-for-primes 1000001 10000000)))
+
+  (set primes [1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037])
+
+  ; (measure-runtime (map prime? primes))
+  (map '(measure-runtime (prime? ~x)) primes)
+
+  (println)
+  (println "Exercise 1.23")
+  (println "-------------")
+  (defn next-2 [n] (if (= n 2) 3 (+ n 2) ))
+  (defn find-divisor-2 [n d]
+    (cond (> (square d) n) n
+          (divides? d n)   d
+          else             (rec (find-divisor-2 n (next-2 d))) ))
+  (defn smallest-divisor-2 [n] (find-divisor-2 n 2))
+  (defn prime-2? [n] (= n (smallest-divisor-2 n)))
+
+  (defn _search-for-primes-2 [start end limit, primes]
+    (cond (= limit 0) primes
+          (> start end) primes
+          (prime? start) (rec (_search-for-primes-2 (+ start 2)
+                                                    end
+                                                    (- limit 1)
+                                                    (+. primes start) ))
+          else (rec (_search-for-primes-2 (+ start 2)
+                                          end
+                                          limit
+                                          primes )) ))
+  (defn search-for-primes-2 [start end]
+    (_search-for-primes-2 start end 3 []))
+
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 1001 10000) = "
+  ;            (search-for-primes-2 1001 10000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 10001 100000) = "
+  ;            (search-for-primes-2 10001 100000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 100001 1000000) = "
+  ;            (search-for-primes-2 100001 1000000)))
+  ;
+  ; (measure-runtime
+  ;   (println "(search-for-primes-2 1000001 10000000) = "
+  ;            (search-for-primes-2 1000001 10000000)))
+
+  ; Unfortunately the garbage collector interferes here and we cannot compare
+  ; runtimes. If we comment the prime test of Ex 1.22 this tests here run a lot
+  ; faster.
+
+  ; (measure-runtime (map prime-2? primes))
+  (map '(measure-runtime (prime-2? ~x)) primes)
+
+  (println)
+  (println "Exercise 1.24")
+  (println "-------------")
+  (defn expmod [base exp m]
+    (cond (= exp 0)   1
+          (even? exp) (mod (square (expmod base (/ exp 2) m)) m)
+          else        (mod (* base (expmod base (- exp 1) m)) m) ))
+  (defn fermat-test [n]
+    (set a (+ 1 (random (- n 1))))
+    (= (expmod a n n) a))
+  (defn fast-prime? [n times]
+    (cond (= times 0)     true
+          (fermat-test n) (rec (fast-prime? n (- times 1)))
+          else            false ))
+
+  ; (measure-runtime (map '(fast-prime? ~x 1) primes))
+  (map '(measure-runtime (fast-prime? ~x 1)) primes)
+
+
+  ;; Exercise 1.25
+  ;; -------------
+  ;; Without repeated remainder calculation the number would either overflow or
+  ;; if the system supports bignums, the size of the number would grow rapidly.
+
+
+  ;; Exercise 1.26
+  ;; -------------
+  ;; With the explicit multiplication we do the same work twice when we call
+  ;; (expmod base (/ exp 2) m) twice. This way we do not gain any advantage of
+  ;; halving the exponent and squaring the result.
+
+
+  (println)
+  (println "Exercise 1.27")
+  (println "-------------")
+  (defn _fermat-run [n a]
+    (cond (= a 1)              true
+          (= (expmod a n n) a) (rec (_fermat-run n (- a 1)))
+          else                 false ))
+  (defn fermat-run [n] (_fermat-run n (- n 1)))
+
+  (println "(fermat-run 561) = " (fermat-run 561))
+  (println "(fermat-run 1105) = " (fermat-run 1105))
+  (println "(fermat-run 1729) = " (fermat-run 1729))
+  (println "(fermat-run 2465) = " (fermat-run 2465))
+  (println "(fermat-run 2821) = " (fermat-run 2821))
+  (println "(fermat-run 6601) = " (fermat-run 6601))
 
   (println)
   (println "Chapter 1 completed.")

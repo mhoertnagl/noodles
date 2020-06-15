@@ -27,6 +27,8 @@ func (a *Assembler) locateLabelPositions(code AsmCode) {
 			a.lbls[x.Name] = ip
 		case *AsmLabeled:
 			ip += a.insInc(x.Op)
+		case *AsmRef:
+			ip += a.insInc(vm.OpRef)
 		case *AsmIns:
 			ip += a.insInc(x.Op)
 		case *AsmStr:
@@ -49,6 +51,8 @@ func (a *Assembler) assemble(code AsmCode) []byte {
 		switch x := line.(type) {
 		case *AsmLabeled:
 			bin = append(bin, vm.Instr(x.Op, a.lbls[x.Name])...)
+		case *AsmRef:
+			bin = append(bin, vm.Instr(vm.OpRef, uint64(x.Cargs), a.lbls[x.Name])...)
 		case *AsmIns:
 			bin = append(bin, vm.Instr(x.Op, x.Args...)...)
 		case *AsmStr:
@@ -57,51 +61,3 @@ func (a *Assembler) assemble(code AsmCode) []byte {
 	}
 	return bin
 }
-
-// // Instr creates a new instruction from an opcode and a variable number of
-// // arguments.
-// func Instr(op vm.Op, args ...uint64) []byte {
-// 	if m, err := vm.LookupMeta(op); err == nil {
-// 		sz := 1 + m.Size()
-// 		ins := make([]byte, sz)
-// 		pos := 1
-//
-// 		ins[0] = op
-// 		for i, as := range m.Args {
-// 			switch as {
-// 			case 1:
-// 				ins[pos] = uint8(args[i])
-// 			case 2:
-// 				binary.BigEndian.PutUint16(ins[pos:pos+2], uint16(args[i]))
-// 			case 4:
-// 				binary.BigEndian.PutUint32(ins[pos:pos+4], uint32(args[i]))
-// 			case 8:
-// 				binary.BigEndian.PutUint64(ins[pos:pos+8], args[i])
-// 			}
-// 			pos += as
-// 		}
-// 		return ins
-// 	}
-// 	panic(fmt.Sprintf("could not find meta infor for [%d]", op))
-// }
-//
-// func Str(s string) []byte {
-// 	b := []byte(s)
-// 	ln := len(b)
-// 	sz := 9 + ln
-// 	ins := make([]byte, sz)
-// 	ins[0] = vm.OpStr
-// 	binary.BigEndian.PutUint64(ins[1:9], uint64(ln))
-// 	copy(ins[9:sz], b)
-// 	return ins
-// }
-//
-// // Concat joins an array of instructions.
-// func Concat(is [][]byte) []byte {
-// 	return bytes.Join(is, []byte{})
-// }
-//
-// // ConcatVar joins a variable number of instructions.
-// func ConcatVar(is ...[]byte) []byte {
-// 	return Concat(is)
-// }

@@ -15,6 +15,7 @@ type Ins = []byte
 
 const (
 	OpConst Op = iota
+	OpConstF
 	// OpNil
 	OpTrue
 	OpFalse
@@ -26,6 +27,8 @@ const (
 	OpSub
 	OpMul
 	OpDiv
+	OpMod
+	OpRand
 
 	OpList
 	OpCons
@@ -42,6 +45,9 @@ const (
 	// OpSll
 	// OpSrl
 	// OpSra
+
+	OpJoin
+	OpExplode
 
 	OpNot
 	OpEQ
@@ -72,9 +78,9 @@ const (
 
 	OpRead
 	OpWrite
-	// TODO: Perhaps obsolete if we switch script and function portion and start
-	//       vm at script start.
+
 	OpHalt
+	OpRuntime
 	OpDebug
 )
 
@@ -94,7 +100,8 @@ type OpMeta struct {
 }
 
 var meta = map[Op]*OpMeta{
-	OpConst: {"Const", []int{8}},
+	OpConst:  {"Const", []int{8}},
+	OpConstF: {"ConstF", []int{8}},
 	// OpNil:         {"Nil", []int{}},
 	OpTrue:        {"True", []int{}},
 	OpFalse:       {"False", []int{}},
@@ -102,10 +109,12 @@ var meta = map[Op]*OpMeta{
 	OpEmptyVector: {"EmptyVector", []int{}},
 	OpStr:         {"String", []int{8}},
 
-	OpAdd: {"Add", []int{}},
-	OpSub: {"Sub", []int{}},
-	OpMul: {"Mul", []int{}},
-	OpDiv: {"Div", []int{}},
+	OpAdd:  {"Add", []int{}},
+	OpSub:  {"Sub", []int{}},
+	OpMul:  {"Mul", []int{}},
+	OpDiv:  {"Div", []int{}},
+	OpMod:  {"Mod", []int{}},
+	OpRand: {"Rand", []int{}},
 
 	OpList:     {"List", []int{}},
 	OpCons:     {"Cons", []int{}},
@@ -115,6 +124,10 @@ var meta = map[Op]*OpMeta{
 	OpDrop:     {"Drop", []int{}},
 	OpLength:   {"Tail", []int{}},
 	OpDissolve: {"Dissolve", []int{}},
+
+	OpJoin:    {"Join", []int{}},
+	OpExplode: {"Explode", []int{}},
+
 	// OpAnd:         {"And", []int{}},
 	// OpOr:          {"Or", []int{}},
 	// OpInv:         {"Inv", []int{}},
@@ -139,7 +152,7 @@ var meta = map[Op]*OpMeta{
 	OpDropArgs: {"DropArgs", []int{8}},
 	OpGetArg:   {"GetArg", []int{8}},
 
-	OpRef:     {"Ref", []int{8}},
+	OpRef:     {"Ref", []int{8, 8}},
 	OpCall:    {"Call", []int{}},
 	OpRecCall: {"RecCall", []int{}},
 	OpReturn:  {"Return", []int{}},
@@ -147,9 +160,10 @@ var meta = map[Op]*OpMeta{
 	OpRead:  {"Read", []int{}},
 	OpWrite: {"Write", []int{}},
 
-	OpEnd:   {"End", []int{}},
-	OpHalt:  {"Halt", []int{}},
-	OpDebug: {"Debug", []int{8}},
+	OpEnd:     {"End", []int{}},
+	OpHalt:    {"Halt", []int{}},
+	OpRuntime: {"Runtime", []int{}},
+	OpDebug:   {"Debug", []int{8}},
 }
 
 // Size returns the number of bytes for all arguments of an instruction.
@@ -203,12 +217,12 @@ func Instr(op Op, args ...uint64) []byte {
 	return ins
 }
 
-func Bool(n bool) []byte {
-	if n {
-		return Instr(OpTrue)
-	}
-	return Instr(OpFalse)
-}
+// func Bool(n bool) []byte {
+// 	if n {
+// 		return Instr(OpTrue)
+// 	}
+// 	return Instr(OpFalse)
+// }
 
 func Str(s string) []byte {
 	b := []byte(s)
