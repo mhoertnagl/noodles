@@ -33,10 +33,19 @@
   (defmacro error [& args] (do (write *STD-ERR* "ERROR: " @args "\n")
                                (halt) ))
 
+  ; (defmacro if* [condition consequent alternative]
+  ;   (cond condition consequent
+  ;         true      alternative ))
+  ;
+  ; (defmacro let* [assign body]
+  ;   (cond (= (len assign) 0) 'body
+  ;         (= (len assign) 1) '((fn [~(fst assign)] ~body) ~(snd assign))
+  ;          true              '((fn [~(fst assign)] (let* ~(drop 2 assign) ~body)) ~(snd assign)) ))
+
   ;; `test` creates a `name`d test case. Compares the expected `exp` and the
   ;; actual `act` value and returns an error message if they are not equal (=).
   ;;
-  ;; ```(test "increment 0" 0 (inc 0))```
+  ;; ```(test "increment 1" 2 (inc 1))```
   ;; >> FAILED: increment 1
   ;;      Expected: 1
   ;;      Actual:   2
