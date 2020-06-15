@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 type AsmPrinter struct {

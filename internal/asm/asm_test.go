@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/asm"
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/asm"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 func TestAssembleBool1(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/mhoertnagl/splis2/internal/util"
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/util"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 func main() {

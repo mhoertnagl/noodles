@@ -1,7 +1,7 @@
 package rwr
 
 import (
-	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/cmp"
 )
 
 type argsMap map[string]cmp.Node

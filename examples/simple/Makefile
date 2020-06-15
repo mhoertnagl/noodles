@@ -1,5 +1,5 @@
-SPLIC=../../bin/splic
-SPLIS=../../bin/splis
+NOODLEC=../../bin/noodlec
+NOODLES=../../bin/noodles
 
 LIB=lib
 CORE=$(LIB)/core
@@ -7,10 +7,10 @@ CORE=$(LIB)/core
 all: build run
 
 build:
-	$(SPLIC) 01.splis
+	$(NOODLEC) 01.splis
 
 run:
-	$(SPLIS) 01.nob
+	$(NOODLES) 01.nob
 
 .PHONY: clean
 

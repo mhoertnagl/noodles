@@ -16,7 +16,6 @@ type Ins = []byte
 const (
 	OpConst Op = iota
 	OpConstF
-	// OpNil
 	OpTrue
 	OpFalse
 	OpEmptyList
@@ -100,9 +99,8 @@ type OpMeta struct {
 }
 
 var meta = map[Op]*OpMeta{
-	OpConst:  {"Const", []int{8}},
-	OpConstF: {"ConstF", []int{8}},
-	// OpNil:         {"Nil", []int{}},
+	OpConst:       {"Const", []int{8}},
+	OpConstF:      {"ConstF", []int{8}},
 	OpTrue:        {"True", []int{}},
 	OpFalse:       {"False", []int{}},
 	OpEmptyList:   {"EmptyList", []int{}},
@@ -185,13 +183,6 @@ func LookupMeta(op Op) (*OpMeta, error) {
 	return nil, fmt.Errorf("opcode [%d] undefined", op)
 }
 
-// // TODO: ~> bin?
-// func Correct(code []byte, pos int, new uint64) {
-// 	for i := 0; i < 8; i++ {
-// 		code[pos+7-i] = byte(new >> uint64(8*i))
-// 	}
-// }
-
 // Instr creates a new instruction from an opcode and a variable number of
 // arguments.
 func Instr(op Op, args ...uint64) []byte {
@@ -216,13 +207,6 @@ func Instr(op Op, args ...uint64) []byte {
 	}
 	return ins
 }
-
-// func Bool(n bool) []byte {
-// 	if n {
-// 		return Instr(OpTrue)
-// 	}
-// 	return Instr(OpFalse)
-// }
 
 func Str(s string) []byte {
 	b := []byte(s)

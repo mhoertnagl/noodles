@@ -3,8 +3,8 @@ package rwr
 import (
 	"fmt"
 
-	"github.com/mhoertnagl/splis2/internal/cmp"
-	"github.com/mhoertnagl/splis2/internal/util"
+	"github.com/mhoertnagl/noodles/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/util"
 )
 
 type macroDefs map[string]*macroDef

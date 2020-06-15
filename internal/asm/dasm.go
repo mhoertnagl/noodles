@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 type Disassembler struct {

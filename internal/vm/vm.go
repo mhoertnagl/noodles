@@ -44,8 +44,6 @@ func (m *VM) Run(code Ins) {
 	ln := int64(len(code))
 	for m.ip = 0; m.ip < ln; {
 		switch m.readOp() {
-		// case OpNil:
-		//   m.push(nil)
 		case OpConst:
 			c := m.readInt64()
 			// fmt.Printf("Const %d\n", c)

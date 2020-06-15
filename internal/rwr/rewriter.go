@@ -1,6 +1,6 @@
 package rwr
 
-import "github.com/mhoertnagl/splis2/internal/cmp"
+import "github.com/mhoertnagl/noodles/internal/cmp"
 
 type Rewriter interface {
 	Rewrite(n cmp.Node) cmp.Node

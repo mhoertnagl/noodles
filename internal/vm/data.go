@@ -16,12 +16,3 @@ func NewRef(addr int64) *Ref {
 func (r *Ref) Add(v Val) {
 	r.cargs = append(r.cargs, v)
 }
-
-// // TODO: variable type.
-// type Sym struct {
-// 	name string
-// 	// file string
-// 	// line int
-// }
-//
-// type Syms map[int64]Sym

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 func TestInstr(t *testing.T) {

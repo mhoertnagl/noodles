@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mhoertnagl/splis2/internal/asm"
-	"github.com/mhoertnagl/splis2/internal/cmp"
-	"github.com/mhoertnagl/splis2/internal/rwr"
-	"github.com/mhoertnagl/splis2/internal/util"
+	"github.com/mhoertnagl/noodles/internal/asm"
+	"github.com/mhoertnagl/noodles/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/rwr"
+	"github.com/mhoertnagl/noodles/internal/util"
 )
 
 func main() {

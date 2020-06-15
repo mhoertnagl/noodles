@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/mhoertnagl/splis2/internal/asm"
-	"github.com/mhoertnagl/splis2/internal/util"
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/asm"
+	"github.com/mhoertnagl/noodles/internal/util"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 // TODO: prelude docs and unit tests.

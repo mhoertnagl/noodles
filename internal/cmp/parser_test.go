@@ -3,7 +3,7 @@ package cmp_test
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/cmp"
 )
 
 func TestParseNil(t *testing.T) {

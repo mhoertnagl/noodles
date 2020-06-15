@@ -3,7 +3,7 @@ package rwr
 import (
 	"reflect"
 
-	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/cmp"
 )
 
 type QuoteRewriter struct {

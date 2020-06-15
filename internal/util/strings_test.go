@@ -3,7 +3,7 @@ package util_test
 import (
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/util"
+	"github.com/mhoertnagl/noodles/internal/util"
 )
 
 func TestEmpty(t *testing.T) {

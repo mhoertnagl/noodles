@@ -6,9 +6,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/asm"
-	"github.com/mhoertnagl/splis2/internal/cmp"
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/asm"
+	"github.com/mhoertnagl/noodles/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 func TestCompileBool(t *testing.T) {

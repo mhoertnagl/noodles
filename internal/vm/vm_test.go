@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mhoertnagl/splis2/internal/vm"
+	"github.com/mhoertnagl/noodles/internal/vm"
 )
 
 func TestConst1(t *testing.T) {

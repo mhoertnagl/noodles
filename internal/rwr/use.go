@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/mhoertnagl/splis2/internal/cmp"
+	"github.com/mhoertnagl/noodles/internal/cmp"
 )
 
 type usingsSet map[string]bool
