@@ -13,5 +13,5 @@ echo 'export SPLIS_HOME="<path to directory that contains splis lib>"' >> ~/.bas
 For instance:
 
 ```bash
-echo 'export SPLIS_HOME="/home/mathias/go/src/github.com/mhoertnagl/splis2"' >> ~/.bashrc
+echo 'export SPLIS_HOME="/home/mathias/go/src/github.com/mhoertnagl/noodles"' >> ~/.bashrc
 ```
